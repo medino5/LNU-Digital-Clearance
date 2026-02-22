@@ -1,0 +1,51 @@
+[90m= [39m[34;4mApp\Models\ClearanceRequest[39;24m {#6526
+    [34mstudent_id[39m: [35m3[39m,
+    [34msemester[39m: "[32m2nd[39m",
+    [34macademic_year[39m: "[32m2025-2026[39m",
+    [34mstatus[39m: "[32mpending[39m",
+    [34mupdated_at[39m: "[32m2026-02-22 14:54:03[39m",
+    [34mcreated_at[39m: "[32m2026-02-22 14:54:03[39m",
+    [34mid[39m: [35m1[39m,
+    [34mstudent[39m: [34;4mApp\Models\User[39;24m {#6511
+      [34mid[39m: [35m3[39m,
+      [34mname[39m: "[32mTest Student[39m",
+      [34memail[39m: "[32mstudent@test.com[39m",
+      #[33mpassword[39m: "[32m$2y$12$zcXJKKjI41W32LoLL8aeJOhoMAt52GZkkoPGxZOeSQi90D8UN/YOi[39m",
+      [34mis_student[39m: [35m1[39m,
+      [34mis_staff[39m: [35m0[39m,
+      [34mprogram_id[39m: [35m1[39m,
+      [34myear_level[39m: [35m3[39m,
+      #[33mremember_token[39m: [36mnull[39m,
+      [34mcreated_at[39m: "[32m2026-02-22 14:42:33[39m",
+      [34mupdated_at[39m: "[32m2026-02-22 14:42:33[39m",
+      [34morganizations[39m: [34;4mIlluminate\Database\Eloquent\Collection[39;24m {#6552
+        [34mall[39m: [
+          [34;4mApp\Models\Organization[39;24m {#6532
+            [34mid[39m: [35m1[39m,
+            [34mname[39m: "[32mEnglish Circle[39m",
+            [34mtype[39m: "[32macademic[39m",
+            [34mprogram_id[39m: [35m1[39m,
+            [34myear_level[39m: [36mnull[39m,
+            [34mcreated_at[39m: "[32m2026-02-22 14:42:32[39m",
+            [34mupdated_at[39m: "[32m2026-02-22 14:42:32[39m",
+            [34mpivot[39m: [34;4mIlluminate\Database\Eloquent\Relations\Pivot[39;24m {#6534
+              [34mstudent_id[39m: [35m3[39m,
+              [34morganization_id[39m: [35m1[39m,
+            },
+            [34mdesignations[39m: [34;4mIlluminate\Database\Eloquent\Collection[39;24m {#5876
+              [34mall[39m: [
+                [34;4mApp\Models\Designation[39;24m {#6102
+                  [34mid[39m: [35m1[39m,
+                  [34mname[39m: "[32mTreasurer[39m",
+                  [34morganization_id[39m: [35m1[39m,
+                  [34mcreated_at[39m: "[32m2026-02-22 14:42:32[39m",
+                  [34mupdated_at[39m: "[32m2026-02-22 14:42:32[39m",
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  }
+

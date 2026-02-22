@@ -2,47 +2,64 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
+        'is_student',
+        'is_staff',
+        'program_id',
+        'year_level'
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    protected $casts = [
+        'is_student' => 'boolean',
+        'is_staff' => 'boolean',
+    ];
+
+    // =========================
+    // RELATIONSHIPS
+    // =========================
+
+    public function program()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->belongsTo(Program::class);
+    }
+
+    public function designations()
+    {
+        return $this->belongsToMany(Designation::class);
+    }
+
+    public function clearanceRequests()
+    {
+        return $this->hasMany(ClearanceRequest::class, 'student_id');
+    }
+
+    public function signedClearances()
+    {
+        return $this->hasMany(ClearanceSignature::class, 'signed_by_user_id');
+    }
+    public function organizations()
+    {
+        return $this->belongsToMany(
+            Organization::class,
+            'student_organizations',
+            'student_id',
+            'organization_id'
+        );
     }
 }
