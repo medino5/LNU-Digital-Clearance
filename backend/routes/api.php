@@ -1,0 +1,27 @@
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ClearanceController;
+
+// 🔓 Public Routes (No token needed to access these)
+Route::post('/login', [AuthController::class, 'login']);
+
+// 🔒 Protected Routes (Flutter app MUST send a valid token to access these)
+// 🔒 Protected Routes (Must be logged in)
+Route::middleware('auth:sanctum')->group(function () {
+
+    // Anyone logged in can access these
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/me', [AuthController::class, 'me']);
+
+    // Students can create clearances
+    Route::post('/clearance/create', [ClearanceController::class, 'create']);
+
+    // 🛑 ONLY STAFF can approve clearances
+    Route::middleware('staff')->group(function () {
+        Route::post('/clearance/approve', [ClearanceController::class, 'approve']);
+    });
+
+});
