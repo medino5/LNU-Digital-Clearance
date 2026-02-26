@@ -1,31 +1,44 @@
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthService {
-  // Use 10.0.2.2 for Android Emulator connecting to local Docker
-  // Use 127.0.0.1 for iOS Simulator
-  // Use your local IP (e.g., 192.168.x.x) if using a physical device
-  final String _baseUrl = 'http://10.0.2.2:8000/api';
+  // 1. Create the secure storage instance
+  final _storage = const FlutterSecureStorage();
 
-  Future<String?> login(String email, String password) async {
+  // Update this to your local IP if testing on a physical device,
+  // or 10.0.2.2 for Android Emulator
+  final String baseUrl = 'http://10.0.2.2:8000/api';
+
+  Future<bool> login(String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/login'),
-        headers: {'Accept': 'application/json'},
-        body: {'email': email, 'password': password},
+        Uri.parse('$baseUrl/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}),
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        // Assuming your Laravel Sanctum returns: { "token": "1|xyz..." }
-        return data['token'];
+        final data = jsonDecode(response.body);
+        final token = data['token'];
+
+        // 2. Save the token securely to the phone
+        await _storage.write(key: 'auth_token', value: token);
+
+        print('Login Success! Token saved securely.');
+        return true;
       } else {
         print('Login failed: ${response.body}');
-        return null;
+        return false;
       }
     } catch (e) {
       print('Network error: $e');
-      return null;
+      return false;
     }
+  }
+
+  // Bonus: A quick method to read the token later when making API requests
+  Future<String?> getToken() async {
+    return await _storage.read(key: 'auth_token');
   }
 }
