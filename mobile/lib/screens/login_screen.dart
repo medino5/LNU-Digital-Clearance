@@ -18,19 +18,23 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     setState(() => _isLoading = true);
 
-    final token = await _authService.login(
+    // 1. This now returns a true/false boolean, not the token string
+    final isSuccess = await _authService.login(
       _emailController.text,
       _passwordController.text,
     );
 
+    // 2. Flutter safety check: Ensure the screen is still visible after the network delay
+    if (!mounted) return;
+
     setState(() => _isLoading = false);
 
-    if (token != null) {
+    // 3. Check the boolean result
+    if (isSuccess) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Login Successful!')));
-      print('Token received: $token');
-      // Ticket 10 will go here: Saving the token to secure storage
+      // We don't need to print the token here anymore because AuthService saved it!
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Invalid credentials or server error.')),
