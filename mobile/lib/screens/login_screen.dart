@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,20 +19,24 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     setState(() => _isLoading = true);
 
-    final token = await _authService.login(
+    // 1. We expect a boolean (true/false) from the new AuthService
+    final isSuccess = await _authService.login(
       _emailController.text,
       _passwordController.text,
     );
 
+    // 2. Safety check before updating UI
+    if (!mounted) return;
+
     setState(() => _isLoading = false);
 
-    if (token != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Login Successful!')));
-      print('Token received: $token');
-      // Ticket 10 will go here: Saving the token to secure storage
+    // 3. Navigate or show error
+    if (isSuccess) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+      );
     } else {
+      // Put the SnackBar back here so the user knows if they typed the wrong password
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Invalid credentials or server error.')),
       );
