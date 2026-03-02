@@ -7,27 +7,44 @@ use Illuminate\Support\Facades\Auth;
 
 class StaffAuthController extends Controller
 {
+    /**
+     * Show the staff login form
+     */
     public function showLogin()
     {
         return view('staff.login');
     }
 
+    /**
+     * Handle login request
+     */
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
-        ]);
+        // Validate inputs with custom messages
+        $credentials = $request->validate(
+            [
+                'email' => ['required', 'email'],
+                'password' => ['required', 'min:6'],
+            ],
+            [
+                'email.required' => 'Email is required.',
+                'email.email' => 'Please enter a valid email address.',
+                'password.required' => 'Password is required.',
+                'password.min' => 'Password must be at least 6 characters.',
+            ]
+        );
 
+        // Attempt login
         if (Auth::guard('web')->attempt($credentials)) {
-            // regenerate session for security
+
+            // Regenerate session for security
             $request->session()->regenerate();
 
-            // Check if the user is staff
+            // Check if user is staff
             if (!Auth::user()->is_staff) {
                 Auth::logout();
 
-                // Invalidate the session and regenerate token to avoid 419
+                // Prevent 419 error
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
 
@@ -36,7 +53,9 @@ class StaffAuthController extends Controller
                 ]);
             }
 
-            return redirect()->intended('/dashboard');
+            // ✅ Redirect to dashboard with success message
+            return redirect()->route('dashboard')
+                ->with('success', 'Login successful. Welcome!');
         }
 
         return back()->withErrors([

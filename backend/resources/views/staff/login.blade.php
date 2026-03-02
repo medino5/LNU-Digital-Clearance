@@ -2,29 +2,76 @@
 <html>
 <head>
     <title>Staff Login</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* full viewport height */
+            font-family: Arial, sans-serif;
+        }
+
+        form {
+            border: 1px solid #ccc;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 300px;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #2d89ef;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #1b5fa7;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        .error-message {
+            color: red;
+            font-size: 0.9em;
+        }
+    </style>
 </head>
 <body>
-    <h2>Staff Login</h2>
-
-    @if ($errors->any())
-        <div style="color:red;">
-            {{ $errors->first() }}
-        </div>
-    @endif
-
-    <form method="POST" action="{{ route('staff.login.submit') }}">
+    <form method="POST" action="{{ route('staff.login.submit') }}" novalidate>
         @csrf
+        <h2>Staff Login</h2>
+
         <div>
-            <label>Email</label><br>
-            <input type="email" name="email" required>
+            <label>Email</label>
+            <input type="email" name="email" value="{{ old('email') }}" placeholder="Enter your email">
+            @error('email')
+                <div class="error-message">@ {{ $message }}</div>
+            @enderror
         </div>
 
         <div>
-            <label>Password</label><br>
-            <input type="password" name="password" required>
+            <label>Password</label>
+            <input type="password" name="password" placeholder="Enter your password">
+            @error('password')
+                <div class="error-message">@ {{ $message }}</div>
+            @enderror
         </div>
 
-        <br>
         <button type="submit">Login</button>
     </form>
 </body>
