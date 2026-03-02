@@ -6,29 +6,19 @@ class AuthService {
   // 1. Create the secure storage instance
   final _storage = const FlutterSecureStorage();
 
-<<<<<<< HEAD
   // Update this to your local IP if testing on a physical device,
   // or 10.0.2.2 for Android Emulator
-  final String baseUrl = 'http://10.0.2.2:8000/api';
-
-=======
-  // Use 10.0.2.2 for Android Emulator connecting to local Docker
-  final String baseUrl = 'http://10.0.2.2:8000/api';
+  final String baseUrl = 'http://192.168.1.13:8000/api';
 
   // --- TICKET 10: Secure Login ---
->>>>>>> DC-11-create-dashboard
   Future<bool> login(String email, String password) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/login'),
-<<<<<<< HEAD
-        headers: {'Content-Type': 'application/json'},
-=======
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
->>>>>>> DC-11-create-dashboard
         body: jsonEncode({'email': email, 'password': password}),
       );
 
@@ -36,15 +26,10 @@ class AuthService {
         final data = jsonDecode(response.body);
         final token = data['token'];
 
-<<<<<<< HEAD
-        // 2. Save the token securely to the phone
+        // Save the token securely to the phone
         await _storage.write(key: 'auth_token', value: token);
 
         print('Login Success! Token saved securely.');
-=======
-        // Save the token securely to the phone
-        await _storage.write(key: 'auth_token', value: token);
->>>>>>> DC-11-create-dashboard
         return true;
       } else {
         print('Login failed: ${response.body}');
@@ -56,12 +41,6 @@ class AuthService {
     }
   }
 
-<<<<<<< HEAD
-  // Bonus: A quick method to read the token later when making API requests
-  Future<String?> getToken() async {
-    return await _storage.read(key: 'auth_token');
-  }
-=======
   // Helper to read the token
   Future<String?> getToken() async {
     return await _storage.read(key: 'auth_token');
@@ -112,5 +91,4 @@ class AuthService {
     // Wipe the token from the phone's secure storage
     await _storage.delete(key: 'auth_token');
   }
->>>>>>> DC-11-create-dashboard
 }
