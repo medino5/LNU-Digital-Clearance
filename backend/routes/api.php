@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClearanceController;
+use App\Http\Controllers\ClearanceRequestController;
 
 // 🔓 Public Routes (No token needed to access these)
 Route::post('/login', [AuthController::class, 'login']);
@@ -17,6 +18,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
 
     // Students can create clearances
+    Route::post('/clearance', [ClearanceRequestController::class, 'store']);
     Route::post('/clearance/create', [ClearanceController::class, 'create']);
 
     // 🛑 ONLY STAFF can approve clearances
