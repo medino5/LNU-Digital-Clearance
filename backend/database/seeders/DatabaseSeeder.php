@@ -41,6 +41,14 @@ class DatabaseSeeder extends Seeder
             'year_level' => null
         ]);
 
+        // Global university-level offices (no specific program)
+        $universityOffices = Organization::create([
+            'name' => 'University Offices',
+            'type' => 'global',
+            'program_id' => null,
+            'year_level' => null
+        ]);
+
         // =========================
         // DESIGNATIONS
         // =========================
@@ -52,6 +60,21 @@ class DatabaseSeeder extends Seeder
         $mathAdviser = Designation::create([
             'name' => 'Adviser',
             'organization_id' => $mathOrg->id
+        ]);
+
+        $cashier = Designation::create([
+            'name' => 'University Cashier',
+            'organization_id' => $universityOffices->id
+        ]);
+
+        $library = Designation::create([
+            'name' => 'University Library',
+            'organization_id' => $universityOffices->id
+        ]);
+
+        $cmeDean = Designation::create([
+            'name' => 'CME Dean',
+            'organization_id' => $universityOffices->id
         ]);
 
         // =========================
