@@ -15,6 +15,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = false;
   Map<String, dynamic>? _clearanceStatus;
   Map<String, dynamic>? _activeRequest;
+  List<dynamic> _signatures = const [];
 
   static const Color _lnuGold = Color(0xFFD4AF37);
   static const Color _lnuNavy = Color(0xFF001F54);
@@ -38,7 +39,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     setState(() {
       _clearanceStatus = status;
-      _activeRequest = status != null ? status['active_request'] as Map<String, dynamic>? : null;
+      // Support either { active_request: {..., clearance_signatures: [...] } }
+      // or { clearance_request: {...}, clearance_signatures: [...] } shapes.
+      Map<String, dynamic>? active;
+      List<dynamic> signatures = const [];
+
+      if (status != null) {
+        if (status['active_request'] is Map<String, dynamic>) {
+          active = status['active_request'] as Map<String, dynamic>;
+          if (active?['clearance_signatures'] is List) {
+            signatures = active!['clearance_signatures'] as List<dynamic>;
+          }
+        } else if (status['clearance_request'] is Map<String, dynamic>) {
+          active = status['clearance_request'] as Map<String, dynamic>;
+          if (status['clearance_signatures'] is List) {
+            signatures = status['clearance_signatures'] as List<dynamic>;
+          }
+        }
+      }
+
+      _activeRequest = active;
+      _signatures = signatures;
       _isLoading = false;
     });
   }
@@ -143,16 +164,88 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: 32),
                   Expanded(
-                    child: Center(
-                      child: _activeRequest != null
-                          ? const Text(
-                              'Checklist UI goes here',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey,
-                              ),
-                            )
-                          : ElevatedButton(
+                    child: _activeRequest != null
+                        ? RefreshIndicator(
+                            onRefresh: () => _fetchClearanceStatus(showSpinner: false),
+                            child: _signatures.isEmpty
+                                ? ListView(
+                                    children: const [
+                                      SizedBox(height: 40),
+                                      Center(
+                                        child: Text(
+                                          'No checklist items found.',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : ListView.builder(
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    itemCount: _signatures.length,
+                                    itemBuilder: (context, index) {
+                                      final sig = _signatures[index] as Map<String, dynamic>? ?? {};
+                                      final designation = sig['designation'] as Map<String, dynamic>? ?? {};
+                                      final officeName =
+                                          (designation['name'] as String?) ?? 'Unknown Office';
+                                      final status =
+                                          (sig['status'] as String?)?.toLowerCase() ?? 'pending';
+
+                                      IconData icon;
+                                      Color iconColor;
+
+                                      switch (status) {
+                                        case 'approved':
+                                          icon = Icons.check_circle;
+                                          iconColor = Colors.green;
+                                          break;
+                                        case 'rejected':
+                                          icon = Icons.cancel;
+                                          iconColor = Colors.red;
+                                          break;
+                                        case 'pending':
+                                        default:
+                                          icon = Icons.access_time;
+                                          iconColor = Colors.amber;
+                                          break;
+                                      }
+
+                                      return Card(
+                                        margin: const EdgeInsets.symmetric(vertical: 8),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          side: BorderSide(color: _lnuGold.withOpacity(0.7)),
+                                        ),
+                                        child: ListTile(
+                                          leading: CircleAvatar(
+                                            backgroundColor: _lnuNavy,
+                                            child: Icon(
+                                              icon,
+                                              color: iconColor,
+                                            ),
+                                          ),
+                                          title: Text(
+                                            officeName,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          subtitle: Text(
+                                            status[0].toUpperCase() + status.substring(1),
+                                          ),
+                                          trailing: Icon(
+                                            icon,
+                                            color: iconColor,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                          )
+                        : Center(
+                            child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: _lnuGold,
                                 foregroundColor: _lnuNavy,
@@ -171,7 +264,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               onPressed: _isLoading ? null : _handleRequestClearance,
                               child: const Text('Initiate Clearance'),
                             ),
-                    ),
+                          ),
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
