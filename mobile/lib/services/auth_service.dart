@@ -3,17 +3,11 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthService {
-  // 1. Create the secure storage instance
   final _storage = const FlutterSecureStorage();
 
-<<<<<<< HEAD
   // Use 10.0.2.2 for Android Emulator connecting to local Docker
+  // Update this to your local IP if testing on a physical device.
   final String baseUrl = 'http://10.0.2.2:8000/api';
-=======
-  // Update this to your local IP if testing on a physical device,
-  // or 10.0.2.2 for Android Emulator
-  final String baseUrl = 'http://192.168.1.13:8000/api';
->>>>>>> remotes/origin/DC-17-web-staff-login-view-auth
 
   // --- TICKET 10: Secure Login ---
   Future<bool> login(String email, String password) async {
@@ -31,13 +25,7 @@ class AuthService {
         final data = jsonDecode(response.body);
         final token = data['token'];
 
-        // Save the token securely to the phone
         await _storage.write(key: 'auth_token', value: token);
-<<<<<<< HEAD
-=======
-
-        print('Login Success! Token saved securely.');
->>>>>>> remotes/origin/DC-17-web-staff-login-view-auth
         return true;
       } else {
         print('Login failed: ${response.body}');
@@ -49,9 +37,8 @@ class AuthService {
     }
   }
 
-  // Helper to read the token
   Future<String?> getToken() async {
-    return await _storage.read(key: 'auth_token');
+    return _storage.read(key: 'auth_token');
   }
 
   // --- TICKET 11: Get User Details ---
@@ -69,7 +56,7 @@ class AuthService {
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        return jsonDecode(response.body) as Map<String, dynamic>;
       }
     } catch (e) {
       print('Failed to fetch user: $e');
@@ -81,7 +68,6 @@ class AuthService {
   Future<void> logout() async {
     final token = await getToken();
     if (token != null) {
-      // Tell Laravel to destroy the token on the server
       try {
         await http.post(
           Uri.parse('$baseUrl/logout'),
@@ -96,11 +82,61 @@ class AuthService {
         );
       }
     }
-    // Wipe the token from the phone's secure storage
+
     await _storage.delete(key: 'auth_token');
   }
-<<<<<<< HEAD
+
+  // --- TICKET 15: Clearance Status ---
+  Future<Map<String, dynamic>?> getClearanceStatus() async {
+    final token = await getToken();
+    if (token == null) return null;
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/clearance/status'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else {
+        print('Failed to fetch clearance status: ${response.body}');
+      }
+    } catch (e) {
+      print('Network error while fetching clearance status: $e');
+    }
+
+    return null;
+  }
+
+  // --- TICKET 15: Request Clearance ---
+  Future<bool> requestClearance() async {
+    final token = await getToken();
+    if (token == null) return false;
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/clearance'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({}),
+      );
+
+      if (response.statusCode == 201) {
+        return true;
+      } else {
+        print('Failed to request clearance: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Network error while requesting clearance: $e');
+      return false;
+    }
+  }
 }
-=======
-}
->>>>>>> remotes/origin/DC-17-web-staff-login-view-auth
