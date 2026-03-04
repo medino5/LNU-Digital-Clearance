@@ -6,8 +6,14 @@ class AuthService {
   // 1. Create the secure storage instance
   final _storage = const FlutterSecureStorage();
 
+<<<<<<< HEAD
   // Use 10.0.2.2 for Android Emulator connecting to local Docker
   final String baseUrl = 'http://10.0.2.2:8000/api';
+=======
+  // Update this to your local IP if testing on a physical device,
+  // or 10.0.2.2 for Android Emulator
+  final String baseUrl = 'http://192.168.1.13:8000/api';
+>>>>>>> remotes/origin/DC-17-web-staff-login-view-auth
 
   // --- TICKET 10: Secure Login ---
   Future<bool> login(String email, String password) async {
@@ -27,6 +33,11 @@ class AuthService {
 
         // Save the token securely to the phone
         await _storage.write(key: 'auth_token', value: token);
+<<<<<<< HEAD
+=======
+
+        print('Login Success! Token saved securely.');
+>>>>>>> remotes/origin/DC-17-web-staff-login-view-auth
         return true;
       } else {
         print('Login failed: ${response.body}');
@@ -88,4 +99,8 @@ class AuthService {
     // Wipe the token from the phone's secure storage
     await _storage.delete(key: 'auth_token');
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> remotes/origin/DC-17-web-staff-login-view-auth
