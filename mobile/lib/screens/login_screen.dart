@@ -19,24 +19,36 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     setState(() => _isLoading = true);
 
+<<<<<<< HEAD
     // 1. We expect a boolean (true/false) from the new AuthService
+=======
+    // Call AuthService, expects a boolean result
+>>>>>>> remotes/origin/DC-17-web-staff-login-view-auth
     final isSuccess = await _authService.login(
       _emailController.text,
       _passwordController.text,
     );
 
+<<<<<<< HEAD
     // 2. Safety check before updating UI
+=======
+    // Safety check before updating UI
+>>>>>>> remotes/origin/DC-17-web-staff-login-view-auth
     if (!mounted) return;
 
     setState(() => _isLoading = false);
 
+<<<<<<< HEAD
     // 3. Navigate or show error
+=======
+>>>>>>> remotes/origin/DC-17-web-staff-login-view-auth
     if (isSuccess) {
+      // Navigate to Dashboard on successful login
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const DashboardScreen()),
       );
     } else {
-      // Put the SnackBar back here so the user knows if they typed the wrong password
+      // Show error if login failed
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Invalid credentials or server error.')),
       );
