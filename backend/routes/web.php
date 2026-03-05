@@ -22,4 +22,6 @@ Route::post('/staff/login', [StaffAuthController::class, 'login'])->name('staff.
 Route::middleware('auth')->group(function () {
     Route::get('/staff/dashboard', [StaffDashboardController::class, 'index'])
         ->name('staff.dashboard');
+    Route::post('/staff/process/{signature}', [StaffDashboardController::class, 'processSignature'])
+        ->name('staff.process');
 });
