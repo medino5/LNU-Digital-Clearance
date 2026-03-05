@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ClearanceController;
 use App\Http\Controllers\StaffAuthController;
+use App\Http\Controllers\StaffDashboardController;
 use Illuminate\Support\Facades\Route;
 
 // Existing welcome route
@@ -16,8 +17,9 @@ Route::get('/staff/login', [StaffAuthController::class, 'showLogin'])->name('sta
 Route::post('/staff/login', [StaffAuthController::class, 'login'])->name('staff.login.submit');
 
 // =========================
-// Placeholder Dashboard for Staff
+// Staff Dashboard (web guard)
 // =========================
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->name('dashboard');
+Route::middleware('auth')->group(function () {
+    Route::get('/staff/dashboard', [StaffDashboardController::class, 'index'])
+        ->name('staff.dashboard');
+});
