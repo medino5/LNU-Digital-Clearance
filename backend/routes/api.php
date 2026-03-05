@@ -10,27 +10,18 @@ use App\Http\Controllers\ClearanceRequestController;
 Route::post('/login', [AuthController::class, 'login']);
 
 // 🔒 Protected Routes (Flutter app MUST send a valid token to access these)
-// 🔒 Protected Routes (Must be logged in)
 Route::middleware('auth:sanctum')->group(function () {
 
     // Anyone logged in can access these
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
 
-    // Students can create clearances
-    Route::middleware(function ($request, $next) {
-        if (!$request->user() || !$request->user()->is_student) {
-            return response()->json([
-                'error' => 'Only students can access this endpoint',
-            ], 403);
-        }
-
-        return $next($request);
-    })->group(function () {
-        Route::get('/clearance/status', [ClearanceRequestController::class, 'status']);
-        Route::post('/clearance', [ClearanceRequestController::class, 'store']);
-        Route::post('/clearance/create', [ClearanceController::class, 'create']);
-    });
+    // Students can create/view clearances.
+    // NOTE: Each controller method (status/store/create) already checks $request->user()->is_student,
+    // so we keep the student restriction there to avoid any unexpected middleware loops.
+    Route::get('/clearance/status', [ClearanceRequestController::class, 'status']);
+    Route::post('/clearance', [ClearanceRequestController::class, 'store']);
+    Route::post('/clearance/create', [ClearanceController::class, 'create']);
 
     // 🛑 ONLY STAFF can approve clearances
     Route::middleware('staff')->group(function () {
