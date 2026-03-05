@@ -18,8 +18,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
 
     // Students can create clearances
-    Route::post('/clearance', [ClearanceRequestController::class, 'store']);
-    Route::post('/clearance/create', [ClearanceController::class, 'create']);
+    Route::middleware(function ($request, $next) {
+        if (!$request->user() || !$request->user()->is_student) {
+            return response()->json([
+                'error' => 'Only students can access this endpoint',
+            ], 403);
+        }
+
+        return $next($request);
+    })->group(function () {
+        Route::get('/clearance/status', [ClearanceRequestController::class, 'status']);
+        Route::post('/clearance', [ClearanceRequestController::class, 'store']);
+        Route::post('/clearance/create', [ClearanceController::class, 'create']);
+    });
 
     // 🛑 ONLY STAFF can approve clearances
     Route::middleware('staff')->group(function () {

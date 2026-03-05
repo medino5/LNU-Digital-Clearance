@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\ClearanceSignature;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class StaffDashboardController extends Controller
 {
@@ -71,27 +73,39 @@ class StaffDashboardController extends Controller
             abort(403, 'Unauthorized.');
         }
 
-        $status = $validated['status'];
+        try {
+            DB::transaction(function () use ($validated, $user, $signature) {
+                $status = $validated['status'];
 
-        $signature->update([
-            'status' => $status,
-            'signed_by_user_id' => $user->id,
-            'approved_at' => $status === 'approved' ? now() : null,
-        ]);
+                $signature->update([
+                    'status' => $status,
+                    'signed_by_user_id' => $user->id,
+                    'approved_at' => $status === 'approved' ? now() : null,
+                ]);
 
-        $clearance = $signature->clearanceRequest;
+                $clearance = $signature->clearanceRequest;
 
-        if ($clearance) {
-            $remainingPending = ClearanceSignature::where('clearance_request_id', $clearance->id)
-                ->where('status', 'pending')
-                ->count();
+                if ($clearance) {
+                    $remainingPending = ClearanceSignature::where('clearance_request_id', $clearance->id)
+                        ->where('status', 'pending')
+                        ->count();
 
-            if ($remainingPending === 0) {
-                $clearance->update(['status' => 'completed']);
-            }
+                    if ($remainingPending === 0) {
+                        $clearance->update(['status' => 'completed']);
+                    }
+                }
+            });
+
+            return back()->with('success', 'Student clearance updated successfully!');
+        } catch (\Throwable $e) {
+            Log::error('Failed to process clearance signature', [
+                'signature_id' => $signature->id,
+                'staff_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'An unexpected error occurred while updating the clearance.');
         }
-
-        return back()->with('success', 'Student clearance updated successfully!');
     }
 }
 
