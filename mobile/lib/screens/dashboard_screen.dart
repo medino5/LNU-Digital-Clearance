@@ -17,8 +17,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? _activeRequest;
   List<dynamic> _signatures = const [];
 
-  static const Color _lnuGold = Color(0xFFD4AF37);
-  static const Color _lnuNavy = Color(0xFF001F54);
+  static const Color _lnuGold = Color(0xFFC9A84C);
+  static const Color _lnuNavy = Color(0xFF1B3A6B);
 
   @override
   void initState() {
@@ -104,9 +104,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (_) => const LoginScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
     );
   }
 
@@ -126,16 +124,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 24,
+                      horizontal: 16,
+                    ),
                     decoration: BoxDecoration(
                       color: _lnuNavy,
                       borderRadius: BorderRadius.circular(8),
@@ -145,10 +144,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         Text(
                           'Student Dashboard',
-                          style: TextStyle(
-                            color: _lnuGold,
-                            fontSize: 18,
-                          ),
+                          style: TextStyle(color: _lnuGold, fontSize: 18),
                         ),
                         SizedBox(height: 8),
                         Text(
@@ -166,7 +162,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Expanded(
                     child: _activeRequest != null
                         ? RefreshIndicator(
-                            onRefresh: () => _fetchClearanceStatus(showSpinner: false),
+                            onRefresh: () =>
+                                _fetchClearanceStatus(showSpinner: false),
                             child: _signatures.isEmpty
                                 ? ListView(
                                     children: const [
@@ -183,64 +180,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ],
                                   )
                                 : ListView.builder(
-                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
                                     itemCount: _signatures.length,
                                     itemBuilder: (context, index) {
-                                      final sig = _signatures[index] as Map<String, dynamic>? ?? {};
-                                      final designation = sig['designation'] as Map<String, dynamic>? ?? {};
-                                      final officeName =
-                                          (designation['name'] as String?) ?? 'Unknown Office';
-                                      final status =
-                                          (sig['status'] as String?)?.toLowerCase() ?? 'pending';
+                                      final sigData = _signatures[index];
+                                      final sig =
+                                          sigData is Map<String, dynamic>
+                                          ? sigData
+                                          : <String, dynamic>{};
 
-                                      IconData icon;
-                                      Color iconColor;
-
-                                      switch (status) {
-                                        case 'approved':
-                                          icon = Icons.check_circle;
-                                          iconColor = Colors.green;
-                                          break;
-                                        case 'rejected':
-                                          icon = Icons.cancel;
-                                          iconColor = Colors.red;
-                                          break;
-                                        case 'pending':
-                                        default:
-                                          icon = Icons.access_time;
-                                          iconColor = Colors.amber;
-                                          break;
-                                      }
-
-                                      return Card(
-                                        margin: const EdgeInsets.symmetric(vertical: 8),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
-                                          side: BorderSide(color: _lnuGold.withOpacity(0.7)),
-                                        ),
-                                        child: ListTile(
-                                          leading: CircleAvatar(
-                                            backgroundColor: _lnuNavy,
-                                            child: Icon(
-                                              icon,
-                                              color: iconColor,
-                                            ),
-                                          ),
-                                          title: Text(
-                                            officeName,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          subtitle: Text(
-                                            status[0].toUpperCase() + status.substring(1),
-                                          ),
-                                          trailing: Icon(
-                                            icon,
-                                            color: iconColor,
-                                          ),
-                                        ),
-                                      );
+                                      return SignatureCard(signature: sig);
                                     },
                                   ),
                           )
@@ -261,7 +211,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              onPressed: _isLoading ? null : _handleRequestClearance,
+                              onPressed: _isLoading
+                                  ? null
+                                  : _handleRequestClearance,
                               child: const Text('Initiate Clearance'),
                             ),
                           ),
@@ -277,16 +229,182 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       child: const Text(
                         'Logout',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.red, fontSize: 16),
                       ),
                     ),
                   ),
                 ],
               ),
             ),
+    );
+  }
+}
+
+class SignatureCard extends StatefulWidget {
+  const SignatureCard({super.key, required this.signature});
+
+  final Map<String, dynamic> signature;
+
+  @override
+  State<SignatureCard> createState() => _SignatureCardState();
+}
+
+class _SignatureCardState extends State<SignatureCard> {
+  static const Color _lnuNavy = Color(0xFF1B3A6B);
+  static const Color _rejectedColor = Color(0xFFE53935);
+
+  bool _remarksExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final designationData = widget.signature['designation'];
+    final designation = designationData is Map<String, dynamic>
+        ? designationData
+        : <String, dynamic>{};
+
+    final officeName = (designation['name'] as String?) ?? 'Unknown Office';
+    final status = ((widget.signature['status'] as String?) ?? 'pending')
+        .toLowerCase();
+    final rejectionReason =
+        ((widget.signature['rejection_reason'] as String?) ?? '').trim();
+    final remarks = ((widget.signature['remarks'] as String?) ?? '').trim();
+
+    final isRejected = status == 'rejected';
+    final hasRejectionReason = rejectionReason.isNotEmpty;
+    final hasRemarks = isRejected && remarks.isNotEmpty;
+
+    IconData statusIcon;
+    Color statusColor;
+    String statusLabel;
+
+    switch (status) {
+      case 'approved':
+        statusIcon = Icons.check_circle;
+        statusColor = Colors.green;
+        statusLabel = 'Approved';
+        break;
+      case 'rejected':
+        statusIcon = Icons.close;
+        statusColor = _rejectedColor;
+        statusLabel = 'Rejected';
+        break;
+      case 'pending':
+      default:
+        statusIcon = Icons.access_time;
+        statusColor = Colors.amber;
+        statusLabel = 'Pending';
+        break;
+    }
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      color: Colors.white,
+      elevation: 2,
+      shadowColor: Colors.black.withValues(alpha: 0.12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    CircleAvatar(
+                      radius: 26,
+                      backgroundColor: _lnuNavy,
+                      child: Icon(statusIcon, color: statusColor, size: 34),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        officeName,
+                        style: const TextStyle(
+                          color: _lnuNavy,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  statusLabel,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (isRejected && hasRejectionReason) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    rejectionReason,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 17,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (hasRemarks) ...[
+            const Divider(height: 1),
+            InkWell(
+              onTap: () {
+                setState(() {
+                  _remarksExpanded = !_remarksExpanded;
+                });
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'View staff remarks',
+                      style: TextStyle(
+                        color: _lnuNavy,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Icon(
+                      _remarksExpanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      color: _lnuNavy,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            AnimatedCrossFade(
+              duration: const Duration(milliseconds: 180),
+              firstChild: const SizedBox.shrink(),
+              secondChild: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                child: Text(
+                  remarks,
+                  style: TextStyle(color: Colors.grey.shade800, fontSize: 15),
+                ),
+              ),
+              crossFadeState: _remarksExpanded
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
