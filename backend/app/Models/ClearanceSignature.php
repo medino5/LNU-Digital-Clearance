@@ -13,6 +13,7 @@ class ClearanceSignature extends Model
         'clearance_request_id',
         'designation_id',
         'status',
+        'rejection_reason',
         'signed_by_user_id',
         'remarks',
         'approved_at'

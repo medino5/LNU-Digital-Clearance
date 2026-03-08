@@ -44,9 +44,25 @@ class ClearanceRequestController extends Controller
                 ]);
             }
 
+            $signatures = $active->signatures->map(function ($signature) {
+                return [
+                    'id' => $signature->id,
+                    'clearance_request_id' => $signature->clearance_request_id,
+                    'designation_id' => $signature->designation_id,
+                    'status' => $signature->status,
+                    'rejection_reason' => $signature->rejection_reason,
+                    'remarks' => $signature->remarks,
+                    'signed_by_user_id' => $signature->signed_by_user_id,
+                    'approved_at' => $signature->approved_at,
+                    'created_at' => $signature->created_at,
+                    'updated_at' => $signature->updated_at,
+                    'designation' => $signature->designation,
+                ];
+            });
+
             return response()->json([
                 'clearance_request' => $active,
-                'clearance_signatures' => $active->signatures,
+                'clearance_signatures' => $signatures,
             ]);
         } catch (\Throwable $e) {
             Log::error('Failed to fetch clearance status', [
@@ -107,4 +123,3 @@ class ClearanceRequestController extends Controller
         }
     }
 }
-
