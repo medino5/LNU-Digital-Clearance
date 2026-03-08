@@ -63,8 +63,24 @@ class StaffDashboardController extends Controller
             abort(403, 'Unauthorized.');
         }
 
+        $normalizedAction = $request->input('action');
+
+        if (!$normalizedAction && $request->filled('status')) {
+            $normalizedAction = match ($request->input('status')) {
+                'approved' => 'approve',
+                'rejected' => 'reject',
+                default => $request->input('status'),
+            };
+        }
+
+        $request->merge([
+            'action' => $normalizedAction,
+        ]);
+
         $validated = $request->validate([
-            'status' => 'required|in:approved,rejected',
+            'action' => 'required|in:approve,reject',
+            'rejection_reason' => 'required_if:action,reject|string',
+            'remarks' => 'nullable|string',
         ]);
 
         $designation = $user->designations()->first();
@@ -74,13 +90,23 @@ class StaffDashboardController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($validated, $user, $signature) {
-                $status = $validated['status'];
+            $signature->loadMissing('designation');
+            $updatedSignature = [];
+            $actionMessage = null;
+
+            DB::transaction(function () use ($validated, $user, $signature, $designation, &$updatedSignature, &$actionMessage) {
+                $action = $validated['action'];
+                $status = $action === 'approve' ? 'approved' : 'rejected';
+                $rejectionReason = $action === 'reject'
+                    ? trim($validated['rejection_reason'])
+                    : null;
 
                 $signature->update([
                     'status' => $status,
                     'signed_by_user_id' => $user->id,
                     'approved_at' => $status === 'approved' ? now() : null,
+                    'remarks' => $validated['remarks'] ?? null,
+                    'rejection_reason' => $rejectionReason,
                 ]);
 
                 $clearance = $signature->clearanceRequest;
@@ -94,9 +120,27 @@ class StaffDashboardController extends Controller
                         $clearance->update(['status' => 'completed']);
                     }
                 }
+
+                $signature->refresh();
+                $updatedSignature = [
+                    'id' => $signature->id,
+                    'status' => $signature->status,
+                    'rejection_reason' => $signature->rejection_reason,
+                    'remarks' => $signature->remarks,
+                    'signed_by_user_id' => $signature->signed_by_user_id,
+                    'approved_at' => $signature->approved_at,
+                    'updated_at' => $signature->updated_at,
+                ];
+
+                $officeName = $signature->designation?->name ?? $designation->name ?? 'Office';
+                $actionMessage = $action === 'approve'
+                    ? $officeName . ' - Approved'
+                    : $officeName . ' - Rejected: ' . $rejectionReason;
             });
 
-            return back()->with('success', 'Student clearance updated successfully!');
+            return back()
+                ->with('success', $actionMessage ?? 'Student clearance updated successfully!')
+                ->with('updated_signature', $updatedSignature);
         } catch (\Throwable $e) {
             Log::error('Failed to process clearance signature', [
                 'signature_id' => $signature->id,
@@ -108,4 +152,3 @@ class StaffDashboardController extends Controller
         }
     }
 }
-
