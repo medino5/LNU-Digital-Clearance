@@ -54,7 +54,9 @@ class StaffAuthController extends Controller
             }
 
             // ✅ Redirect to dashboard with success message
-            return redirect()->route('dashboard')
+            // Note: dashboard route was renamed to 'staff.dashboard' when the
+            // dedicated staff panel was introduced.
+            return redirect()->route('staff.dashboard')
                 ->with('success', 'Login successful. Welcome!');
         }
 

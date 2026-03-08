@@ -96,9 +96,20 @@ class DatabaseSeeder extends Seeder
             'is_student' => false
         ]);
 
+        // BUGFIX (Sprints 1–2): the demo staff account cashier@lnu.edu.ph was not seeded at all,
+        // so login always returned "invalid credentials" even with the correct password.
+        $cashierStaff = User::create([
+            'name' => 'University Cashier',
+            'email' => 'cashier@lnu.edu.ph',
+            'password' => Hash::make('password'),
+            'is_staff' => true,
+            'is_student' => false,
+        ]);
+
         // Attach designations to staff
         $staff1->designations()->attach($englishTreasurer->id);
         $staff2->designations()->attach($mathAdviser->id);
+        $cashierStaff->designations()->attach($cashier->id);
 
         // =========================
         // STUDENT USER

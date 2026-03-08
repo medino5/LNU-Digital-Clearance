@@ -27,6 +27,12 @@
             Pending Clearance Requests
         </h2>
 
+        @if(session('success'))
+            <div class="mb-4 rounded border border-green-300 bg-green-50 px-4 py-2 text-sm text-green-800">
+                {{ session('success') }}
+            </div>
+        @endif
+
         @if($pendingSignatures->isEmpty())
             <div class="bg-white rounded-lg shadow p-6 text-center text-gray-600">
                 No pending clearance requests for your office at this time.
@@ -82,18 +88,26 @@
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap text-center">
                                 <div class="inline-flex gap-2">
-                                    <button
-                                        type="button"
-                                        class="px-3 py-1 text-xs font-semibold rounded bg-green-600 text-white hover:bg-green-700"
-                                    >
-                                        Approve
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="px-3 py-1 text-xs font-semibold rounded bg-red-600 text-white hover:bg-red-700"
-                                    >
-                                        Reject
-                                    </button>
+                                    <form method="POST" action="{{ route('staff.process', $signature) }}">
+                                        @csrf
+                                        <input type="hidden" name="status" value="approved">
+                                        <button
+                                            type="submit"
+                                            class="px-3 py-1 text-xs font-semibold rounded bg-green-600 text-white hover:bg-green-700"
+                                        >
+                                            Approve
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ route('staff.process', $signature) }}">
+                                        @csrf
+                                        <input type="hidden" name="status" value="rejected">
+                                        <button
+                                            type="submit"
+                                            class="px-3 py-1 text-xs font-semibold rounded bg-red-600 text-white hover:bg-red-700"
+                                        >
+                                            Reject
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
