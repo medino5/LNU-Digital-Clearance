@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../services/clearance_service.dart';
 import 'login_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -11,6 +12,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final AuthService _authService = AuthService();
+  final ClearanceService _clearanceService = ClearanceService();
 
   bool _isLoading = false;
   Map<String, dynamic>? _clearanceStatus;
@@ -33,7 +35,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     }
 
-    final status = await _authService.getClearanceStatus();
+    final status = await _clearanceService.getClearanceStatus();
 
     if (!mounted) return;
 
@@ -71,7 +73,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _isLoading = true;
     });
 
-    final success = await _authService.requestClearance();
+    final success = await _clearanceService.requestClearance();
 
     if (!mounted) return;
 
@@ -108,8 +110,245 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Future<void> _showResubmitDialog(
+    BuildContext context,
+    List<Map<String, dynamic>> rejectedSignatures,
+  ) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        bool isSubmitting = false;
+
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            Future<void> handleResubmit() async {
+              setDialogState(() {
+                isSubmitting = true;
+              });
+
+              try {
+                final cancelled = await _clearanceService.cancelClearance();
+                if (!cancelled) {
+                  throw Exception(
+                    'Failed to cancel the current clearance request.',
+                  );
+                }
+
+                final created = await _clearanceService.requestClearance();
+                if (!created) {
+                  throw Exception('Failed to re-submit the clearance request.');
+                }
+
+                if (!mounted || !context.mounted || !dialogContext.mounted) {
+                  return;
+                }
+                Navigator.of(dialogContext).pop();
+
+                await _fetchClearanceStatus(showSpinner: false);
+                if (!mounted || !context.mounted) return;
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: Colors.green.shade700,
+                    content: const Text('Clearance re-submitted successfully.'),
+                  ),
+                );
+              } catch (e) {
+                if (!mounted || !context.mounted || !dialogContext.mounted) {
+                  return;
+                }
+
+                setDialogState(() {
+                  isSubmitting = false;
+                });
+
+                final message = e is Exception
+                    ? e.toString().replaceFirst('Exception: ', '')
+                    : 'Unable to re-submit the clearance request.';
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: Colors.red.shade700,
+                    content: Text(message),
+                  ),
+                );
+              }
+            }
+
+            return Dialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 24,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          color: _lnuGold,
+                          size: 28,
+                        ),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Text(
+                            'Re-Submit Request?',
+                            style: TextStyle(
+                              color: _lnuNavy,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    const Divider(height: 1),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Are you sure you want to cancel the current clearance request\n'
+                      'and re-submit a new one?',
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontSize: 14,
+                        height: 1.45,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'The following offices had rejected your request:',
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontSize: 14,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...rejectedSignatures.map((signature) {
+                      final designationData = signature['designation'];
+                      final designation =
+                          designationData is Map<String, dynamic>
+                          ? designationData
+                          : <String, dynamic>{};
+                      final officeName =
+                          (designation['name'] as String?) ?? 'Unknown Office';
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.cancel,
+                              color: Color(0xFFE53935),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                officeName,
+                                style: const TextStyle(
+                                  color: _lnuNavy,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 8),
+                    const Divider(height: 1),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: isSubmitting
+                                ? null
+                                : () => Navigator.of(dialogContext).pop(),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFFB8BDC7)),
+                              foregroundColor: _lnuNavy,
+                              backgroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: isSubmitting ? null : handleResubmit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _lnuGold,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: _lnuGold,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            child: isSubmitting
+                                ? const SizedBox(
+                                    height: 22,
+                                    width: 22,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.3,
+                                    ),
+                                  )
+                                : const Text('Re-Submit'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final rejectedSignatures = _signatures
+        .whereType<Map<String, dynamic>>()
+        .where((signature) {
+          return ((signature['status'] as String?) ?? '').toLowerCase() ==
+              'rejected';
+        })
+        .toList();
+
+    final bool showResubmitCta =
+        _activeRequest != null && rejectedSignatures.isNotEmpty;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: _lnuGold,
@@ -218,6 +457,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                           ),
                   ),
+                  if (showResubmitCta) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _lnuGold,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        onPressed: _isLoading
+                            ? null
+                            : () => _showResubmitDialog(
+                                context,
+                                rejectedSignatures,
+                              ),
+                        child: const Text('Re-Submit Request'),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
