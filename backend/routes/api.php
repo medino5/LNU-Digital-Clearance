@@ -4,7 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClearanceController;
-use App\Http\Controllers\Api\ClearanceRequestController;
+use App\Http\Controllers\ClearanceRequestController;
 
 // 🔓 Public Routes (No token needed to access these)
 Route::post('/login', [AuthController::class, 'login']);
@@ -20,8 +20,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // NOTE: Each controller method (status/store/create) already checks $request->user()->is_student,
     // so we keep the student restriction there to avoid any unexpected middleware loops.
     Route::get('/clearance/status', [ClearanceRequestController::class, 'status']);
+    Route::get('/clearance/history', [ClearanceRequestController::class, 'history']);
     Route::post('/clearance', [ClearanceRequestController::class, 'store']);
-    Route::get('/clearance/status', [ClearanceRequestController::class, 'getStatus']);
+    Route::delete('/clearance', [ClearanceRequestController::class, 'cancel']);
     Route::post('/clearance/create', [ClearanceController::class, 'create']);
 
     // 🛑 ONLY STAFF can approve clearances
