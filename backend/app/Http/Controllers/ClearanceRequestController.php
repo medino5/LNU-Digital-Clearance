@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ClearanceRequest;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -72,6 +73,64 @@ class ClearanceRequestController extends Controller
 
             return response()->json([
                 'error' => 'An unexpected error occurred while fetching clearance status.',
+            ], 500);
+        }
+    }
+
+    /**
+     * DELETE /api/clearance
+     *
+     * Cancels the student's active clearance request (if any).
+     */
+    public function cancel(Request $request)
+    {
+        $user = Auth::user();
+
+        try {
+            return DB::transaction(function () use ($user) {
+                $active = ClearanceRequest::where('student_id', $user->id)
+                    ->where('status', 'pending')
+                    ->first();
+
+                if (!$active) {
+                    return response()->json([
+                        'message' => 'No active clearance request found.',
+                    ], 404);
+                }
+
+                if ($active->student_id !== $user->id) {
+                    return response()->json([
+                        'message' => 'Unauthorized.',
+                    ], 403);
+                }
+
+                if ($active->status === 'completed') {
+                    return response()->json([
+                        'message' => 'A completed clearance request cannot be cancelled.',
+                    ], 422);
+                }
+
+                $active->signatures()->update([
+                    'status' => 'cancelled',
+                ]);
+
+                $active->update([
+                    'status' => 'cancelled',
+                ]);
+
+                return response()->json([
+                    'message' => 'Clearance request cancelled successfully.',
+                ]);
+            });
+        } catch (\Throwable $e) {
+            Log::error('Failed to cancel clearance request', [
+                'user_id' => $user?->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to cancel clearance request.',
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
