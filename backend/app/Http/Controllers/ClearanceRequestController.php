@@ -135,6 +135,67 @@ class ClearanceRequestController extends Controller
         }
     }
 
+    /**
+     * GET /api/clearance/history
+     *
+     * Returns paginated clearance requests for the authenticated student.
+     */
+    public function history(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user || !$user->is_student) {
+            return response()->json([
+                'message' => 'Only students can view clearance history.',
+            ], 403);
+        }
+
+        try {
+            $paginated = ClearanceRequest::where('student_id', $user->id)
+                ->with('signatures')
+                ->orderByDesc('created_at')
+                ->paginate(10);
+
+            $data = $paginated->getCollection()->map(function ($clearance) {
+                $signatures = $clearance->signatures;
+
+                return [
+                    'id' => $clearance->id,
+                    'semester' => $clearance->semester,
+                    'status' => $clearance->status,
+                    'created_at' => $clearance->created_at?->toISOString(),
+                    'completed_at' => $clearance->status === 'completed'
+                        ? $clearance->updated_at?->toISOString()
+                        : null,
+                    'total_signatures' => $signatures->count(),
+                    'approved_signatures' => $signatures->where('status', 'approved')->count(),
+                    'rejected_signatures' => $signatures->where('status', 'rejected')->count(),
+                    'pending_signatures' => $signatures->where('status', 'pending')->count(),
+                ];
+            })->values();
+
+            return response()->json([
+                'data' => $data,
+                'meta' => [
+                    'current_page' => $paginated->currentPage(),
+                    'last_page' => $paginated->lastPage(),
+                    'per_page' => $paginated->perPage(),
+                    'total' => $paginated->total(),
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Failed to fetch clearance history', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to fetch clearance history.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         $user = $request->user();
