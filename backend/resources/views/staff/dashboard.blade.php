@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -26,6 +26,12 @@
         <h2 class="text-2xl font-semibold text-gray-800 mb-4">
             Pending Clearance Requests
         </h2>
+
+        @if(session('status'))
+            <div class="mb-4 rounded border border-blue-300 bg-blue-50 px-4 py-2 text-sm text-blue-800">
+                {{ session('status') }}
+            </div>
+        @endif
 
         @if(session('success'))
             <div class="mb-4 rounded border border-green-300 bg-green-50 px-4 py-2 text-sm text-green-800">
@@ -74,6 +80,7 @@
                         @php
                             $request = $signature->clearanceRequest;
                             $student = $request?->student;
+                            $showRejectField = old('action') === 'reject' && (int) old('signature_id') === (int) $signature->id;
                         @endphp
 
                         <tr>
@@ -81,142 +88,104 @@
                                 <div class="text-sm font-medium text-gray-900">
                                     {{ $student?->name ?? 'Unknown Student' }}
                                 </div>
+
+                                @if(!empty($signature->remarks))
+                                    <button
+                                        type="button"
+                                        id="remarks-toggle-{{ $signature->id }}"
+                                        onclick="toggleRemarks({{ $signature->id }})"
+                                        class="mt-2 text-xs font-medium text-blue-700 underline hover:text-blue-900"
+                                    >
+                                        View Remarks ▼
+                                    </button>
+                                    <div
+                                        id="remarks-content-{{ $signature->id }}"
+                                        class="mt-2 hidden text-xs italic text-gray-600"
+                                    >
+                                        {{ $signature->remarks }}
+                                    </div>
+                                @endif
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap">
                                 <div class="text-sm text-gray-700">
-                                    {{ $student?->student_number ?? '—' }}
+                                    {{ $student?->student_number ?? 'â€”' }}
                                 </div>
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap">
                                 <div class="text-sm text-gray-700">
-                                    {{ $student?->program?->name ?? '—' }}
+                                    {{ $student?->program?->name ?? 'â€”' }}
                                 </div>
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap">
                                 <div class="text-sm text-gray-700">
-                                    {{ $request?->created_at?->format('M d, Y') ?? '—' }}
+                                    {{ $request?->created_at?->format('M d, Y') ?? 'â€”' }}
                                 </div>
                             </td>
                             <td class="px-4 py-3 text-center align-top">
-                                <div class="flex flex-col items-center gap-2">
-                                    <div class="inline-flex gap-2">
+                                <form
+                                    id="process-form-{{ $signature->id }}"
+                                    method="POST"
+                                    action="{{ route('staff.process', $signature) }}"
+                                    class="w-64 text-left space-y-2"
+                                >
+                                    @csrf
+                                    <input
+                                        type="hidden"
+                                        name="action"
+                                        id="action-{{ $signature->id }}"
+                                        value="{{ (int) old('signature_id') === (int) $signature->id ? old('action') : '' }}"
+                                    >
+                                    <input type="hidden" name="signature_id" value="{{ $signature->id }}">
+
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">
+                                            Remarks <span class="text-gray-400">(Optional)</span>
+                                        </label>
+                                        <textarea
+                                            name="remarks"
+                                            rows="3"
+                                            class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Add a note (optional)..."
+                                        >{{ (int) old('signature_id') === (int) $signature->id ? old('remarks') : '' }}</textarea>
+                                    </div>
+
+                                    <div id="rejection-field-{{ $signature->id }}" class="{{ $showRejectField ? '' : 'hidden' }}">
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">
+                                            Rejection Reason <span class="text-red-600">*</span>
+                                        </label>
+                                        <textarea
+                                            id="rejection-reason-{{ $signature->id }}"
+                                            name="rejection_reason"
+                                            rows="2"
+                                            class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                                            placeholder="Reason for rejection (required)..."
+                                        >{{ $showRejectField ? old('rejection_reason') : '' }}</textarea>
+                                        @error('rejection_reason')
+                                            @if((int) old('signature_id') === (int) $signature->id)
+                                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                            @endif
+                                        @enderror
+                                    </div>
+
+                                    <div class="flex items-center justify-center gap-2 pt-1">
                                         <button
                                             type="button"
-                                            onclick="toggleApproveForm({{ $signature->id }})"
+                                            onclick="handleApprove({{ $signature->id }})"
                                             class="px-3 py-1 text-xs font-semibold rounded bg-green-600 text-white hover:bg-green-700"
                                         >
                                             Approve
                                         </button>
-
                                         <button
                                             type="button"
-                                            onclick="toggleRejectForm({{ $signature->id }})"
+                                            onclick="handleReject({{ $signature->id }})"
                                             class="px-3 py-1 text-xs font-semibold rounded bg-red-600 text-white hover:bg-red-700"
                                         >
                                             Reject
                                         </button>
                                     </div>
-
-                                    <!-- APPROVE FORM -->
-                                    <div id="approve-form-{{ $signature->id }}" class="hidden w-64 rounded-lg border border-green-200 bg-green-50 p-3 text-left">
-                                        <form method="POST" action="{{ route('staff.process', $signature) }}" class="space-y-2">
-                                            @csrf
-                                            <input type="hidden" name="action" value="approve">
-
-                                            <div>
-                                                <label class="block text-xs font-medium text-gray-700 mb-1">
-                                                    Remarks <span class="text-gray-400">(Optional)</span>
-                                                </label>
-                                                <textarea
-                                                    name="remarks"
-                                                    rows="3"
-                                                    class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                                                    placeholder="Enter remarks"
-                                                >{{ old('action') === 'approve' ? old('remarks') : '' }}</textarea>
-                                            </div>
-
-                                            <div class="flex justify-end gap-2">
-                                                <button
-                                                    type="button"
-                                                    onclick="toggleApproveForm({{ $signature->id }})"
-                                                    class="px-3 py-1 text-xs font-semibold rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
-                                                >
-                                                    Cancel
-                                                </button>
-                                                <button
-                                                    type="submit"
-                                                    class="px-3 py-1 text-xs font-semibold rounded bg-green-600 text-white hover:bg-green-700"
-                                                >
-                                                    Confirm Approve
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-
-                                    <!-- REJECT FORM -->
-                                    <div id="reject-form-{{ $signature->id }}" class="hidden w-64 rounded-lg border border-red-200 bg-red-50 p-3 text-left">
-                                        <form method="POST" action="{{ route('staff.process', $signature) }}" class="space-y-2">
-                                            @csrf
-                                            <input type="hidden" name="action" value="reject">
-
-                                            <div>
-                                                <label class="block text-xs font-medium text-gray-700 mb-1">
-                                                    Rejection Reason <span class="text-red-600">*</span>
-                                                </label>
-                                                <textarea
-                                                    name="rejection_reason"
-                                                    rows="3"
-                                                    required
-                                                    class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                                                    placeholder="Enter rejection reason"
-                                                >{{ old('rejection_reason') }}</textarea>
-                                            </div>
-
-                                            <div class="flex justify-end gap-2">
-                                                <button
-                                                    type="button"
-                                                    onclick="toggleRejectForm({{ $signature->id }})"
-                                                    class="px-3 py-1 text-xs font-semibold rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
-                                                >
-                                                    Cancel
-                                                </button>
-                                                <button
-                                                    type="submit"
-                                                    class="px-3 py-1 text-xs font-semibold rounded bg-red-600 text-white hover:bg-red-700"
-                                                >
-                                                    Confirm Reject
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-
-                                    @if($signature->remarks)
-                                        <button
-                                            type="button"
-                                            onclick="toggleRemarks({{ $signature->id }})"
-                                            class="text-xs font-medium text-blue-700 underline hover:text-blue-900"
-                                        >
-                                            View Submitted Note
-                                        </button>
-                                    @endif
-                                </div>
+                                </form>
                             </td>
                         </tr>
-
-                        @if($signature->remarks)
-                            <tr id="remarks-row-{{ $signature->id }}" class="hidden bg-blue-50">
-                                <td colspan="5" class="px-4 py-3">
-                                    <div class="rounded-md border border-blue-200 bg-white p-3">
-                                        <p class="text-xs font-semibold uppercase tracking-wide text-blue-800 mb-1">
-                                            Submitted Remarks
-                                        </p>
-                                        <p class="text-sm text-gray-700 whitespace-pre-line">
-                                            {{ $signature->remarks }}
-                                        </p>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endif
                     @endforeach
                     </tbody>
                 </table>
@@ -226,25 +195,62 @@
 </div>
 
 <script>
-    function toggleApproveForm(signatureId) {
-        const approveForm = document.getElementById('approve-form-' + signatureId);
-        const rejectForm = document.getElementById('reject-form-' + signatureId);
+    function handleApprove(signatureId) {
+        const form = document.getElementById('process-form-' + signatureId);
+        const actionInput = document.getElementById('action-' + signatureId);
+        const rejectionField = document.getElementById('rejection-field-' + signatureId);
+        const rejectionInput = document.getElementById('rejection-reason-' + signatureId);
 
-        approveForm.classList.toggle('hidden');
-        rejectForm.classList.add('hidden');
+        if (actionInput) {
+            actionInput.value = 'approve';
+        }
+
+        if (rejectionInput) {
+            rejectionInput.value = '';
+        }
+
+        if (rejectionField) {
+            rejectionField.classList.add('hidden');
+        }
+
+        form.submit();
     }
 
-    function toggleRejectForm(signatureId) {
-        const approveForm = document.getElementById('approve-form-' + signatureId);
-        const rejectForm = document.getElementById('reject-form-' + signatureId);
+    function handleReject(signatureId) {
+        const form = document.getElementById('process-form-' + signatureId);
+        const actionInput = document.getElementById('action-' + signatureId);
+        const rejectionField = document.getElementById('rejection-field-' + signatureId);
+        const rejectionInput = document.getElementById('rejection-reason-' + signatureId);
 
-        rejectForm.classList.toggle('hidden');
-        approveForm.classList.add('hidden');
+        if (actionInput) {
+            actionInput.value = 'reject';
+        }
+
+        if (rejectionField && rejectionField.classList.contains('hidden')) {
+            rejectionField.classList.remove('hidden');
+            if (rejectionInput) {
+                rejectionInput.focus();
+            }
+            return;
+        }
+
+        form.submit();
     }
 
     function toggleRemarks(signatureId) {
-        const remarksRow = document.getElementById('remarks-row-' + signatureId);
-        remarksRow.classList.toggle('hidden');
+        const remarks = document.getElementById('remarks-content-' + signatureId);
+        const toggle = document.getElementById('remarks-toggle-' + signatureId);
+
+        if (!remarks || !toggle) return;
+
+        const isHidden = remarks.classList.contains('hidden');
+        if (isHidden) {
+            remarks.classList.remove('hidden');
+            toggle.textContent = 'Hide Remarks ▲';
+        } else {
+            remarks.classList.add('hidden');
+            toggle.textContent = 'View Remarks ▼';
+        }
     }
 </script>
 </body>
