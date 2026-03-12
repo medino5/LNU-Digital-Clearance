@@ -38,6 +38,7 @@ class StaffDashboardController extends Controller
 
         $pendingSignatures = ClearanceSignature::with([
             'clearanceRequest.student.program',
+            'clearanceRequest.signatures.designation',
             'designation',
         ])
             ->where('designation_id', $designation->id)
