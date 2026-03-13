@@ -34,6 +34,50 @@ class ClearanceService {
     return null;
   }
 
+  Future<List<dynamic>> getClearanceHistory() async {
+  final token = await _getToken();
+  if (token == null) return [];
+
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/clearance/history'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = decoded['data'];
+      if (data is List) return data;
+    }
+  } catch (_) {}
+
+  return [];
+}
+
+  Future<Map<String, dynamic>?> getClearanceHistoryDetail(int requestId) async {
+    final token = await _getToken();
+    if (token == null) return null;
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/clearance/history/$requestId'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+
+    return null;
+  }
+
   Future<bool> requestClearance() async {
     final token = await _getToken();
     if (token == null) return false;

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
 import '../services/clearance_service.dart';
-import 'login_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -11,11 +9,9 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final AuthService _authService = AuthService();
   final ClearanceService _clearanceService = ClearanceService();
 
   bool _isLoading = false;
-  Map<String, dynamic>? _clearanceStatus;
   Map<String, dynamic>? _activeRequest;
   List<dynamic> _signatures = const [];
 
@@ -40,7 +36,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (!mounted) return;
 
     setState(() {
-      _clearanceStatus = status;
       // Support either { active_request: {..., clearance_signatures: [...] } }
       // or { clearance_request: {...}, clearance_signatures: [...] } shapes.
       Map<String, dynamic>? active;
@@ -49,8 +44,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (status != null) {
         if (status['active_request'] is Map<String, dynamic>) {
           active = status['active_request'] as Map<String, dynamic>;
-          if (active?['clearance_signatures'] is List) {
-            signatures = active!['clearance_signatures'] as List<dynamic>;
+          if (active['clearance_signatures'] is List) {
+            signatures = active['clearance_signatures'] as List<dynamic>;
           }
         } else if (status['clearance_request'] is Map<String, dynamic>) {
           active = status['clearance_request'] as Map<String, dynamic>;
@@ -97,17 +92,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() {
       _isLoading = false;
     });
-  }
-
-  Future<void> _handleLogout() async {
-    await _authService.logout();
-
-    if (!mounted) return;
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
   }
 
   Future<void> _showResubmitDialog(
@@ -471,21 +455,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: OutlinedButton(
-                      onPressed: _isLoading ? null : _handleLogout,
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.red.shade700),
-                      ),
-                      child: const Text(
-                        'Logout',
-                        style: TextStyle(color: Colors.red, fontSize: 16),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
