@@ -21,6 +21,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // so we keep the student restriction there to avoid any unexpected middleware loops.
     Route::get('/clearance/status', [ClearanceRequestController::class, 'status']);
     Route::get('/clearance/history', [ClearanceRequestController::class, 'history']);
+    Route::get('/clearance/history/{id}', [ClearanceRequestController::class, 'showHistoryDetail']);
     Route::post('/clearance', [ClearanceRequestController::class, 'store']);
     Route::delete('/clearance', [ClearanceRequestController::class, 'cancel']);
     Route::post('/clearance/create', [ClearanceController::class, 'create']);
