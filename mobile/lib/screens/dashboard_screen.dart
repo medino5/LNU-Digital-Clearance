@@ -334,18 +334,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _activeRequest != null && rejectedSignatures.isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: _lnuGold,
-        automaticallyImplyLeading: false,
-        title: const Text(
-          'Leyte Normal University',
-          style: TextStyle(
-            color: _lnuNavy,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
-          ),
-        ),
-      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
