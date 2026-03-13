@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -44,50 +46,91 @@ class AuthService {
   // --- TICKET 29: Profile Screen ---
   Future<Map<String, dynamic>?> getUser() async {
     final token = await getToken();
-    if (token == null) return null;
-
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/me'),
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['user'] as Map<String, dynamic>;
-      } else {
-        print('Failed to fetch user: ${response.body}');
-      }
-    } catch (e) {
-      print('Failed to fetch user: $e');
+    if (token == null) {
+      throw Exception('You are not logged in.');
     }
 
-    return null;
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/user'),
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 20));
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          return decoded;
+        }
+        throw Exception('Unexpected response format.');
+      }
+
+      throw Exception(_extractMessage(response.body));
+    } on SocketException {
+      throw Exception('Network error. Please check your connection.');
+    } on TimeoutException {
+      throw Exception('Request timed out. Please try again.');
+    }
   }
 
-  // --- TICKET 11: Secure Logout ---
+  // --- TICKET 29: Logout ---
   Future<void> logout() async {
     final token = await getToken();
+    Exception? failure;
+
     if (token != null) {
       try {
-        await http.post(
-          Uri.parse('$baseUrl/logout'),
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-        );
+        final response = await http
+            .post(
+              Uri.parse('$baseUrl/logout'),
+              headers: {
+                'Accept': 'application/json',
+                'Authorization': 'Bearer $token',
+              },
+            )
+            .timeout(const Duration(seconds: 20));
+
+        if (response.statusCode != 200) {
+          failure = Exception(_extractMessage(response.body));
+        }
+      } on SocketException {
+        failure = Exception('Network error. Please check your connection.');
+      } on TimeoutException {
+        failure = Exception('Request timed out. Please try again.');
       } catch (e) {
-        print(
-          'Server logout failed, but local token will still be deleted: $e',
-        );
+        failure = Exception('Logout failed. Please try again.');
       }
     }
 
     await _storage.delete(key: 'auth_token');
+
+    if (failure != null) {
+      throw failure;
+    }
+  }
+
+  String _extractMessage(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) {
+        final message = decoded['message'];
+        if (message is String && message.trim().isNotEmpty) {
+          return message;
+        }
+        final error = decoded['error'];
+        if (error is String && error.trim().isNotEmpty) {
+          return error;
+        }
+      }
+    } catch (_) {
+      // Ignore parse errors and fall back to generic message below.
+    }
+
+    return 'Request failed. Please try again.';
   }
 
   // --- TICKET 15: Clearance Status ---
