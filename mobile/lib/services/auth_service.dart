@@ -41,14 +41,14 @@ class AuthService {
     return _storage.read(key: 'auth_token');
   }
 
-  // --- TICKET 11: Get User Details ---
+  // --- TICKET 29: Profile Screen ---
   Future<Map<String, dynamic>?> getUser() async {
     final token = await getToken();
     if (token == null) return null;
 
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/user'),
+        Uri.parse('$baseUrl/me'),
         headers: {
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
@@ -56,11 +56,15 @@ class AuthService {
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
+        final data = jsonDecode(response.body);
+        return data['user'] as Map<String, dynamic>;
+      } else {
+        print('Failed to fetch user: ${response.body}');
       }
     } catch (e) {
       print('Failed to fetch user: $e');
     }
+
     return null;
   }
 
