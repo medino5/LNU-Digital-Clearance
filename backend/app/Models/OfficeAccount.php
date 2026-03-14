@@ -1,0 +1,102 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class OfficeAccount extends Model
+{
+    use HasFactory;
+
+    public const TYPE_ACAD_ORG_TREASURER = 'acad_org_treasurer';
+
+    public const TYPE_ACAD_ORG_ADVISER = 'acad_org_adviser';
+
+    public const TYPE_YEAR_LEVEL_TREASURER = 'year_level_treasurer';
+
+    public const TYPE_LIBRARIAN = 'librarian';
+
+    public const TYPE_VPSD = 'vpsd';
+
+    protected $fillable = [
+        'user_id',
+        'display_name',
+        'office_type',
+        'program_id',
+        'year_level',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function program()
+    {
+        return $this->belongsTo(Program::class);
+    }
+
+    public function clearanceSteps()
+    {
+        return $this->hasMany(ClearanceStep::class);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function typeOptions(): array
+    {
+        return [
+            self::TYPE_ACAD_ORG_TREASURER => 'Academic Organization Treasurer',
+            self::TYPE_ACAD_ORG_ADVISER => 'Academic Organization Adviser',
+            self::TYPE_YEAR_LEVEL_TREASURER => 'Year Level Organization Treasurer',
+            self::TYPE_LIBRARIAN => 'College Chief Librarian',
+            self::TYPE_VPSD => 'Vice President for Student Development',
+        ];
+    }
+
+    public function scopeForStudent($query, Student $student)
+    {
+        return $query->where(function ($officeQuery) use ($student) {
+            $officeQuery
+                ->where(function ($programScoped) use ($student) {
+                    $programScoped
+                        ->whereIn('office_type', [
+                            self::TYPE_ACAD_ORG_TREASURER,
+                            self::TYPE_ACAD_ORG_ADVISER,
+                        ])
+                        ->where('program_id', $student->program_id);
+                })
+                ->orWhere(function ($yearScoped) use ($student) {
+                    $yearScoped
+                        ->where('office_type', self::TYPE_YEAR_LEVEL_TREASURER)
+                        ->where('year_level', $student->year_level);
+                })
+                ->orWhereIn('office_type', [
+                    self::TYPE_LIBRARIAN,
+                    self::TYPE_VPSD,
+                ]);
+        });
+    }
+
+    public function scopeLabel(): ?string
+    {
+        return match ($this->office_type) {
+            self::TYPE_ACAD_ORG_TREASURER, self::TYPE_ACAD_ORG_ADVISER => $this->program?->code,
+            self::TYPE_YEAR_LEVEL_TREASURER => match ((int) $this->year_level) {
+                1 => '1st Year',
+                2 => '2nd Year',
+                3 => '3rd Year',
+                4 => '4th Year',
+                default => $this->year_level ? $this->year_level . 'th Year' : null,
+            },
+            default => null,
+        };
+    }
+
+    public function officeTypeLabel(): string
+    {
+        return self::typeOptions()[$this->office_type] ?? $this->office_type;
+    }
+}

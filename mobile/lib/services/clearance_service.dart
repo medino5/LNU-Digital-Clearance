@@ -1,145 +1,135 @@
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart' as http;
+
+import '../core/api_client.dart';
+import '../core/session_expired_exception.dart';
 
 class ClearanceService {
+  ClearanceService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final ApiClient _apiClient;
 
-  // Use 10.0.2.2 for Android Emulator connecting to local Docker
-  // Update this to your local IP if testing on a physical device.
-  final String baseUrl = 'http://10.0.2.2:8000/api';
-
-  Future<String?> _getToken() async {
-    return _storage.read(key: 'auth_token');
-  }
-
-  Future<Map<String, dynamic>?> getClearanceStatus() async {
-    final token = await _getToken();
-    if (token == null) return null;
-
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/clearance/status'),
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
-      }
-    } catch (_) {}
-
-    return null;
-  }
-
-  Future<List<dynamic>> getClearanceHistory() async {
-  final token = await _getToken();
-  if (token == null) return [];
-
-  try {
-    final response = await http.get(
-      Uri.parse('$baseUrl/clearance/history'),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+  Future<Map<String, dynamic>> getCurrentClearance() async {
+    final response = await _apiClient.get(
+      '/clearance/current',
+      headers: await _authHeaders(),
     );
 
-    if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-      final data = decoded['data'];
-      if (data is List) return data;
+    _throwIfSessionExpired(response.statusCode);
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        _extractMessage(response.body, 'Unable to load the current clearance.'),
+      );
     }
-  } catch (_) {}
 
-  return [];
-}
-
-  Future<Map<String, dynamic>?> getClearanceHistoryDetail(int requestId) async {
-    final token = await _getToken();
-    if (token == null) return null;
-
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/clearance/history/$requestId'),
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
-      }
-    } catch (_) {}
-
-    return null;
+    return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
-  Future<bool> requestClearance() async {
-    final token = await _getToken();
-    if (token == null) return false;
+  Future<Map<String, dynamic>> createOrResumeClearance() async {
+    final response = await _apiClient.post(
+      '/clearance',
+      headers: await _authHeaders(contentType: true),
+      body: jsonEncode({}),
+    );
 
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/clearance'),
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({}),
+    _throwIfSessionExpired(response.statusCode);
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        _extractMessage(
+          response.body,
+          'Unable to start the clearance request.',
+        ),
       );
+    }
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        return true;
-      }
-    } catch (_) {}
-
-    return false;
+    return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
-  Future<bool> cancelClearance() async {
-    final token = await _getToken();
+  Future<Map<String, dynamic>> resubmitStep(int stepId) async {
+    final response = await _apiClient.post(
+      '/clearance/steps/$stepId/resubmit',
+      headers: await _authHeaders(contentType: true),
+      body: jsonEncode({}),
+    );
+
+    _throwIfSessionExpired(response.statusCode);
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        _extractMessage(
+          response.body,
+          'Unable to resubmit the flagged clearance step.',
+        ),
+      );
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  Future<String> downloadCurrentClearancePdf({String? referenceNumber}) async {
+    final response = await _apiClient.get(
+      '/clearance/current/pdf',
+      headers: await _authHeaders(),
+    );
+
+    _throwIfSessionExpired(response.statusCode);
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        _extractMessage(response.body, 'Unable to download the clearance PDF.'),
+      );
+    }
+
+    final fileName =
+        (referenceNumber?.isNotEmpty ?? false)
+            ? '$referenceNumber.pdf'
+            : 'student-clearance.pdf';
+    final safeName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    final file = File(
+      '${Directory.systemTemp.path}${Platform.pathSeparator}$safeName',
+    );
+
+    await file.writeAsBytes(response.bodyBytes, flush: true);
+
+    return file.path;
+  }
+
+  Future<Map<String, String>> _authHeaders({bool contentType = false}) async {
+    final token = await _storage.read(key: 'auth_token');
+
     if (token == null) {
       throw Exception('You are not logged in.');
     }
 
+    return {
+      'Accept': 'application/json',
+      if (contentType) 'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+  }
+
+  String _extractMessage(String body, String fallback) {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/clearance'),
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      final payload = jsonDecode(body);
 
-      if (response.statusCode == 200) {
-        return true;
+      if (payload is Map<String, dynamic> && payload['message'] is String) {
+        return payload['message'] as String;
       }
+    } catch (_) {
+      // Use the fallback when the response is not JSON.
+    }
 
-      String message = 'Failed to cancel the current clearance request.';
-      try {
-        final decoded = jsonDecode(response.body);
-        if (decoded is Map<String, dynamic> && decoded['message'] is String) {
-          message = decoded['message'] as String;
-        } else if (decoded is Map<String, dynamic> &&
-            decoded['error'] is String) {
-          message = decoded['error'] as String;
-        }
-      } catch (_) {
-        // Keep fallback message when response is not JSON.
-      }
+    return fallback;
+  }
 
-      throw Exception(message);
-    } catch (e) {
-      if (e is Exception) {
-        rethrow;
-      }
-
-      throw Exception('Network error while cancelling clearance: $e');
+  void _throwIfSessionExpired(int statusCode) {
+    if (statusCode == 401) {
+      throw SessionExpiredException();
     }
   }
 }

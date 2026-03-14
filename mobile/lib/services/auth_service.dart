@@ -1,189 +1,170 @@
-import 'dart:async';
+import 'dart:developer' as developer;
 import 'dart:convert';
-import 'dart:io';
-import 'package:http/http.dart' as http;
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../core/api_client.dart';
+import '../core/debug/build_identity_card.dart';
+import '../core/network_config.dart';
+import '../core/session_expired_exception.dart';
+
 class AuthService {
-  final _storage = const FlutterSecureStorage();
+  AuthService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
-  // Use 10.0.2.2 for Android Emulator connecting to local Docker
-  // Update this to your local IP if testing on a physical device.
-  final String baseUrl = 'http://10.0.2.2:8000/api';
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final ApiClient _apiClient;
 
-  // --- TICKET 10: Secure Login ---
-  Future<bool> login(String email, String password) async {
+  Future<void> login(String studentId, String password) async {
+    final normalizedStudentId = studentId.trim();
+
+    developer.log(
+      'Student login request -> ${NetworkConfig.baseUrl}/login '
+      '(student_id=$normalizedStudentId, build=${BuildIdentityCard.debugBuildLabel})',
+      name: 'AuthService',
+    );
+
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/login'),
+      final response = await _apiClient.post(
+        '/login',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({'email': email, 'password': password}),
+        body: jsonEncode({
+          'student_id': normalizedStudentId,
+          'password': password,
+        }),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final token = data['token'];
+      final message = _extractMessage(response.body, 'Unable to sign in.');
 
-        await _storage.write(key: 'auth_token', value: token);
-        return true;
-      } else {
-        print('Login failed: ${response.body}');
-        return false;
+      developer.log(
+        'Student login response <- status=${response.statusCode} message=$message',
+        name: 'AuthService',
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(message);
       }
-    } catch (e) {
-      print('Network error: $e');
-      return false;
+
+      final payload = jsonDecode(response.body) as Map<String, dynamic>;
+      final token = payload['token'] as String?;
+
+      if (token == null || token.isEmpty) {
+        throw Exception('The server did not return an auth token.');
+      }
+
+      await _storage.write(key: 'auth_token', value: token);
+    } catch (error, stackTrace) {
+      developer.log(
+        'Student login failed: $error',
+        name: 'AuthService',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      rethrow;
     }
+  }
+
+  Future<Map<String, dynamic>> getProfile() async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw Exception('You are not logged in.');
+    }
+
+    final response = await _apiClient.get(
+      '/me',
+      headers: _authHeaders(token),
+    );
+
+    if (response.statusCode == 401) {
+      await clearStoredToken();
+      throw SessionExpiredException();
+    }
+
+    if (response.statusCode != 200) {
+      throw Exception(_extractMessage(response.body, 'Unable to load profile.'));
+    }
+
+    final payload = jsonDecode(response.body) as Map<String, dynamic>;
+    return (payload['profile'] as Map?)?.cast<String, dynamic>() ??
+        <String, dynamic>{};
   }
 
   Future<String?> getToken() async {
     return _storage.read(key: 'auth_token');
   }
 
-  // --- TICKET 29: Profile Screen ---
-  Future<Map<String, dynamic>?> getUser() async {
-    final token = await getToken();
-    if (token == null) {
-      throw Exception('You are not logged in.');
-    }
-
-    try {
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/user'),
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 20));
-
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        if (decoded is Map<String, dynamic>) {
-          return decoded;
-        }
-        throw Exception('Unexpected response format.');
-      }
-
-      throw Exception(_extractMessage(response.body));
-    } on SocketException {
-      throw Exception('Network error. Please check your connection.');
-    } on TimeoutException {
-      throw Exception('Request timed out. Please try again.');
-    }
+  Future<bool> hasToken() async {
+    return (await getToken()) != null;
   }
 
-  // --- TICKET 29: Logout ---
+  Future<bool> validateSession() async {
+    final token = await getToken();
+
+    if (token == null) {
+      return false;
+    }
+
+    final response = await _apiClient.get(
+      '/me',
+      headers: _authHeaders(token),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    }
+
+    if (response.statusCode == 401) {
+      await clearStoredToken();
+      return false;
+    }
+
+    throw Exception(
+      _extractMessage(response.body, 'Unable to validate the current session.'),
+    );
+  }
+
+  Future<void> clearStoredToken() async {
+    await _storage.delete(key: 'auth_token');
+  }
+
   Future<void> logout() async {
     final token = await getToken();
-    Exception? failure;
 
     if (token != null) {
       try {
-        final response = await http
-            .post(
-              Uri.parse('$baseUrl/logout'),
-              headers: {
-                'Accept': 'application/json',
-                'Authorization': 'Bearer $token',
-              },
-            )
-            .timeout(const Duration(seconds: 20));
-
-        if (response.statusCode != 200) {
-          failure = Exception(_extractMessage(response.body));
-        }
-      } on SocketException {
-        failure = Exception('Network error. Please check your connection.');
-      } on TimeoutException {
-        failure = Exception('Request timed out. Please try again.');
-      } catch (e) {
-        failure = Exception('Logout failed. Please try again.');
+        await _apiClient.post(
+          '/logout',
+          headers: _authHeaders(token),
+        );
+      } catch (_) {
+        // Local logout still succeeds even if the server request fails.
       }
     }
 
-    await _storage.delete(key: 'auth_token');
-
-    if (failure != null) {
-      throw failure;
-    }
+    await clearStoredToken();
   }
 
-  String _extractMessage(String body) {
+  Map<String, String> _authHeaders(String token) {
+    return {
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+  }
+
+  String _extractMessage(String body, String fallback) {
     try {
-      final decoded = jsonDecode(body);
-      if (decoded is Map<String, dynamic>) {
-        final message = decoded['message'];
-        if (message is String && message.trim().isNotEmpty) {
-          return message;
-        }
-        final error = decoded['error'];
-        if (error is String && error.trim().isNotEmpty) {
-          return error;
-        }
+      final payload = jsonDecode(body);
+
+      if (payload is Map<String, dynamic> && payload['message'] is String) {
+        return payload['message'] as String;
       }
     } catch (_) {
-      // Ignore parse errors and fall back to generic message below.
+      // Ignore JSON parsing failures and use the fallback.
     }
 
-    return 'Request failed. Please try again.';
-  }
-
-  // --- TICKET 15: Clearance Status ---
-  Future<Map<String, dynamic>?> getClearanceStatus() async {
-    final token = await getToken();
-    if (token == null) return null;
-
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/clearance/status'),
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
-      } else {
-        print('Failed to fetch clearance status: ${response.body}');
-      }
-    } catch (e) {
-      print('Network error while fetching clearance status: $e');
-    }
-
-    return null;
-  }
-
-  // --- TICKET 15: Request Clearance ---
-  Future<bool> requestClearance() async {
-    final token = await getToken();
-    if (token == null) return false;
-
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/clearance'),
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({}),
-      );
-
-      if (response.statusCode == 201) {
-        return true;
-      } else {
-        print('Failed to request clearance: ${response.body}');
-        return false;
-      }
-    } catch (e) {
-      print('Network error while requesting clearance: $e');
-      return false;
-    }
+    return fallback;
   }
 }

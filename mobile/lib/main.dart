@@ -11,8 +11,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Clearance System',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      debugShowCheckedModeBanner: false,
+      title: 'Student Clearance System',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF183A63)),
+        scaffoldBackgroundColor: const Color(0xFFF8F4EA),
+        useMaterial3: true,
+      ),
       home: const LoginScreen(),
     );
   }

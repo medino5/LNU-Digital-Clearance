@@ -2,129 +2,161 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\User;
+use App\Models\OfficeAccount;
 use App\Models\Program;
-use App\Models\Organization;
-use App\Models\Designation;
+use App\Models\Semester;
+use App\Models\Student;
+use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // =========================
-        // PROGRAMS
-        // =========================
-        $english = Program::create([
-            'name' => 'BSED English'
-        ]);
+        $programs = [
+            [
+                'code' => 'BSIT',
+                'name' => 'Bachelor of Science in Information Technology',
+                'org_name' => 'DIGITS',
+            ],
+            [
+                'code' => 'BAEL',
+                'name' => 'Bachelor of Arts in English Language',
+                'org_name' => 'English Circle',
+            ],
+            [
+                'code' => 'BSTM',
+                'name' => 'Bachelor of Science in Tourism Management',
+                'org_name' => 'Tourism Circle',
+            ],
+            [
+                'code' => 'BSEntrep',
+                'name' => 'Bachelor of Science in Entrepreneurship',
+                'org_name' => 'Entrep Society',
+            ],
+        ];
 
-        $math = Program::create([
-            'name' => 'BSED Math'
-        ]);
+        $programModels = collect($programs)->mapWithKeys(function (array $program) {
+            $model = Program::updateOrCreate(
+                ['code' => $program['code']],
+                $program
+            );
 
-        // =========================
-        // ORGANIZATIONS
-        // =========================
-        $englishOrg = Organization::create([
-            'name' => 'English Circle',
-            'type' => 'academic',
-            'program_id' => $english->id,
-            'year_level' => null
-        ]);
+            return [$program['code'] => $model];
+        });
 
-        $mathOrg = Organization::create([
-            'name' => 'Math Student Society',
-            'type' => 'academic',
-            'program_id' => $math->id,
-            'year_level' => null
-        ]);
+        Semester::query()->update(['is_active' => false]);
 
-        // Global university-level offices (no specific program)
-        $universityOffices = Organization::create([
-            'name' => 'University Offices',
-            'type' => 'global',
-            'program_id' => null,
-            'year_level' => null
-        ]);
+        Semester::updateOrCreate(
+            ['label' => '2nd Semester 2024-2025'],
+            ['is_active' => true]
+        );
 
-        // =========================
-        // DESIGNATIONS
-        // =========================
-        $englishTreasurer = Designation::create([
-            'name' => 'Treasurer',
-            'organization_id' => $englishOrg->id
-        ]);
+        User::updateOrCreate(
+            ['username' => 'mis.admin'],
+            [
+                'name' => 'MIS Super Admin',
+                'email' => null,
+                'password' => Hash::make('password'),
+                'role' => User::ROLE_ADMIN,
+                'is_student' => false,
+                'is_staff' => false,
+            ]
+        );
 
-        $mathAdviser = Designation::create([
-            'name' => 'Adviser',
-            'organization_id' => $mathOrg->id
-        ]);
+        $createOfficeAccount = function (
+            string $username,
+            string $displayName,
+            string $officeType,
+            ?Program $program = null,
+            ?int $yearLevel = null
+        ): void {
+            $user = User::updateOrCreate(
+                ['username' => $username],
+                [
+                    'name' => $displayName,
+                    'email' => null,
+                    'password' => Hash::make('password'),
+                    'role' => User::ROLE_OFFICE,
+                    'is_student' => false,
+                    'is_staff' => true,
+                ]
+            );
 
-        $cashier = Designation::create([
-            'name' => 'University Cashier',
-            'organization_id' => $universityOffices->id
-        ]);
+            OfficeAccount::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'display_name' => $displayName,
+                    'office_type' => $officeType,
+                    'program_id' => $program?->id,
+                    'year_level' => $yearLevel,
+                ]
+            );
+        };
 
-        $library = Designation::create([
-            'name' => 'University Library',
-            'organization_id' => $universityOffices->id
-        ]);
+        foreach ($programModels as $program) {
+            $createOfficeAccount(
+                strtolower($program->code) . '.treasurer',
+                $program->org_name . ' Academic Organization Treasurer',
+                OfficeAccount::TYPE_ACAD_ORG_TREASURER,
+                $program
+            );
 
-        $cmeDean = Designation::create([
-            'name' => 'CME Dean',
-            'organization_id' => $universityOffices->id
-        ]);
+            $createOfficeAccount(
+                strtolower($program->code) . '.adviser',
+                $program->org_name . ' Academic Organization Adviser',
+                OfficeAccount::TYPE_ACAD_ORG_ADVISER,
+                $program
+            );
+        }
 
-        // =========================
-        // STAFF USERS
-        // =========================
-        $staff1 = User::create([
-            'name' => 'Staff English Treasurer',
-            'email' => 'english_staff@test.com',
-            'password' => Hash::make('password'),
-            'is_staff' => true,
-            'is_student' => false
-        ]);
+        foreach ([1, 2, 3, 4] as $yearLevel) {
+            $createOfficeAccount(
+                'year' . $yearLevel . '.treasurer',
+                match ($yearLevel) {
+                    1 => '1st Year Level Organization Treasurer',
+                    2 => '2nd Year Level Organization Treasurer',
+                    3 => '3rd Year Level Organization Treasurer',
+                    4 => '4th Year Level Organization Treasurer',
+                },
+                OfficeAccount::TYPE_YEAR_LEVEL_TREASURER,
+                null,
+                $yearLevel
+            );
+        }
 
-        $staff2 = User::create([
-            'name' => 'Staff Math Adviser',
-            'email' => 'math_staff@test.com',
-            'password' => Hash::make('password'),
-            'is_staff' => true,
-            'is_student' => false
-        ]);
+        $createOfficeAccount(
+            'librarian.office',
+            'College Chief Librarian',
+            OfficeAccount::TYPE_LIBRARIAN
+        );
 
-        // BUGFIX (Sprints 1–2): the demo staff account cashier@lnu.edu.ph was not seeded at all,
-        // so login always returned "invalid credentials" even with the correct password.
-        $cashierStaff = User::create([
-            'name' => 'University Cashier',
-            'email' => 'cashier@lnu.edu.ph',
-            'password' => Hash::make('password'),
-            'is_staff' => true,
-            'is_student' => false,
-        ]);
+        $createOfficeAccount(
+            'vpsd.office',
+            'Vice President for Student Development',
+            OfficeAccount::TYPE_VPSD
+        );
 
-        // Attach designations to staff
-        $staff1->designations()->attach($englishTreasurer->id);
-        $staff2->designations()->attach($mathAdviser->id);
-        $cashierStaff->designations()->attach($cashier->id);
+        $studentUser = User::updateOrCreate(
+            ['username' => '2302314'],
+            [
+                'name' => 'John A. Doe',
+                'email' => null,
+                'password' => Hash::make('password'),
+                'role' => User::ROLE_STUDENT,
+                'is_student' => true,
+                'is_staff' => false,
+            ]
+        );
 
-        // =========================
-        // STUDENT USER
-        // =========================
-        $student = User::create([
-            'name' => 'Test Student',
-            'email' => 'student@test.com',
-            'password' => Hash::make('password'),
-            'is_student' => true,
-            'is_staff' => false,
-            'program_id' => $english->id,
-            'year_level' => 3
-        ]);
-
-        // Attach student to English organization
-        $englishOrg->students()->attach($student->id);
+        Student::updateOrCreate(
+            ['user_id' => $studentUser->id],
+            [
+                'student_id_number' => '2302314',
+                'program_id' => $programModels['BSIT']->id,
+                'year_level' => 3,
+            ]
+        );
     }
 }
