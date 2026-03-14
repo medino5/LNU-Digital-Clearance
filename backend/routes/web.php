@@ -1,29 +1,48 @@
 <?php
 
-use App\Http\Controllers\ClearanceController;
-use App\Http\Controllers\StaffAuthController;
-use App\Http\Controllers\StaffDashboardController;
+use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\OfficeAccountAdminController;
+use App\Http\Controllers\OfficeDashboardController;
+use App\Http\Controllers\PortalAuthController;
+use App\Http\Controllers\ProgramAdminController;
+use App\Http\Controllers\SemesterAdminController;
+use App\Http\Controllers\StudentAdminController;
 use Illuminate\Support\Facades\Route;
 
-// Existing welcome route
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', fn () => redirect()->route('office.login'));
 
-// =========================
-// Staff Login Routes
-// =========================
-Route::get('/staff/login', [StaffAuthController::class, 'showLogin'])->name('staff.login');
-Route::post('/staff/login', [StaffAuthController::class, 'login'])->name('staff.login.submit');
+Route::get('/admin/login', [PortalAuthController::class, 'showAdminLogin'])->name('admin.login');
+Route::post('/admin/login', [PortalAuthController::class, 'loginAdmin'])->name('admin.login.submit');
 
-// =========================
-// Staff Dashboard (web guard)
-// =========================
-Route::middleware('auth')->group(function () {
-    Route::get('/staff/dashboard', [StaffDashboardController::class, 'index'])
-        ->name('staff.dashboard');
-    Route::get('/staff/student/{student}', [StaffDashboardController::class, 'show'])
-        ->name('staff.student.show');
-    Route::post('/staff/process/{signature}', [StaffDashboardController::class, 'processSignature'])
-        ->name('staff.process');
-});
+Route::get('/office/login', [PortalAuthController::class, 'showOfficeLogin'])->name('office.login');
+Route::post('/office/login', [PortalAuthController::class, 'loginOffice'])->name('office.login.submit');
+
+Route::post('/logout', [PortalAuthController::class, 'logout'])
+    ->middleware('auth')
+    ->name('portal.logout');
+
+Route::prefix('admin')
+    ->middleware(['auth', 'role:admin'])
+    ->group(function () {
+        Route::get('/', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+
+        Route::post('/programs', [ProgramAdminController::class, 'store'])->name('admin.programs.store');
+        Route::put('/programs/{program}', [ProgramAdminController::class, 'update'])->name('admin.programs.update');
+
+        Route::post('/semesters', [SemesterAdminController::class, 'store'])->name('admin.semesters.store');
+        Route::put('/semesters/{semester}', [SemesterAdminController::class, 'update'])->name('admin.semesters.update');
+
+        Route::post('/students', [StudentAdminController::class, 'store'])->name('admin.students.store');
+        Route::put('/students/{student}', [StudentAdminController::class, 'update'])->name('admin.students.update');
+
+        Route::post('/office-accounts', [OfficeAccountAdminController::class, 'store'])->name('admin.office-accounts.store');
+        Route::put('/office-accounts/{officeAccount}', [OfficeAccountAdminController::class, 'update'])
+            ->name('admin.office-accounts.update');
+    });
+
+Route::prefix('office')
+    ->middleware(['auth', 'role:office'])
+    ->group(function () {
+        Route::get('/', [OfficeDashboardController::class, 'index'])->name('office.dashboard');
+        Route::post('/steps/{step}/process', [OfficeDashboardController::class, 'process'])->name('office.steps.process');
+    });

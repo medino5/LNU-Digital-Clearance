@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Give our middleware a short, easy-to-use nickname
         $middleware->alias([
             'staff' => \App\Http\Middleware\EnsureUserIsStaff::class,
+            'role' => \App\Http\Middleware\EnsureUserHasRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
