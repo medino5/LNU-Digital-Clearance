@@ -1,13 +1,301 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({
+    super.key,
+    required this.payload,
+    required this.isLoading,
+    required this.isBusy,
+    required this.onLogout,
+    required this.onRefresh,
+  });
+
+  final Map<String, dynamic>? payload;
+  final bool isLoading;
+  final bool isBusy;
+  final Future<void> Function() onLogout;
+  final Future<void> Function() onRefresh;
+
+  static const Color _navy = Color(0xFF183A63);
+  static const Color _gold = Color(0xFFD1A33B);
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Profile — Coming in LDCS-29'),
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator(color: _gold));
+    }
+
+    final student = payload?['student'] as Map<String, dynamic>?;
+    final program = student?['program'] as Map<String, dynamic>?;
+    final semester = payload?['active_semester'] as Map<String, dynamic>?;
+
+    return RefreshIndicator(
+      color: _gold,
+      onRefresh: onRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+        children: [
+          Stack(
+            alignment: Alignment.topCenter,
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 42),
+                padding: const EdgeInsets.fromLTRB(20, 62, 20, 22),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      student?['name'] as String? ?? 'Student',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: _navy,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      (program?['org_name'] as String?)?.isNotEmpty == true
+                          ? '${program?['org_name']} Student'
+                          : 'Student',
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 92,
+                height: 92,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 4),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFE7E3E1), Color(0xFFD1CFCF)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.person_rounded,
+                  size: 46,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          _DetailCard(
+            children: [
+              _DetailRow(
+                label: 'Student ID',
+                value:
+                    student?['student_id_number'] as String? ?? 'Unavailable',
+              ),
+              _DetailRow(
+                label: 'Program',
+                value: program?['name'] as String? ?? 'Unavailable',
+              ),
+              _DetailRow(
+                label: 'Year Level',
+                value: student?['year_level_label'] as String? ?? 'Unavailable',
+                isLast: true,
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          _DetailCard(
+            title: 'Academic Context',
+            children: [
+              _DetailRow(
+                label: 'Program Code',
+                value: program?['code'] as String? ?? 'Unavailable',
+              ),
+              _DetailRow(
+                label: 'Organization',
+                value: program?['org_name'] as String? ?? 'Unavailable',
+              ),
+              _DetailRow(
+                label: 'Active Semester',
+                value: semester?['label'] as String? ?? 'No active semester',
+                isLast: true,
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF4DB),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: _gold.withValues(alpha: 0.35)),
+            ),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.verified_user_outlined, color: _navy),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'This account is used for student clearance only. If any profile detail is wrong, please contact MIS before the semester closes.',
+                    style: TextStyle(
+                      color: _navy,
+                      fontWeight: FontWeight.w600,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: isBusy ? null : onLogout,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _gold,
+                foregroundColor: _navy,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              icon: isBusy
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: _navy,
+                      ),
+                    )
+                  : const Icon(Icons.logout_rounded),
+              label: const Text('Logout'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailCard extends StatelessWidget {
+  const _DetailCard({this.title, required this.children});
+
+  final String? title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          if (title != null) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title!,
+                style: const TextStyle(
+                  color: ProfileScreen._navy,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          ...children,
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({
+    required this.label,
+    required this.value,
+    this.isLast = false,
+  });
+
+  final String label;
+  final String value;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: isLast
+              ? BorderSide.none
+              : BorderSide(color: Colors.grey.shade200),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 106,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: ProfileScreen._navy,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

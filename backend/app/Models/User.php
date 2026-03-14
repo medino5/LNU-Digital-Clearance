@@ -2,25 +2,31 @@
 
 namespace App\Models;
 
-use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    use HasFactory, Notifiable;
+    public const ROLE_ADMIN = 'admin';
+
+    public const ROLE_OFFICE = 'office';
+
+    public const ROLE_STUDENT = 'student';
 
     protected $fillable = [
         'name',
+        'username',
         'email',
         'password',
+        'role',
         'is_student',
         'is_staff',
         'program_id',
-        'year_level'
+        'year_level',
     ];
 
     protected $hidden = [
@@ -33,9 +39,15 @@ class User extends Authenticatable
         'is_staff' => 'boolean',
     ];
 
-    // =========================
-    // RELATIONSHIPS
-    // =========================
+    public function studentProfile()
+    {
+        return $this->hasOne(Student::class);
+    }
+
+    public function officeAccount()
+    {
+        return $this->hasOne(OfficeAccount::class);
+    }
 
     public function program()
     {
@@ -64,5 +76,20 @@ class User extends Authenticatable
             'student_id',
             'organization_id'
         );
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    public function isOffice(): bool
+    {
+        return $this->role === self::ROLE_OFFICE;
+    }
+
+    public function isStudent(): bool
+    {
+        return $this->role === self::ROLE_STUDENT;
     }
 }

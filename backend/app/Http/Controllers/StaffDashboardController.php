@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\ClearanceSignature;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -38,6 +40,7 @@ class StaffDashboardController extends Controller
 
         $pendingSignatures = ClearanceSignature::with([
             'clearanceRequest.student.program',
+            'clearanceRequest.signatures.designation',
             'designation',
         ])
             ->where('designation_id', $designation->id)
@@ -149,6 +152,90 @@ class StaffDashboardController extends Controller
             ]);
 
             return back()->with('error', 'An unexpected error occurred while updating the clearance.');
+        }
+    }
+
+    public function show(User $student): JsonResponse
+    {
+        try {
+            $staff = Auth::user();
+
+            if (!$staff || !$staff->is_staff) {
+                return response()->json(['message' => 'Unauthorized.'], 403);
+            }
+
+            $student->load('program');
+
+            $designationIds = $staff->designations()->pluck('designations.id');
+
+            if ($designationIds->isEmpty()) {
+                return response()->json(['message' => 'Unauthorized.'], 403);
+            }
+
+            $hasAccess = ClearanceSignature::whereIn('designation_id', $designationIds)
+                ->whereHas('clearanceRequest', function ($query) use ($student) {
+                    $query->where('student_id', $student->id);
+                })
+                ->exists();
+
+            if (!$hasAccess) {
+                return response()->json(['message' => 'Unauthorized.'], 403);
+            }
+
+            $request = $student->clearanceRequests()
+                ->with(['signatures.designation', 'signatures.signedBy'])
+                ->orderByDesc('created_at')
+                ->first();
+
+            if (!$request) {
+                return response()->json([
+                    'message' => 'No clearance request found for this student.',
+                ], 404);
+            }
+
+            $signatures = $request->signatures->map(function ($signature) {
+                $processedAt = null;
+
+                if ($signature->status !== 'pending') {
+                    $processedAt = $signature->approved_at ?? $signature->updated_at;
+                }
+
+                return [
+                    'id' => $signature->id,
+                    'designation' => $signature->designation?->name,
+                    'status' => $signature->status,
+                    'processed_by' => $signature->signedBy?->name,
+                    'processed_at' => $processedAt?->toISOString(),
+                    'rejection_reason' => $signature->rejection_reason,
+                    'remarks' => $signature->remarks,
+                ];
+            })->values();
+
+            return response()->json([
+                'student' => [
+                    'id' => $student->id,
+                    'name' => $student->name,
+                    'email' => $student->email,
+                    'program' => $student->program?->name,
+                ],
+                'request' => [
+                    'id' => $request->id,
+                    'semester' => $request->semester,
+                    'status' => $request->status,
+                    'created_at' => $request->created_at?->toISOString(),
+                ],
+                'signatures' => $signatures,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Failed to load student details.', [
+                'student_id' => $student->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to load student details.',
+                'error' => $e->getMessage(),
+            ], 500);
         }
     }
 }

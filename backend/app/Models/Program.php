@@ -9,7 +9,7 @@ class Program extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['code', 'name', 'org_name'];
 
     public function organizations()
     {
@@ -18,6 +18,11 @@ class Program extends Model
 
     public function students()
     {
-        return $this->hasMany(User::class);
+        return $this->hasMany(Student::class);
+    }
+
+    public function officeAccounts()
+    {
+        return $this->hasMany(OfficeAccount::class);
     }
 }
