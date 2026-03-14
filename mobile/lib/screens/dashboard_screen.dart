@@ -334,6 +334,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _activeRequest != null && rejectedSignatures.isNotEmpty;
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: _lnuGold,
+        automaticallyImplyLeading: false,
+        title: const Text(
+          'Leyte Normal University',
+          style: TextStyle(
+            color: _lnuNavy,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const HistoryScreen(),
+                ),
+              );
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: _lnuNavy,
+              textStyle: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            child: const Text('View History'),
+          ),
+        ],
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
