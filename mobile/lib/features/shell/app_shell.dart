@@ -9,15 +9,26 @@ import '../pdf/pdf_screen.dart';
 import '../profile/profile_screen.dart';
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key});
+  const AppShell({
+    super.key,
+    this.authService,
+    this.clearanceService,
+    this.loginScreenBuilder,
+  });
+
+  final AuthService? authService;
+  final ClearanceService? clearanceService;
+  final Widget Function(BuildContext context, String? initialMessage)?
+  loginScreenBuilder;
 
   @override
   State<AppShell> createState() => _AppShellState();
 }
 
 class _AppShellState extends State<AppShell> {
-  final AuthService _authService = AuthService();
-  final ClearanceService _clearanceService = ClearanceService();
+  late final AuthService _authService = widget.authService ?? AuthService();
+  late final ClearanceService _clearanceService =
+      widget.clearanceService ?? ClearanceService();
 
   Map<String, dynamic>? _payload;
   String? _error;
@@ -217,9 +228,13 @@ class _AppShellState extends State<AppShell> {
       return;
     }
 
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) =>
+            widget.loginScreenBuilder?.call(context, null) ??
+            const LoginScreen(),
+      ),
+    );
   }
 
   Future<bool> _handleSessionExpired(Object error) async {
@@ -235,7 +250,9 @@ class _AppShellState extends State<AppShell> {
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => LoginScreen(initialMessage: error.message),
+        builder: (context) =>
+            widget.loginScreenBuilder?.call(context, error.message) ??
+            LoginScreen(initialMessage: error.message),
       ),
     );
 

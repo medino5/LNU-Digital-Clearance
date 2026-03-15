@@ -1,18 +1,19 @@
 import 'dart:developer' as developer;
 import 'dart:convert';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
 import '../core/api_client.dart';
 import '../core/debug/build_identity_card.dart';
 import '../core/network_config.dart';
 import '../core/session_expired_exception.dart';
+import 'auth_token_store.dart';
 
 class AuthService {
-  AuthService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  AuthService({ApiClient? apiClient, AuthTokenStore? tokenStore})
+    : _apiClient = apiClient ?? ApiClient(),
+      _tokenStore = tokenStore ?? SecureAuthTokenStore();
 
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
   final ApiClient _apiClient;
+  final AuthTokenStore _tokenStore;
 
   Future<void> login(String studentId, String password) async {
     final normalizedStudentId = studentId.trim();
@@ -54,7 +55,7 @@ class AuthService {
         throw Exception('The server did not return an auth token.');
       }
 
-      await _storage.write(key: 'auth_token', value: token);
+      await _tokenStore.writeToken(token);
     } catch (error, stackTrace) {
       developer.log(
         'Student login failed: $error',
@@ -73,10 +74,7 @@ class AuthService {
       throw Exception('You are not logged in.');
     }
 
-    final response = await _apiClient.get(
-      '/me',
-      headers: _authHeaders(token),
-    );
+    final response = await _apiClient.get('/me', headers: _authHeaders(token));
 
     if (response.statusCode == 401) {
       await clearStoredToken();
@@ -84,7 +82,9 @@ class AuthService {
     }
 
     if (response.statusCode != 200) {
-      throw Exception(_extractMessage(response.body, 'Unable to load profile.'));
+      throw Exception(
+        _extractMessage(response.body, 'Unable to load profile.'),
+      );
     }
 
     final payload = jsonDecode(response.body) as Map<String, dynamic>;
@@ -93,7 +93,7 @@ class AuthService {
   }
 
   Future<String?> getToken() async {
-    return _storage.read(key: 'auth_token');
+    return _tokenStore.readToken();
   }
 
   Future<bool> hasToken() async {
@@ -107,10 +107,7 @@ class AuthService {
       return false;
     }
 
-    final response = await _apiClient.get(
-      '/me',
-      headers: _authHeaders(token),
-    );
+    final response = await _apiClient.get('/me', headers: _authHeaders(token));
 
     if (response.statusCode == 200) {
       return true;
@@ -127,7 +124,7 @@ class AuthService {
   }
 
   Future<void> clearStoredToken() async {
-    await _storage.delete(key: 'auth_token');
+    await _tokenStore.clearToken();
   }
 
   Future<void> logout() async {
@@ -135,10 +132,7 @@ class AuthService {
 
     if (token != null) {
       try {
-        await _apiClient.post(
-          '/logout',
-          headers: _authHeaders(token),
-        );
+        await _apiClient.post('/logout', headers: _authHeaders(token));
       } catch (_) {
         // Local logout still succeeds even if the server request fails.
       }
@@ -148,10 +142,7 @@ class AuthService {
   }
 
   Map<String, String> _authHeaders(String token) {
-    return {
-      'Accept': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
+    return {'Accept': 'application/json', 'Authorization': 'Bearer $token'};
   }
 
   String _extractMessage(String body, String fallback) {

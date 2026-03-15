@@ -6,9 +6,18 @@ import '../features/shell/app_shell.dart';
 import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, this.initialMessage});
+  const LoginScreen({
+    super.key,
+    this.initialMessage,
+    this.authService,
+    this.shellBuilder,
+    this.connectionTestBuilder,
+  });
 
   final String? initialMessage;
+  final AuthService? authService;
+  final WidgetBuilder? shellBuilder;
+  final WidgetBuilder? connectionTestBuilder;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -17,7 +26,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _studentIdController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final AuthService _authService = AuthService();
+  late final AuthService _authService = widget.authService ?? AuthService();
 
   bool _isLoading = false;
   String? _notice;
@@ -57,9 +66,11 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const AppShell()));
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: widget.shellBuilder ?? (_) => const AppShell(),
+        ),
+      );
     } catch (error) {
       if (!mounted) return;
 
@@ -88,9 +99,11 @@ class _LoginScreenState extends State<LoginScreen> {
         _notice = null;
       });
 
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const AppShell()));
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: widget.shellBuilder ?? (_) => const AppShell(),
+        ),
+      );
     } catch (error) {
       if (!mounted) return;
 
@@ -273,7 +286,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => const ConnectionTestScreen(),
+                              builder:
+                                  widget.connectionTestBuilder ??
+                                  (_) => const ConnectionTestScreen(),
                             ),
                           );
                         },

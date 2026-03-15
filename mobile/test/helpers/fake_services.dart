@@ -1,0 +1,137 @@
+import 'package:mobile/core/session_expired_exception.dart';
+import 'package:mobile/services/auth_service.dart';
+import 'package:mobile/services/clearance_service.dart';
+
+import 'fake_token_store.dart';
+
+class FakeAuthService extends AuthService {
+  FakeAuthService({
+    this.hasTokenResult = false,
+    this.validateSessionResult = false,
+    this.loginError,
+    this.validationError,
+    this.logoutError,
+    this.profile = const <String, dynamic>{},
+  }) : super(tokenStore: FakeTokenStore());
+
+  bool hasTokenResult;
+  bool validateSessionResult;
+  Object? loginError;
+  Object? validationError;
+  Object? logoutError;
+  Map<String, dynamic> profile;
+  String? lastStudentId;
+  String? lastPassword;
+  bool clearedStoredToken = false;
+  int logoutCalls = 0;
+
+  @override
+  Future<Map<String, dynamic>> getProfile() async {
+    return profile;
+  }
+
+  @override
+  Future<bool> hasToken() async {
+    return hasTokenResult;
+  }
+
+  @override
+  Future<void> login(String studentId, String password) async {
+    lastStudentId = studentId;
+    lastPassword = password;
+
+    if (loginError != null) {
+      throw loginError!;
+    }
+  }
+
+  @override
+  Future<void> logout() async {
+    logoutCalls += 1;
+
+    if (logoutError != null) {
+      throw logoutError!;
+    }
+  }
+
+  @override
+  Future<bool> validateSession() async {
+    if (validationError != null) {
+      throw validationError!;
+    }
+
+    return validateSessionResult;
+  }
+
+  @override
+  Future<void> clearStoredToken() async {
+    clearedStoredToken = true;
+  }
+}
+
+class FakeClearanceService extends ClearanceService {
+  FakeClearanceService({
+    this.currentPayload,
+    this.startOrResumePayload,
+    this.resubmitPayload,
+    this.loadError,
+    this.startError,
+    this.resubmitError,
+    this.downloadError,
+    this.downloadPath = '/tmp/student-clearance.pdf',
+  }) : super(tokenStore: FakeTokenStore());
+
+  Map<String, dynamic>? currentPayload;
+  Map<String, dynamic>? startOrResumePayload;
+  Map<String, dynamic>? resubmitPayload;
+  Object? loadError;
+  Object? startError;
+  Object? resubmitError;
+  Object? downloadError;
+  String downloadPath;
+  int downloadCalls = 0;
+
+  @override
+  Future<Map<String, dynamic>> createOrResumeClearance() async {
+    if (startError != null) {
+      throw startError!;
+    }
+
+    return startOrResumePayload ?? currentPayload ?? const <String, dynamic>{};
+  }
+
+  @override
+  Future<String> downloadCurrentClearancePdf({String? referenceNumber}) async {
+    downloadCalls += 1;
+
+    if (downloadError != null) {
+      throw downloadError!;
+    }
+
+    return downloadPath;
+  }
+
+  @override
+  Future<Map<String, dynamic>> getCurrentClearance() async {
+    if (loadError != null) {
+      throw loadError!;
+    }
+
+    return currentPayload ?? const <String, dynamic>{};
+  }
+
+  @override
+  Future<Map<String, dynamic>> resubmitStep(int stepId) async {
+    if (resubmitError != null) {
+      throw resubmitError!;
+    }
+
+    return resubmitPayload ?? currentPayload ?? const <String, dynamic>{};
+  }
+}
+
+SessionExpiredException buildExpiredSession([String? message]) {
+  return SessionExpiredException(
+    message ?? 'Your session expired. Please sign in again.',
+  );
+}

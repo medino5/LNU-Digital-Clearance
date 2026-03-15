@@ -1,16 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
 import '../core/api_client.dart';
 import '../core/session_expired_exception.dart';
+import 'auth_token_store.dart';
 
 class ClearanceService {
-  ClearanceService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  ClearanceService({ApiClient? apiClient, AuthTokenStore? tokenStore})
+    : _apiClient = apiClient ?? ApiClient(),
+      _tokenStore = tokenStore ?? SecureAuthTokenStore();
 
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
   final ApiClient _apiClient;
+  final AuthTokenStore _tokenStore;
 
   Future<Map<String, dynamic>> getCurrentClearance() async {
     final response = await _apiClient.get(
@@ -85,10 +86,9 @@ class ClearanceService {
       );
     }
 
-    final fileName =
-        (referenceNumber?.isNotEmpty ?? false)
-            ? '$referenceNumber.pdf'
-            : 'student-clearance.pdf';
+    final fileName = (referenceNumber?.isNotEmpty ?? false)
+        ? '$referenceNumber.pdf'
+        : 'student-clearance.pdf';
     final safeName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
     final file = File(
       '${Directory.systemTemp.path}${Platform.pathSeparator}$safeName',
@@ -100,7 +100,7 @@ class ClearanceService {
   }
 
   Future<Map<String, String>> _authHeaders({bool contentType = false}) async {
-    final token = await _storage.read(key: 'auth_token');
+    final token = await _tokenStore.readToken();
 
     if (token == null) {
       throw Exception('You are not logged in.');
