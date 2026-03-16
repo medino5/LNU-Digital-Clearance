@@ -14,12 +14,17 @@ class PortalRoutingTest extends TestCase
 
     public function test_root_redirects_to_office_login(): void
     {
+        // This documents the default browser entry point for the rehauled
+        // portal setup: the root URL should lead to the office login page.
         $this->get('/')
             ->assertRedirect(route('office.login'));
     }
 
     public function test_authenticated_admin_can_view_office_login_page(): void
     {
+        // This covers the portal-switching fix: an authenticated admin should
+        // still be able to open the office login page instead of being trapped
+        // on the admin dashboard.
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN,
             'is_student' => false,
@@ -36,6 +41,8 @@ class PortalRoutingTest extends TestCase
 
     public function test_authenticated_admin_can_switch_to_office_portal(): void
     {
+        // This proves that signing into another portal replaces the current
+        // browser session and lands on the correct office dashboard.
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN,
             'is_student' => false,
@@ -75,6 +82,8 @@ class PortalRoutingTest extends TestCase
 
     public function test_admin_dashboard_shows_logout_and_switch_actions(): void
     {
+        // This keeps the super admin dashboard usable by asserting the visible
+        // session controls that were added during the portal rehaul.
         $admin = User::factory()->create([
             'name' => 'MIS Admin',
             'role' => User::ROLE_ADMIN,
@@ -91,6 +100,8 @@ class PortalRoutingTest extends TestCase
 
     public function test_office_dashboard_shows_logout_and_switch_actions(): void
     {
+        // This mirrors the admin check for office users so logout and portal
+        // switching stay discoverable after future UI changes.
         $officeUser = User::factory()->create([
             'name' => 'Office User',
             'username' => 'office.user',
