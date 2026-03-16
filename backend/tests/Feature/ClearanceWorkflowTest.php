@@ -24,6 +24,9 @@ class ClearanceWorkflowTest extends TestCase
 
     public function test_student_clearance_creation_is_routed_to_five_required_offices(): void
     {
+        // This is the core workflow entry test: when a student starts a
+        // clearance, the system should create exactly the five offices defined
+        // by the rehauled routing rules and reuse the same record on retry.
         $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
         Sanctum::actingAs($student->user);
 
@@ -56,6 +59,9 @@ class ClearanceWorkflowTest extends TestCase
 
     public function test_clearance_snapshots_do_not_change_after_student_profile_edits(): void
     {
+        // This protects historical integrity. A clearance should keep the
+        // original program and year snapshot even if the student's profile
+        // changes later in the admin portal.
         $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
         Sanctum::actingAs($student->user);
 
@@ -75,6 +81,9 @@ class ClearanceWorkflowTest extends TestCase
 
     public function test_flagged_step_can_be_resubmitted_without_resetting_other_approved_steps(): void
     {
+        // This verifies the most important branch in the new workflow: one
+        // flagged office can be resubmitted without erasing approvals that
+        // other offices already completed.
         Storage::disk('local')->deleteDirectory('clearances');
 
         $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
@@ -154,6 +163,8 @@ class ClearanceWorkflowTest extends TestCase
 
     public function test_office_dashboard_only_shows_students_routed_to_that_office(): void
     {
+        // This keeps office scope isolation intact: an office account should
+        // see only the students routed to that exact office and scope.
         $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
         Sanctum::actingAs($student->user);
         $this->postJson('/api/clearance')->assertOk();
@@ -177,5 +188,31 @@ class ClearanceWorkflowTest extends TestCase
             ->get('/office')
             ->assertOk()
             ->assertDontSee('John A. Doe');
+    }
+
+    public function test_office_user_cannot_process_a_step_owned_by_a_different_office(): void
+    {
+        // This ensures step processing stays locked to the assigned office
+        // account, even if another valid office user tries to post directly to
+        // the process route.
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        Sanctum::actingAs($student->user);
+        $this->postJson('/api/clearance')->assertOk();
+
+        $step = ClearanceStep::query()->firstOrFail();
+        $wrongOfficeUser = \App\Models\OfficeAccount::where(
+            'display_name',
+            'English Circle Academic Organization Treasurer'
+        )->firstOrFail()->user;
+
+        $this->actingAs($wrongOfficeUser)
+            ->post(route('office.steps.process', $step), [
+                'action' => 'approve',
+                'remarks' => 'Trying to approve another office step.',
+            ])
+            ->assertForbidden();
+
+        $step->refresh();
+        $this->assertSame(ClearanceStep::STATUS_AWAITING_ACTION, $step->status);
     }
 }
