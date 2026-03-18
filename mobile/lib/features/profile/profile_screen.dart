@@ -4,6 +4,7 @@ class ProfileScreen extends StatelessWidget {
   const ProfileScreen({
     super.key,
     required this.payload,
+    required this.error, // ADDED: for consistent state messaging across tabs
     required this.isLoading,
     required this.isBusy,
     required this.onLogout,
@@ -11,6 +12,7 @@ class ProfileScreen extends StatelessWidget {
   });
 
   final Map<String, dynamic>? payload;
+  final String? error; // ADDED: display errors similar to Dashboard/PDF
   final bool isLoading;
   final bool isBusy;
   final Future<void> Function() onLogout;
@@ -36,6 +38,32 @@ class ProfileScreen extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
         children: [
+          // ADDED: consistent error display across tabs (ticket: stronger state messaging)
+          if (error != null) ...[
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.25)),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.error_outline_rounded, color: Colors.red),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Unable to refresh your profile right now. Pull down to try again.',
+                      style: TextStyle(height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+          ],
+
           Stack(
             alignment: Alignment.topCenter,
             clipBehavior: Clip.none,
