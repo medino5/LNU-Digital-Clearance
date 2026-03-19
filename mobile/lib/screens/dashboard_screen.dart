@@ -6,7 +6,9 @@ class DashboardScreen extends StatelessWidget {
     required this.payload,
     required this.error,
     required this.isLoading,
-    required this.isBusy,
+    required this.isStartingOrResuming,
+    required this.isDownloadingPdf,
+    required this.resubmittingStepId,
     required this.onRefresh,
     required this.onStartOrResume,
     required this.onResubmitStep,
@@ -16,7 +18,12 @@ class DashboardScreen extends StatelessWidget {
   final Map<String, dynamic>? payload;
   final String? error;
   final bool isLoading;
-  final bool isBusy;
+
+  // Ticket polish: separate dashboard action states so unrelated controls
+  // do not get disabled across the shell.
+  final bool isStartingOrResuming;
+  final bool isDownloadingPdf;
+  final int? resubmittingStepId;
   final Future<void> Function() onRefresh;
   final Future<void> Function() onStartOrResume;
   final Future<void> Function(Map<String, dynamic> step) onResubmitStep;
@@ -83,13 +90,13 @@ class DashboardScreen extends StatelessWidget {
           else if (_clearance == null)
             _StartClearanceCard(
               semesterLabel: _activeSemester?['label'] as String? ?? '',
-              isBusy: isBusy,
+              isBusy: isStartingOrResuming,
               onPressed: onStartOrResume,
             )
           else ...[
             _ClearanceSummaryCard(
               clearance: _clearance!,
-              isBusy: isBusy,
+              isBusy: isDownloadingPdf,
               onDownload: onDownloadPdf,
             ),
             const SizedBox(height: 18),
@@ -101,18 +108,26 @@ class DashboardScreen extends StatelessWidget {
                   ),
             ),
             const SizedBox(height: 10),
-            ..._steps.map(
-              (step) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _ClearanceStepCard(
-                  step: step,
-                  isBusy: isBusy,
-                  onResubmit: step['can_resubmit'] == true
-                      ? () => onResubmitStep(step)
-                      : null,
+            if (_steps.isEmpty)
+              _InfoCard(
+                title: 'No office steps available',
+                body:
+                    'The clearance record exists, but no office routing steps are available yet. Pull down to refresh or contact MIS if this persists.',
+                accent: _gold,
+              )
+            else
+              ..._steps.map(
+                (step) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _ClearanceStepCard(
+                    step: step,
+                    isResubmitting: resubmittingStepId == step['id'],
+                    onResubmit: step['can_resubmit'] == true
+                        ? () => onResubmitStep(step)
+                        : null,
+                  ),
                 ),
               ),
-            ),
           ],
         ],
       ),
@@ -150,7 +165,7 @@ class _HeaderCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Leyte Normal University',
+            'Student Overview',
             style: TextStyle(
               color: Colors.white,
               fontSize: 22,
@@ -441,8 +456,17 @@ class _ClearanceSummaryCard extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: isBusy ? null : onDownload,
-                icon: const Icon(Icons.picture_as_pdf_rounded),
-                label: const Text('Download Clearance PDF'),
+                icon: isBusy
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: _navy,
+                        ),
+                      )
+                    : const Icon(Icons.picture_as_pdf_rounded),
+                label: Text(isBusy ? 'Preparing PDF...' : 'Download Clearance PDF'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _gold,
                   foregroundColor: _navy,
@@ -541,12 +565,15 @@ class _StatusChip extends StatelessWidget {
 class _ClearanceStepCard extends StatelessWidget {
   const _ClearanceStepCard({
     required this.step,
-    required this.isBusy,
+    required this.isResubmitting,
     this.onResubmit,
   });
 
   final Map<String, dynamic> step;
-  final bool isBusy;
+
+  // Ticket polish: only the selected flagged step should show a loading state
+  // during re-submit.
+  final bool isResubmitting;
   final VoidCallback? onResubmit;
 
   @override
@@ -662,13 +689,19 @@ class _ClearanceStepCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
-                onPressed: isBusy ? null : onResubmit,
+                onPressed: isResubmitting ? null : onResubmit,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.red.shade700,
                   side: BorderSide(color: Colors.red.shade300),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: const Text('Re-Submit to This Office'),
+                child: isResubmitting
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Re-Submit to This Office'),
               ),
             ),
           ],

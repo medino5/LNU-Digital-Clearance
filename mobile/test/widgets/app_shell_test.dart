@@ -97,6 +97,7 @@ void main() {
           MaterialApp(
             home: ProfileScreen(
               payload: buildTestPayload(),
+              error: null, // ADDED: required after profile state messaging update
               isLoading: false,
               isBusy: false,
               onRefresh: () async {},

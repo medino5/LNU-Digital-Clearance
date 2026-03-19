@@ -4,15 +4,19 @@ class PdfScreen extends StatelessWidget {
   const PdfScreen({
     super.key,
     required this.payload,
+    required this.error,
     required this.isLoading,
-    required this.isBusy,
+    required this.isDownloadingPdf,
     required this.onRefresh,
     required this.onDownloadPdf,
   });
 
   final Map<String, dynamic>? payload;
+  final String? error;
   final bool isLoading;
-  final bool isBusy;
+
+  // Ticket polish: downloading state is isolated to PDF actions only.
+  final bool isDownloadingPdf;
   final Future<void> Function() onRefresh;
   final Future<void> Function() onDownloadPdf;
 
@@ -40,6 +44,30 @@ class PdfScreen extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
         children: [
+          if (error != null) ...[
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.25)),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.error_outline_rounded, color: Colors.red),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Unable to refresh the latest PDF status right now. Pull down to try again.',
+                      style: TextStyle(height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+          ],
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
@@ -102,7 +130,7 @@ class PdfScreen extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: isBusy ? null : onDownloadPdf,
+                      onPressed: isDownloadingPdf ? null : onDownloadPdf,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _gold,
                         foregroundColor: _navy,
@@ -115,7 +143,7 @@ class PdfScreen extends StatelessWidget {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      icon: isBusy
+                      icon: isDownloadingPdf
                           ? const SizedBox(
                               height: 18,
                               width: 18,
@@ -125,7 +153,9 @@ class PdfScreen extends StatelessWidget {
                               ),
                             )
                           : const Icon(Icons.download_rounded),
-                      label: Text(isBusy ? 'Preparing PDF...' : 'Download PDF'),
+                      label: Text(
+                        isDownloadingPdf ? 'Preparing PDF...' : 'Download PDF',
+                      ),
                     ),
                   ),
                 ],

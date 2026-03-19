@@ -25,6 +25,10 @@ class AppShell extends StatefulWidget {
   State<AppShell> createState() => _AppShellState();
 }
 
+// Ticket polish: distinguish initial load, pull-to-refresh, and silent reloads
+// to make tab behavior feel more cohesive.
+enum ShellLoadMode { initial, refresh, silent }
+
 class _AppShellState extends State<AppShell> {
   late final AuthService _authService = widget.authService ?? AuthService();
   late final ClearanceService _clearanceService =
@@ -32,8 +36,19 @@ class _AppShellState extends State<AppShell> {
 
   Map<String, dynamic>? _payload;
   String? _error;
-  bool _isLoading = true;
-  bool _isBusy = false;
+
+  // Ticket polish: separate first screen load from user-initiated refresh
+  // so the shell can show clearer state handling across all 3 tabs.
+  bool _isInitialLoading = true;
+  bool _isRefreshing = false;
+
+  // Ticket polish: replace one global busy flag with action-specific loading
+  // so unrelated buttons in other tabs do not get disabled.
+  bool _isStartingOrResuming = false;
+  bool _isDownloadingPdf = false;
+  bool _isLoggingOut = false;
+  int? _resubmittingStepId;
+
   int _selectedIndex = 0;
 
   static const Color _navy = Color(0xFF183A63);
@@ -46,10 +61,19 @@ class _AppShellState extends State<AppShell> {
     _loadClearance();
   }
 
-  Future<void> _loadClearance({bool showLoading = true}) async {
-    if (showLoading) {
+  Future<void> _loadClearance({
+    ShellLoadMode mode = ShellLoadMode.initial,
+  }) async {
+    if (mode == ShellLoadMode.initial) {
       setState(() {
-        _isLoading = true;
+        // Ticket polish: full loading only on first load
+        _isInitialLoading = true;
+        _error = null;
+      });
+    } else if (mode == ShellLoadMode.refresh) {
+      setState(() {
+        // Ticket polish: show refresh without removing UI
+        _isRefreshing = true;
         _error = null;
       });
     }
@@ -57,34 +81,30 @@ class _AppShellState extends State<AppShell> {
     try {
       final payload = await _clearanceService.getCurrentClearance();
 
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       setState(() {
         _payload = payload;
         _error = null;
-        _isLoading = false;
+        _isInitialLoading = false;
+        _isRefreshing = false;
       });
     } catch (error) {
-      if (await _handleSessionExpired(error)) {
-        return;
-      }
-
-      if (!mounted) {
-        return;
-      }
+      if (await _handleSessionExpired(error)) return;
+      if (!mounted) return;
 
       setState(() {
         _error = error.toString().replaceFirst('Exception: ', '');
-        _isLoading = false;
+        _isInitialLoading = false;
+        _isRefreshing = false;
       });
     }
   }
 
   Future<void> _startOrResumeClearance() async {
     setState(() {
-      _isBusy = true;
+      // Ticket polish: isolate start/resume action loading
+      _isStartingOrResuming = true;
     });
 
     try {
@@ -95,7 +115,9 @@ class _AppShellState extends State<AppShell> {
       }
 
       setState(() {
+        // Ticket polish: clear stale shell error after a successful action refresh.
         _payload = payload;
+        _error = null;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -118,7 +140,7 @@ class _AppShellState extends State<AppShell> {
     } finally {
       if (mounted) {
         setState(() {
-          _isBusy = false;
+          _isStartingOrResuming = false;
         });
       }
     }
@@ -132,7 +154,8 @@ class _AppShellState extends State<AppShell> {
     }
 
     setState(() {
-      _isBusy = true;
+      // Ticket polish: only the selected step shows loading
+      _resubmittingStepId = stepId;
     });
 
     try {
@@ -143,7 +166,9 @@ class _AppShellState extends State<AppShell> {
       }
 
       setState(() {
+        // Ticket polish: clear stale shell error after a successful action refresh.
         _payload = payload;
+        _error = null;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -168,7 +193,7 @@ class _AppShellState extends State<AppShell> {
     } finally {
       if (mounted) {
         setState(() {
-          _isBusy = false;
+          _resubmittingStepId = null;
         });
       }
     }
@@ -179,7 +204,8 @@ class _AppShellState extends State<AppShell> {
     final referenceNumber = clearance?['reference_number'] as String?;
 
     setState(() {
-      _isBusy = true;
+      // Ticket polish: isolate PDF download loading
+      _isDownloadingPdf = true;
     });
 
     try {
@@ -211,7 +237,7 @@ class _AppShellState extends State<AppShell> {
     } finally {
       if (mounted) {
         setState(() {
-          _isBusy = false;
+          _isDownloadingPdf = false;
         });
       }
     }
@@ -219,22 +245,31 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _logout() async {
     setState(() {
-      _isBusy = true;
+      // Ticket polish: isolate logout loading state
+      _isLoggingOut = true;
     });
 
-    await _authService.logout();
+    try {
+      await _authService.logout();
 
-    if (!mounted) {
-      return;
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) =>
+              widget.loginScreenBuilder?.call(context, null) ??
+              const LoginScreen(),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoggingOut = false;
+        });
+      }
     }
-
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) =>
-            widget.loginScreenBuilder?.call(context, null) ??
-            const LoginScreen(),
-      ),
-    );
   }
 
   Future<bool> _handleSessionExpired(Object error) async {
@@ -333,14 +368,14 @@ class _AppShellState extends State<AppShell> {
             const SizedBox(width: 12),
             IconButton(
               tooltip: 'Refresh',
-              onPressed: _isBusy
-                  ? null
-                  : () => _loadClearance(showLoading: false),
+              onPressed: _isRefreshing
+                ? null
+                : () => _loadClearance(mode: ShellLoadMode.refresh),
               style: IconButton.styleFrom(
                 backgroundColor: Colors.white.withValues(alpha: 0.12),
                 foregroundColor: Colors.white,
               ),
-              icon: _isBusy
+              icon: _isRefreshing
                   ? const SizedBox(
                       height: 18,
                       width: 18,
@@ -360,31 +395,35 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final tabs = [
-      DashboardScreen(
-        payload: _payload,
-        error: _error,
-        isLoading: _isLoading,
-        isBusy: _isBusy,
-        onRefresh: () => _loadClearance(showLoading: false),
-        onStartOrResume: _startOrResumeClearance,
-        onResubmitStep: _resubmitStep,
-        onDownloadPdf: _downloadPdf,
-      ),
-      PdfScreen(
-        payload: _payload,
-        isLoading: _isLoading,
-        isBusy: _isBusy,
-        onRefresh: () => _loadClearance(showLoading: false),
-        onDownloadPdf: _downloadPdf,
-      ),
-      ProfileScreen(
-        payload: _payload,
-        isLoading: _isLoading,
-        isBusy: _isBusy,
-        onLogout: _logout,
-        onRefresh: () => _loadClearance(showLoading: false),
-      ),
-    ];
+    DashboardScreen(
+      payload: _payload,
+      error: _error,
+      isLoading: _isInitialLoading,
+      isStartingOrResuming: _isStartingOrResuming,
+      isDownloadingPdf: _isDownloadingPdf,
+      resubmittingStepId: _resubmittingStepId,
+      onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
+      onStartOrResume: _startOrResumeClearance,
+      onResubmitStep: _resubmitStep,
+      onDownloadPdf: _downloadPdf,
+    ),
+    PdfScreen(
+      payload: _payload,
+      error: _error,
+      isLoading: _isInitialLoading,
+      isDownloadingPdf: _isDownloadingPdf,
+      onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
+      onDownloadPdf: _downloadPdf,
+    ),
+    ProfileScreen(
+      payload: _payload,
+      error: _error, // ADDED: pass shared shell error
+      isLoading: _isInitialLoading,
+      isBusy: _isLoggingOut, // FIX: match parameter name
+      onLogout: _logout,
+      onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
+    ),
+  ];
 
     return PopScope<void>(
       canPop: _selectedIndex == 0,
