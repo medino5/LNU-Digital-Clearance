@@ -47,7 +47,9 @@ class OfficeDashboardController extends Controller
 
         $data = $request->validate([
             'action' => ['required', 'in:approve,flag'],
-            'remarks' => ['nullable', 'string'],
+            'remarks' => ['nullable', 'string', 'required_if:action,flag'],
+        ], [
+            'remarks.required_if' => 'Flag reason is required before marking this clearance step as flagged.',
         ]);
 
         try {
