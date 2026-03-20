@@ -4,12 +4,13 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 
-class DatabaseSeeder extends Seeder
+class UatDatabaseSeeder extends Seeder
 {
     public function run(): void
     {
         $this->call([
             CoreSystemSeeder::class,
+            UatStudentSeeder::class,
         ]);
     }
 }
