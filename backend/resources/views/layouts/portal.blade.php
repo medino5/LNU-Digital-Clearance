@@ -224,10 +224,133 @@
         .divider { height: 1px; background: var(--line); margin: 8px 0 18px; }
         .actions-inline { display: flex; flex-wrap: wrap; gap: 10px; }
         .mini { font-size: 13px; color: var(--muted); }
+        /* New: section-based dashboard information architecture styles */
+        /* Updated: stronger separation between major dashboard sections */
+        .dashboard-section {
+            display: grid;
+            gap: 18px;
+            margin-top: 32px;
+            padding-top: 18px;
+            border-top: 1px solid rgba(22, 56, 95, 0.18); /* soft navy */
+        }
+
+        /* Updated: stronger section header visual hierarchy */
+        .section-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(22, 56, 95, 0.22); /* slightly stronger navy */
+        }
+
+        .section-heading h2 {
+            font-size: 22px;
+            letter-spacing: 0.01em;
+        }
+
+        .section-copy {
+            margin-top: 6px;
+        }
+
+        .section-heading h2,
+        .section-subheader h3 {
+            margin: 0;
+        }
+
+        .section-copy {
+            margin: 8px 0 0;
+            color: var(--muted);
+            max-width: 760px;
+        }
+
+        .section-stack {
+            display: grid;
+            gap: 20px;
+            align-content: start;
+        }
+
+        .stat-card {
+            min-height: 168px;
+        }
+
+        /* make whole card clickable */
+        .clickable-card {
+            display: block;
+            text-decoration: none;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+
+        .clickable-card:hover,
+        .clickable-card:focus-visible {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 28px rgba(14, 39, 66, 0.12);
+            border-color: rgba(22, 56, 95, 0.35);
+            outline: none;
+        }
+
+        /* the "Manage" pill button */
+        .manage-pill {
+            display: inline-block;
+            margin-top: 14px;
+            padding: 6px 16px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            box-shadow: 0 4px 10px rgba(14, 39, 66, 0.18);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        }
+
+        /* when hovering the card, button reacts */
+        .clickable-card:hover .manage-pill {
+            transform: scale(1.08);
+            box-shadow: 0 6px 14px rgba(14, 39, 66, 0.22);
+        }
 
         @media (max-width: 980px) {
             .grid-2, .grid-3, .field-grid { grid-template-columns: 1fr; }
             .topbar { flex-direction: column; align-items: flex-start; }
+            .section-heading,
+            .section-subheader {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .history-filter {
+                min-width: 100%;
+            }
+        }
+
+        /* Fix: keep checkbox inline with label in forms */
+        .inline-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .inline-check input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
+        /* New: scrollable list container for long records */
+        .scrollable-list {
+            max-height: 320px;
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+
+        /* optional: nicer scrollbar */
+        .scrollable-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scrollable-list::-webkit-scrollbar-thumb {
+            background: rgba(14, 39, 66, 0.2);
+            border-radius: 999px;
         }
     </style>
 </head>
