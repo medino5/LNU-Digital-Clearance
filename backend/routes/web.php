@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\AdminClearanceDetailController;
 use App\Http\Controllers\OfficeAccountAdminController;
 use App\Http\Controllers\OfficeDashboardController;
 use App\Http\Controllers\PortalAuthController;
@@ -25,6 +26,8 @@ Route::prefix('admin')
     ->middleware(['auth', 'role:admin'])
     ->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+        Route::get('/clearances/{clearance}', [AdminClearanceDetailController::class, 'show'])
+            ->name('admin.clearances.show');
 
         Route::post('/programs', [ProgramAdminController::class, 'store'])->name('admin.programs.store');
         Route::put('/programs/{program}', [ProgramAdminController::class, 'update'])->name('admin.programs.update');
