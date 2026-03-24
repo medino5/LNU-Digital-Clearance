@@ -49,6 +49,26 @@ class User extends Authenticatable
         return $this->hasOne(OfficeAccount::class);
     }
 
+    public function officeDesignationAssignments()
+    {
+        return $this->hasMany(OfficeDesignationAssignment::class);
+    }
+
+    public function officeDesignations()
+    {
+        return $this->belongsToMany(OfficeDesignation::class, 'office_designation_assignments')
+            ->withPivot(['assigned_by_user_id', 'assigned_at', 'released_at', 'is_active'])
+            ->withTimestamps();
+    }
+
+    public function activeOfficeDesignations()
+    {
+        return $this->belongsToMany(OfficeDesignation::class, 'office_designation_assignments')
+            ->wherePivot('is_active', true)
+            ->withPivot(['assigned_by_user_id', 'assigned_at', 'released_at', 'is_active'])
+            ->withTimestamps();
+    }
+
     public function program()
     {
         return $this->belongsTo(Program::class);
