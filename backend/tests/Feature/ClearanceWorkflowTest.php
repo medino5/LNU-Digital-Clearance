@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Clearance;
 use App\Models\ClearanceStep;
+use App\Models\OfficeAccount;
+use App\Models\OfficeDesignation;
 use App\Models\Student;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -55,6 +57,13 @@ class ClearanceWorkflowTest extends TestCase
             $secondResponse->json('clearance.id'),
         );
         $this->assertDatabaseCount('clearances', 1);
+        $this->assertDatabaseCount('clearance_steps', 5);
+        $this->assertDatabaseHas('clearance_steps', [
+            'clearance_id' => $response->json('clearance.id'),
+            'office_designation_id' => OfficeDesignation::query()
+                ->where('key', 'bsit-acad-org-treasurer')
+                ->value('id'),
+        ]);
     }
 
     public function test_clearance_snapshots_do_not_change_after_student_profile_edits(): void
@@ -90,7 +99,7 @@ class ClearanceWorkflowTest extends TestCase
         Sanctum::actingAs($student->user);
         $this->postJson('/api/clearance')->assertOk();
 
-        $clearance = Clearance::with('steps.officeAccount.user')->firstOrFail();
+        $clearance = Clearance::with('steps.officeDesignation.activeUsers')->firstOrFail();
 
         $flaggedStep = $clearance->steps->firstWhere(
             'office_label',
@@ -100,15 +109,20 @@ class ClearanceWorkflowTest extends TestCase
             'office_label',
             'DIGITS Academic Organization Treasurer'
         );
+        $approvedOfficeUser = $approvedStep->officeDesignation->activeUsers->first();
+        $this->assertNotNull($approvedOfficeUser);
 
-        $this->actingAs($approvedStep->officeAccount->user)
+        $this->actingAs($approvedOfficeUser)
             ->post(route('office.steps.process', $approvedStep), [
                 'action' => 'approve',
                 'remarks' => 'Approved by test office.',
             ])
             ->assertRedirect();
 
-        $this->actingAs($flaggedStep->officeAccount->user)
+        $flaggedOfficeUser = $flaggedStep->officeDesignation->activeUsers->first();
+        $this->assertNotNull($flaggedOfficeUser);
+
+        $this->actingAs($flaggedOfficeUser)
             ->post(route('office.steps.process', $flaggedStep), [
                 'action' => 'flag',
                 'remarks' => 'Please resolve your concern.',
@@ -136,10 +150,13 @@ class ClearanceWorkflowTest extends TestCase
         $this->assertSame(ClearanceStep::STATUS_AWAITING_ACTION, $flaggedStep->status);
 
         $clearance->refresh();
-        $clearance->load('steps.officeAccount.user');
+        $clearance->load('steps.officeDesignation.activeUsers');
 
         foreach ($clearance->steps as $step) {
-            $this->actingAs($step->officeAccount->user)
+            $officeUser = $step->officeDesignation->activeUsers->first();
+            $this->assertNotNull($officeUser);
+
+            $this->actingAs($officeUser)
                 ->post(route('office.steps.process', $step), [
                     'action' => 'approve',
                     'remarks' => 'Approved.',
@@ -169,12 +186,12 @@ class ClearanceWorkflowTest extends TestCase
         Sanctum::actingAs($student->user);
         $this->postJson('/api/clearance')->assertOk();
 
-        $bsitOfficeUser = \App\Models\OfficeAccount::where(
+        $bsitOfficeUser = OfficeAccount::where(
             'display_name',
             'DIGITS Academic Organization Treasurer'
         )->firstOrFail()->user;
 
-        $baelOfficeUser = \App\Models\OfficeAccount::where(
+        $baelOfficeUser = OfficeAccount::where(
             'display_name',
             'English Circle Academic Organization Treasurer'
         )->firstOrFail()->user;
@@ -200,7 +217,7 @@ class ClearanceWorkflowTest extends TestCase
         $this->postJson('/api/clearance')->assertOk();
 
         $step = ClearanceStep::query()->firstOrFail();
-        $wrongOfficeUser = \App\Models\OfficeAccount::where(
+        $wrongOfficeUser = OfficeAccount::where(
             'display_name',
             'English Circle Academic Organization Treasurer'
         )->firstOrFail()->user;
@@ -214,5 +231,50 @@ class ClearanceWorkflowTest extends TestCase
 
         $step->refresh();
         $this->assertSame(ClearanceStep::STATUS_AWAITING_ACTION, $step->status);
+    }
+
+    public function test_any_active_holder_of_a_designation_can_process_the_step(): void
+    {
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        Sanctum::actingAs($student->user);
+        $this->postJson('/api/clearance')->assertOk();
+
+        $program = \App\Models\Program::where('code', 'BSIT')->firstOrFail();
+
+        $secondaryHolder = \App\Models\User::factory()->create([
+            'name' => 'Second DIGITS Treasurer',
+            'username' => 'digits.second',
+            'role' => \App\Models\User::ROLE_OFFICE,
+            'is_student' => false,
+            'is_staff' => true,
+        ]);
+
+        $secondaryOfficeAccount = OfficeAccount::create([
+            'user_id' => $secondaryHolder->id,
+            'display_name' => 'DIGITS Academic Organization Treasurer',
+            'office_type' => OfficeAccount::TYPE_ACAD_ORG_TREASURER,
+            'program_id' => $program->id,
+        ]);
+
+        app(\App\Support\OfficeDesignationBackfill::class)
+            ->syncOfficeAccount($secondaryOfficeAccount->fresh('program'));
+
+        $step = ClearanceStep::query()
+            ->where('office_label', 'DIGITS Academic Organization Treasurer')
+            ->firstOrFail();
+
+        $this->assertNotSame($secondaryOfficeAccount->id, $step->office_account_id);
+
+        $this->actingAs($secondaryHolder)
+            ->post(route('office.steps.process', $step), [
+                'action' => 'approve',
+                'remarks' => 'Approved by secondary holder.',
+            ])
+            ->assertRedirect();
+
+        $step->refresh();
+
+        $this->assertSame(ClearanceStep::STATUS_APPROVED, $step->status);
+        $this->assertSame('Approved by secondary holder.', $step->remarks);
     }
 }

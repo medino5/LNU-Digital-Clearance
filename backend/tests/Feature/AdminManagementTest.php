@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\OfficeAccount;
+use App\Models\OfficeDesignation;
+use App\Models\OfficeDesignationAssignment;
 use App\Models\Program;
 use App\Models\Semester;
 use App\Models\Student;
@@ -56,10 +58,19 @@ class AdminManagementTest extends TestCase
 
         $student = Student::where('student_id_number', '2400001')->firstOrFail();
         $officeAccount = OfficeAccount::where('display_name', 'BITS Academic Organization Treasurer')->firstOrFail();
+        $designation = OfficeDesignation::where('key', 'bsis-acad-org-treasurer')->firstOrFail();
 
         $this->assertSame('Jane Systems', $student->user->name);
         $this->assertSame($program->id, $student->program_id);
         $this->assertSame($program->id, $officeAccount->program_id);
+        $this->assertSame($program->id, $designation->program_id);
+        $this->assertTrue(
+            OfficeDesignationAssignment::query()
+                ->where('office_designation_id', $designation->id)
+                ->where('user_id', $officeAccount->user_id)
+                ->where('is_active', true)
+                ->exists()
+        );
     }
 
     public function test_activating_a_new_semester_turns_off_the_previous_one(): void

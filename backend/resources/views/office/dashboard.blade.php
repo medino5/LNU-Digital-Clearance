@@ -3,7 +3,11 @@
 @section('page')
     <div class="topbar">
         <div>
-            <h1>{{ $officeAccount->display_name }}</h1>
+            <h1>{{ $dashboardTitle }}</h1>
+            <p class="muted" style="margin: 8px 0 0;">
+                Current designation{{ $officeDesignations->count() === 1 ? '' : 's' }}:
+                {{ $officeDesignations->pluck('display_name')->implode(' | ') }}
+            </p>
         </div>
         <div class="toolbar">
             <a class="button topbar-action" href="{{ route('admin.login') }}">Switch to Admin Portal</a>
@@ -69,6 +73,11 @@
 
                             <div class="record-meta">
                                 <p class="mini">
+                                    <strong>Assigned office:</strong>
+                                    {{ $step->office_label }}
+                                </p>
+
+                                <p class="mini">
                                     <strong>Clearance status:</strong>
                                     {{ ucwords(str_replace('_', ' ', $step->clearance->status)) }}
                                 </p>
@@ -81,7 +90,7 @@
                         </div>
                     @empty
                         <div class="record office-empty-state">
-                            <p class="muted" style="margin: 0;">No routed students are waiting on this office right now.</p>
+                            <p class="muted" style="margin: 0;">No routed students are waiting on your current designation set right now.</p>
                         </div>
                     @endforelse
                 </div>
@@ -113,6 +122,11 @@
 
                             <div class="record-meta">
                                 <p class="mini">
+                                    <strong>Assigned office:</strong>
+                                    {{ $step->office_label }}
+                                </p>
+
+                                <p class="mini">
                                     <strong>Processed:</strong>
                                     {{ optional($step->signed_at)->format('M d, Y h:i A') ?? 'Pending timestamp' }}
                                 </p>
@@ -130,7 +144,7 @@
                         </div>
                     @empty
                         <div class="record office-empty-state">
-                            <p class="muted" style="margin: 0;">No processed records yet for this office account.</p>
+                            <p class="muted" style="margin: 0;">No processed records yet for your current designation set.</p>
                         </div>
                     @endforelse
                 </div>

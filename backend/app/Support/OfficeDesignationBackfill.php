@@ -21,7 +21,7 @@ class OfficeDesignationBackfill
     public function syncOfficeAccount(OfficeAccount $officeAccount): OfficeDesignation
     {
         $designation = OfficeDesignation::query()->updateOrCreate(
-            ['key' => $this->keyFor($officeAccount)],
+            ['key' => $this->keyForOfficeAccount($officeAccount)],
             [
                 'display_name' => $officeAccount->display_name,
                 'office_type' => $officeAccount->office_type,
@@ -44,7 +44,7 @@ class OfficeDesignationBackfill
         return $designation;
     }
 
-    private function keyFor(OfficeAccount $officeAccount): string
+    public function keyForOfficeAccount(OfficeAccount $officeAccount): string
     {
         return match ($officeAccount->office_type) {
             OfficeAccount::TYPE_ACAD_ORG_TREASURER => sprintf(

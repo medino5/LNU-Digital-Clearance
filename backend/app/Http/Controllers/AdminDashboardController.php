@@ -15,7 +15,7 @@ class AdminDashboardController extends Controller
     {
         $selectedSemesterId = $request->integer('history_semester');
 
-        $historyQuery = Clearance::with(['steps.officeAccount', 'student.user'])
+        $historyQuery = Clearance::with(['steps.officeDesignation', 'student.user'])
             ->where('status', Clearance::STATUS_COMPLETED)
             ->orderByDesc('completed_at');
 

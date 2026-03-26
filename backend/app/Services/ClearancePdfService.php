@@ -10,7 +10,7 @@ class ClearancePdfService
 {
     public function generate(Clearance $clearance): string
     {
-        $clearance->loadMissing('steps.officeAccount');
+        $clearance->loadMissing('steps.officeDesignation');
 
         $pdf = new SimplePdfDocument();
         $y = 752;
