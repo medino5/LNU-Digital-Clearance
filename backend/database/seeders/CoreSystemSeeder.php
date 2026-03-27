@@ -15,6 +15,7 @@ class CoreSystemSeeder extends Seeder
 {
     public function run(): void
     {
+        $defaultPassword = Hash::make('password');
         $programs = [
             [
                 'code' => 'BSIT',
@@ -59,7 +60,7 @@ class CoreSystemSeeder extends Seeder
             [
                 'name' => 'MIS Super Admin',
                 'email' => null,
-                'password' => Hash::make('password'),
+                'password' => $defaultPassword,
                 'role' => User::ROLE_ADMIN,
                 'is_student' => false,
                 'is_staff' => false,
@@ -72,13 +73,13 @@ class CoreSystemSeeder extends Seeder
             string $officeType,
             ?Program $program = null,
             ?int $yearLevel = null
-        ): void {
+        ) use ($defaultPassword): void {
             $user = User::updateOrCreate(
                 ['username' => $username],
                 [
                     'name' => $displayName,
                     'email' => null,
-                    'password' => Hash::make('password'),
+                    'password' => $defaultPassword,
                     'role' => User::ROLE_OFFICE,
                     'is_student' => false,
                     'is_staff' => true,
@@ -140,13 +141,12 @@ class CoreSystemSeeder extends Seeder
         );
 
         (new OfficeDesignationBackfill())->run();
-
         $studentUser = User::updateOrCreate(
             ['username' => '2302314'],
             [
                 'name' => 'John A. Doe',
                 'email' => null,
-                'password' => Hash::make('password'),
+                'password' => $defaultPassword,
                 'role' => User::ROLE_STUDENT,
                 'is_student' => true,
                 'is_staff' => false,

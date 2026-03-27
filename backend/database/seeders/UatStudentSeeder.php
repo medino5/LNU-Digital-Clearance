@@ -7,19 +7,25 @@ use App\Models\Student;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use RuntimeException;
 
 class UatStudentSeeder extends Seeder
 {
     public function run(): void
     {
-        $programs = Program::query()->get()->keyBy('code');
-        $students = require database_path('seeders/data/uat_students.php');
+        $programs = Program::query()
+            ->whereIn('code', ['BSIT', 'BAEL', 'BSTM', 'BSEntrep'])
+            ->get()
+            ->keyBy('code');
 
-        foreach ($students as $studentData) {
+        $defaultPassword = Hash::make('password');
+        $roster = require database_path('seeders/data/uat_students.php');
+
+        foreach ($roster as $studentData) {
             $program = $programs->get($studentData['program_code']);
 
             if (!$program) {
-                continue;
+                throw new RuntimeException('Missing program for UAT roster: ' . $studentData['program_code']);
             }
 
             $user = User::updateOrCreate(
@@ -27,7 +33,7 @@ class UatStudentSeeder extends Seeder
                 [
                     'name' => $studentData['name'],
                     'email' => null,
-                    'password' => Hash::make('password'),
+                    'password' => $defaultPassword,
                     'role' => User::ROLE_STUDENT,
                     'is_student' => true,
                     'is_staff' => false,
