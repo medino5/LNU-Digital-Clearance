@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Program;
 use App\Models\Student;
+use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\UatDatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -12,21 +13,32 @@ class UatDatabaseSeederTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_uat_database_seeder_creates_balanced_student_roster(): void
+    public function test_default_database_seeder_only_loads_the_core_system_records(): void
     {
-        // This seeds the base system data plus the 100 fixed UAT student accounts.
+        // This keeps the base application seed lightweight so production-safe
+        // bootstrap data does not accidentally include the large UAT roster.
+        $this->seed(DatabaseSeeder::class);
+
+        $this->assertSame(1, Student::count());
+        $this->assertDatabaseHas('students', [
+            'student_id_number' => '2302314',
+        ]);
+    }
+
+    public function test_uat_database_seeder_adds_a_balanced_100_student_roster(): void
+    {
+        // This protects the manual-testing dataset: UAT should always reseed
+        // with 100 deterministic student accounts plus the canonical demo student.
         $this->seed(UatDatabaseSeeder::class);
 
-        // The UAT roster should add 100 students on top of the canonical regression account.
         $this->assertSame(101, Student::query()->count());
         $this->assertNotNull(Student::query()->where('student_id_number', '2302314')->first());
 
         $generatedStudents = Student::query()
             ->where('student_id_number', '!=', '2302314')
-            ->with('program')
+            ->with(['program', 'user'])
             ->get();
 
-        // The generated UAT set should stay deterministic and fully balanced by program and year.
         $this->assertSame(100, $generatedStudents->count());
         $this->assertSame(
             100,
@@ -37,8 +49,13 @@ class UatDatabaseSeederTest extends TestCase
                 ->count()
         );
 
+        foreach ($generatedStudents as $student) {
+            $this->assertMatchesRegularExpression('/^2\d{6}$/', $student->student_id_number);
+            $this->assertSame($student->student_id_number, $student->user->username);
+        }
+
         foreach (['BSIT', 'BAEL', 'BSTM', 'BSEntrep'] as $programCode) {
-            $programId = Program::query()->where('code', $programCode)->value('id');
+            $programId = Program::where('code', $programCode)->value('id');
 
             $this->assertSame(
                 25,
@@ -54,5 +71,15 @@ class UatDatabaseSeederTest extends TestCase
                 "Expected 25 generated students for year level {$yearLevel}."
             );
         }
+
+        $this->assertDatabaseHas('users', [
+            'username' => '2400001',
+            'name' => 'Adrian A. Abad',
+        ]);
+
+        $this->assertDatabaseHas('students', [
+            'student_id_number' => '2400100',
+            'year_level' => 4,
+        ]);
     }
 }
