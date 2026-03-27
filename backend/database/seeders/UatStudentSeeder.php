@@ -41,9 +41,9 @@ class UatStudentSeeder extends Seeder
             );
 
             Student::updateOrCreate(
-                ['user_id' => $user->id],
+                ['student_id_number' => $studentData['student_id_number']],
                 [
-                    'student_id_number' => $studentData['student_id_number'],
+                    'user_id' => $user->id,
                     'program_id' => $program->id,
                     'year_level' => $studentData['year_level'],
                 ]

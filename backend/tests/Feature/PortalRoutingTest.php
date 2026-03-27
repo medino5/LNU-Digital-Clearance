@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\OfficeAccount;
 use App\Models\User;
+use App\Support\OfficeDesignationBackfill;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -58,13 +59,15 @@ class PortalRoutingTest extends TestCase
             'is_staff' => true,
         ]);
 
-        OfficeAccount::create([
+        $officeAccount = OfficeAccount::create([
             'user_id' => $officeUser->id,
             'display_name' => 'College Chief Librarian',
             'office_type' => OfficeAccount::TYPE_LIBRARIAN,
             'program_id' => null,
             'year_level' => null,
         ]);
+
+        app(OfficeDesignationBackfill::class)->syncOfficeAccount($officeAccount);
 
         $response = $this->actingAs($admin)->post(route('office.login.submit'), [
             'username' => 'office.user',
@@ -111,13 +114,15 @@ class PortalRoutingTest extends TestCase
             'is_staff' => true,
         ]);
 
-        OfficeAccount::create([
+        $officeAccount = OfficeAccount::create([
             'user_id' => $officeUser->id,
             'display_name' => 'College Chief Librarian',
             'office_type' => OfficeAccount::TYPE_LIBRARIAN,
             'program_id' => null,
             'year_level' => null,
         ]);
+
+        app(OfficeDesignationBackfill::class)->syncOfficeAccount($officeAccount);
 
         $this->actingAs($officeUser)
             ->get(route('office.dashboard'))

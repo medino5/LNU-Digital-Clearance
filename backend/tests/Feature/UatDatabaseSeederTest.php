@@ -31,13 +31,23 @@ class UatDatabaseSeederTest extends TestCase
         // with 100 deterministic student accounts plus the canonical demo student.
         $this->seed(UatDatabaseSeeder::class);
 
+        $this->assertSame(101, Student::query()->count());
+        $this->assertNotNull(Student::query()->where('student_id_number', '2302314')->first());
+
         $generatedStudents = Student::query()
             ->where('student_id_number', '!=', '2302314')
             ->with(['program', 'user'])
             ->get();
 
-        $this->assertSame(101, Student::count());
         $this->assertSame(100, $generatedStudents->count());
+        $this->assertSame(
+            100,
+            $generatedStudents
+                ->pluck('student_id_number')
+                ->filter(fn (string $studentId) => str_starts_with($studentId, '2') && strlen($studentId) === 7)
+                ->unique()
+                ->count()
+        );
 
         foreach ($generatedStudents as $student) {
             $this->assertMatchesRegularExpression('/^2\d{6}$/', $student->student_id_number);
@@ -49,18 +59,16 @@ class UatDatabaseSeederTest extends TestCase
 
             $this->assertSame(
                 25,
-                Student::where('program_id', $programId)
-                    ->where('student_id_number', '!=', '2302314')
-                    ->count()
+                $generatedStudents->where('program_id', $programId)->count(),
+                "Expected 25 generated students for {$programCode}."
             );
         }
 
         foreach ([1, 2, 3, 4] as $yearLevel) {
             $this->assertSame(
                 25,
-                Student::where('year_level', $yearLevel)
-                    ->where('student_id_number', '!=', '2302314')
-                    ->count()
+                $generatedStudents->where('year_level', $yearLevel)->count(),
+                "Expected 25 generated students for year level {$yearLevel}."
             );
         }
 

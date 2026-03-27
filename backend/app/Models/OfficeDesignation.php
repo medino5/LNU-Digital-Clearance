@@ -37,6 +37,11 @@ class OfficeDesignation extends Model
         return $this->belongsTo(Program::class);
     }
 
+    public function clearanceSteps()
+    {
+        return $this->hasMany(ClearanceStep::class);
+    }
+
     public function assignments()
     {
         return $this->hasMany(OfficeDesignationAssignment::class);
@@ -95,5 +100,29 @@ class OfficeDesignation extends Model
             },
             default => null,
         };
+    }
+
+    public function scopeForStudent($query, Student $student)
+    {
+        return $query->where(function ($officeQuery) use ($student) {
+            $officeQuery
+                ->where(function ($programScoped) use ($student) {
+                    $programScoped
+                        ->whereIn('office_type', [
+                            self::TYPE_ACAD_ORG_TREASURER,
+                            self::TYPE_ACAD_ORG_ADVISER,
+                        ])
+                        ->where('program_id', $student->program_id);
+                })
+                ->orWhere(function ($yearScoped) use ($student) {
+                    $yearScoped
+                        ->where('office_type', self::TYPE_YEAR_LEVEL_TREASURER)
+                        ->where('year_level', $student->year_level);
+                })
+                ->orWhereIn('office_type', [
+                    self::TYPE_LIBRARIAN,
+                    self::TYPE_VPSD,
+                ]);
+        });
     }
 }

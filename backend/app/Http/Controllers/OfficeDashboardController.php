@@ -16,18 +16,29 @@ class OfficeDashboardController extends Controller
 
     public function index(Request $request)
     {
-        $officeAccount = $request->user()->loadMissing('officeAccount.program')->officeAccount;
+        $officeDesignations = $request->user()
+            ->loadMissing('activeOfficeDesignations.program')
+            ->activeOfficeDesignations
+            ->sortBy('display_name')
+            ->values();
 
-        if (!$officeAccount) {
-            abort(404, 'Office account not found.');
+        if ($officeDesignations->isEmpty()) {
+            abort(404, 'Office designation not found.');
         }
 
-        $baseQuery = ClearanceStep::with(['clearance.student.user', 'clearance.student.program', 'officeAccount.program'])
-            ->where('office_account_id', $officeAccount->id)
+        $baseQuery = ClearanceStep::with([
+                'clearance.student.user',
+                'clearance.student.program',
+                'officeDesignation.program',
+            ])
+            ->whereIn('office_designation_id', $officeDesignations->pluck('id'))
             ->orderByDesc('updated_at');
 
         return view('office.dashboard', [
-            'officeAccount' => $officeAccount,
+            'dashboardTitle' => $officeDesignations->count() === 1
+                ? $officeDesignations->first()->display_name
+                : $request->user()->name,
+            'officeDesignations' => $officeDesignations,
             'pendingSteps' => (clone $baseQuery)
                 ->where('status', ClearanceStep::STATUS_AWAITING_ACTION)
                 ->get(),
@@ -39,9 +50,12 @@ class OfficeDashboardController extends Controller
 
     public function process(Request $request, ClearanceStep $step)
     {
-        $officeAccount = $request->user()->loadMissing('officeAccount')->officeAccount;
+        $hasDesignationAccess = $request->user()
+            ->activeOfficeDesignations()
+            ->where('office_designations.id', $step->office_designation_id)
+            ->exists();
 
-        if (!$officeAccount || $step->office_account_id !== $officeAccount->id) {
+        if (!$hasDesignationAccess) {
             abort(403, 'Unauthorized.');
         }
 

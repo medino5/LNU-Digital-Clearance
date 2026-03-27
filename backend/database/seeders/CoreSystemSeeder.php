@@ -7,6 +7,7 @@ use App\Models\Program;
 use App\Models\Semester;
 use App\Models\Student;
 use App\Models\User;
+use App\Support\OfficeDesignationBackfill;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -15,7 +16,6 @@ class CoreSystemSeeder extends Seeder
     public function run(): void
     {
         $defaultPassword = Hash::make('password');
-
         $programs = [
             [
                 'code' => 'BSIT',
@@ -140,6 +140,7 @@ class CoreSystemSeeder extends Seeder
             OfficeAccount::TYPE_VPSD
         );
 
+        (new OfficeDesignationBackfill())->run();
         $studentUser = User::updateOrCreate(
             ['username' => '2302314'],
             [

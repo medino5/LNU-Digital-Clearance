@@ -15,7 +15,7 @@ class StudentClearancePayloadBuilder
     {
         $student->loadMissing('user', 'program');
 
-        $clearance = $clearance?->loadMissing('steps.events', 'steps.officeAccount');
+        $clearance = $clearance?->loadMissing('steps.events', 'steps.officeDesignation');
         $steps = $clearance?->steps ?? collect();
 
         return [

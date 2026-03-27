@@ -29,7 +29,7 @@ class StudentClearanceController extends Controller
         $clearance = null;
 
         if ($semester) {
-            $clearance = Clearance::with(['steps.events', 'steps.officeAccount'])
+            $clearance = Clearance::with(['steps.events', 'steps.officeDesignation'])
                 ->where('student_id', $student->id)
                 ->where('semester_id', $semester->id)
                 ->first();
@@ -60,7 +60,7 @@ class StudentClearanceController extends Controller
     public function resubmit(Request $request, ClearanceStep $step)
     {
         $student = $this->studentFromRequest($request);
-        $step->loadMissing('clearance', 'events', 'officeAccount');
+        $step->loadMissing('clearance', 'events', 'officeDesignation');
 
         try {
             $this->workflow->resubmit($step, $student);
@@ -70,7 +70,7 @@ class StudentClearanceController extends Controller
             ], 422);
         }
 
-        $clearance = $step->clearance->fresh(['semester', 'steps.events', 'steps.officeAccount']);
+        $clearance = $step->clearance->fresh(['semester', 'steps.events', 'steps.officeDesignation']);
 
         return response()->json(
             $this->payloadBuilder->build($student, $clearance->semester, $clearance)
