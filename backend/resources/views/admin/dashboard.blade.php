@@ -86,6 +86,14 @@
                     <p class="metric-note">Combined setup entries for program and semester management.</p>
                     <span class="manage-pill">Manage</span>
                 </a>
+
+                <a href="#routing-configuration" class="card stat-card clickable-card"> 
+                    <div class="eyebrow">Routing Configuration</div>
+                    <p class="metric">{{ $designations->count() }}</p>
+                    <p class="metric-note">Designation routing and current office-user assignment controls.</p>
+                    <span class="manage-pill">Manage</span>
+                </a>
+
             </div>
         </section>
 
@@ -204,6 +212,141 @@
                             @endforeach
                         </div>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="routing-configuration" class="dashboard-section">
+            <div class="section-heading">
+                <div>
+                    <div class="eyebrow">Routing Configuration</div>
+                    <h2>DESIGNATION ASSIGNMENT</h2>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-subheader">
+                    <div>
+                        <h3>Manage Designation Assignments</h3>
+                    </div>
+
+                    <form method="GET" action="{{ route('admin.dashboard') }}#routing-configuration" class="routing-search-form">
+                        <label class="routing-search-field">
+                            <input
+                                type="text"
+                                name="designation_search"
+                                value="{{ $designationSearch }}"
+                                placeholder="Search designation..."
+                            >
+                        </label>
+
+                        @if($selectedSemesterId)
+                            <input type="hidden" name="history_semester" value="{{ $selectedSemesterId }}">
+                        @endif
+
+                        <button type="submit" class="routing-search-button">Search</button>
+                    </form>
+                </div>
+
+                <div class="list routing-list">
+                    @forelse($designations as $designation)
+                        @php
+                            $currentAssignment = $designation->getRelation('current_assignment');
+                            $eligibleUsers = $designation->getRelation('eligible_users');
+                            $currentUser = $currentAssignment?->user;
+                            $currentOfficeAccount = $currentUser?->officeAccount;
+                        @endphp
+
+                        <details class="record">
+                            <summary>
+                                {{ $designation->display_name }}
+                                <span class="mini" style="display:block; margin-top:6px;">
+                                    Current Assigned:
+                                    {{ $currentOfficeAccount?->display_name ?? $currentUser?->name ?? 'No active assignment' }}
+                                    @if($designation->scopeLabel())
+                                        | Scope: {{ $designation->scopeLabel() }}
+                                    @endif
+                                    | Status:
+                                    @if($currentAssignment)
+                                        Assigned
+                                    @else
+                                        Unassigned
+                                    @endif
+                                </span>
+                            </summary>
+
+                            <div class="divider"></div>
+
+                            <div class="field-grid">
+                                <div>
+                                    <div class="eyebrow">Designation Name</div>
+                                    <p style="margin-top: 6px;">{{ $designation->display_name }}</p>
+                                </div>
+
+                                <div>
+                                    <div class="eyebrow">Office Type</div>
+                                    <p style="margin-top: 6px;">{{ $designation->officeTypeLabel() }}</p>
+                                </div>
+
+                                <div>
+                                    <div class="eyebrow">Scope</div>
+                                    <p style="margin-top: 6px;">{{ $designation->scopeLabel() ?? 'No scope restriction' }}</p>
+                                </div>
+
+                                <div>
+                                    <div class="eyebrow">Current Assigned Office User</div>
+                                    <p style="margin-top: 6px;">
+                                        {{ $currentOfficeAccount?->display_name ?? $currentUser?->name ?? 'No active assignment' }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="divider"></div>
+
+                            <form method="POST" action="{{ route('admin.office-designations.assignment.update', $designation) }}">
+                                @csrf
+                                @method('PUT')
+
+                                <label>
+                                    Select Office User
+                                    <select name="user_id" required>
+                                        <option value="">Select office user</option>
+                                        @foreach($eligibleUsers as $eligibleUser)
+                                            @php
+                                                $eligibleOfficeAccount = $eligibleUser->officeAccount;
+                                                $isSelected = $currentUser && $currentUser->id === $eligibleUser->id;
+                                            @endphp
+                                            <option value="{{ $eligibleUser->id }}" {{ $isSelected ? 'selected' : '' }}>
+                                                {{ $eligibleOfficeAccount?->display_name ?? $eligibleUser->name }}
+                                                @if($eligibleOfficeAccount?->program)
+                                                    — {{ $eligibleOfficeAccount->program->code }}
+                                                @endif
+                                                @if($eligibleOfficeAccount?->year_level)
+                                                    — Year {{ $eligibleOfficeAccount->year_level }}
+                                                @endif
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </label>
+
+                                @if($eligibleUsers->isEmpty())
+                                    <p class="mini" style="margin-top: 10px; color: #b5442c;">
+                                        No eligible office users found for this designation scope.
+                                    </p>
+                                @endif
+
+                                <div class="toolbar" style="margin-top: 14px;">
+                                    <button type="submit" {{ $eligibleUsers->isEmpty() ? 'disabled' : '' }}>
+                                        Save Assignment
+                                    </button>
+                                </div>
+                            </form>
+                        </details>
+                    @empty
+                        <div class="record">
+                            <p class="muted" style="margin: 0;">No designations found for the current search.</p>
+                        </div>
+                    @endforelse
                 </div>
             </div>
         </section>
@@ -519,4 +662,17 @@
             </div>
         </section>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const params = new URLSearchParams(window.location.search);
+
+            if (params.has('designation_search')) {
+                const section = document.getElementById('routing-configuration');
+                if (section) {
+                    section.scrollIntoView({ behavior: 'auto', block: 'start' });
+                }
+            }
+        });
+    </script>
 @endsection
