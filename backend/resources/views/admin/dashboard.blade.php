@@ -4,7 +4,7 @@
     <div class="topbar">
         <div>
             <h1>SUPER ADMIN DASHBOARD</h1>
-            <p>Manage programs, semesters, accounts, and completed clearance history.</p>
+            <p>Manage programs, semesters, accounts, designation assignments, and completed clearance history.</p>
         </div>
         <div class="toolbar">
             <span>{{ auth()->user()->name }}</span>
@@ -228,24 +228,8 @@
                 <div class="section-subheader">
                     <div>
                         <h3>Manage Designation Assignments</h3>
+                        <p class="section-copy">Review each routing designation and choose which eligible office account currently holds it.</p>
                     </div>
-
-                    <form method="GET" action="{{ route('admin.dashboard') }}#routing-configuration" class="routing-search-form">
-                        <label class="routing-search-field">
-                            <input
-                                type="text"
-                                name="designation_search"
-                                value="{{ $designationSearch }}"
-                                placeholder="Search designation..."
-                            >
-                        </label>
-
-                        @if($selectedSemesterId)
-                            <input type="hidden" name="history_semester" value="{{ $selectedSemesterId }}">
-                        @endif
-
-                        <button type="submit" class="routing-search-button">Search</button>
-                    </form>
                 </div>
 
                 <div class="list routing-list">
@@ -315,15 +299,14 @@
                                             @php
                                                 $eligibleOfficeAccount = $eligibleUser->officeAccount;
                                                 $isSelected = $currentUser && $currentUser->id === $eligibleUser->id;
+                                                $labelParts = collect([
+                                                    $eligibleOfficeAccount?->display_name ?? $eligibleUser->name,
+                                                    $eligibleOfficeAccount?->program?->code,
+                                                    $eligibleOfficeAccount?->year_level ? 'Year ' . $eligibleOfficeAccount->year_level : null,
+                                                ])->filter()->implode(' | ');
                                             @endphp
                                             <option value="{{ $eligibleUser->id }}" {{ $isSelected ? 'selected' : '' }}>
-                                                {{ $eligibleOfficeAccount?->display_name ?? $eligibleUser->name }}
-                                                @if($eligibleOfficeAccount?->program)
-                                                    — {{ $eligibleOfficeAccount->program->code }}
-                                                @endif
-                                                @if($eligibleOfficeAccount?->year_level)
-                                                    — Year {{ $eligibleOfficeAccount->year_level }}
-                                                @endif
+                                                {{ $labelParts }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -344,7 +327,7 @@
                         </details>
                     @empty
                         <div class="record">
-                            <p class="muted" style="margin: 0;">No designations found for the current search.</p>
+                            <p class="muted" style="margin: 0;">No active designations are available.</p>
                         </div>
                     @endforelse
                 </div>
@@ -663,16 +646,4 @@
         </section>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const params = new URLSearchParams(window.location.search);
-
-            if (params.has('designation_search')) {
-                const section = document.getElementById('routing-configuration');
-                if (section) {
-                    section.scrollIntoView({ behavior: 'auto', block: 'start' });
-                }
-            }
-        });
-    </script>
 @endsection

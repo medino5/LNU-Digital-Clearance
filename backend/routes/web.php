@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminClearanceDetailController;
-use App\Http\Controllers\AdminOfficeDesignationController;  //new ticket 40//
+use App\Http\Controllers\AdminOfficeDesignationController;
 use App\Http\Controllers\OfficeAccountAdminController;
 use App\Http\Controllers\OfficeDashboardController;
 use App\Http\Controllers\PortalAuthController;

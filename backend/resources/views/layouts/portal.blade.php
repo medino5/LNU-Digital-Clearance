@@ -353,28 +353,6 @@
             border-radius: 999px;
         }
 
-        .routing-search-form {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-top: 14px;
-            margin-bottom: 18px;
-        }
-
-        .routing-search-field {
-            flex: 1;
-            margin: 0;
-        }
-
-        .routing-search-field input {
-            width: 100%;
-        }
-
-        .routing-search-button {
-            flex: 0 0 120px;
-            width: 120px;
-        }
-
         #routing-configuration .section-subheader {
             margin-bottom: 14px;
         }

@@ -23,8 +23,14 @@ class AdminOfficeDesignationController extends Controller
             return back()->with('error', 'The selected user is not a valid office account.');
         }
 
-        if (! $this->isEligibleForDesignation($user, $officeDesignation)) {
+        if (! $officeDesignation->matchesOfficeAccount($user->officeAccount)) {
             return back()->with('error', 'The selected office user is not eligible for this designation.');
+        }
+
+        $activeAssignment = $officeDesignation->activeAssignments()->first();
+
+        if ($activeAssignment && $activeAssignment->user_id === $user->id) {
+            return back()->with('info', 'Designation assignment is already up to date.');
         }
 
         DB::transaction(function () use ($officeDesignation, $user) {
@@ -48,32 +54,5 @@ class AdminOfficeDesignationController extends Controller
         });
 
         return back()->with('success', 'Designation assignment updated successfully.');
-    }
-
-    protected function isEligibleForDesignation(User $user, OfficeDesignation $officeDesignation): bool
-    {
-        $officeAccount = $user->officeAccount;
-
-        if (! $officeAccount) {
-            return false;
-        }
-
-        if ($officeAccount->office_type !== $officeDesignation->office_type) {
-            return false;
-        }
-
-        if ((int) $officeDesignation->program_id !== (int) $officeAccount->program_id) {
-            if ($officeDesignation->program_id || $officeAccount->program_id) {
-                return false;
-            }
-        }
-
-        if ((int) $officeDesignation->year_level !== (int) $officeAccount->year_level) {
-            if ($officeDesignation->year_level || $officeAccount->year_level) {
-                return false;
-            }
-        }
-
-        return true;
     }
 }
