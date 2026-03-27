@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Clearance;
 use App\Models\ClearanceStep;
 use App\Models\OfficeAccount;
+use App\Models\OfficeDesignation;
 use App\Models\Semester;
 use App\Models\Student;
 use App\Models\User;
@@ -33,7 +34,7 @@ class ClearanceWorkflowService
     {
         $semester = $this->activeSemester();
 
-        $existing = Clearance::with(['steps.officeAccount.user', 'steps.events'])
+        $existing = Clearance::with(['steps.officeDesignation.activeUsers', 'steps.events'])
             ->where('student_id', $student->id)
             ->where('semester_id', $semester->id)
             ->first();
@@ -42,9 +43,9 @@ class ClearanceWorkflowService
             return $existing;
         }
 
-        $officeAccounts = $this->resolveOfficeAccounts($student);
+        $officeDesignations = $this->resolveOfficeDesignations($student);
 
-        return DB::transaction(function () use ($student, $semester, $officeAccounts) {
+        return DB::transaction(function () use ($student, $semester, $officeDesignations) {
             $clearance = Clearance::create([
                 'student_id' => $student->id,
                 'semester_id' => $semester->id,
@@ -58,13 +59,22 @@ class ClearanceWorkflowService
                 'semester_label' => $semester->label,
             ]);
 
-            foreach ($officeAccounts as $officeAccount) {
+            foreach ($officeDesignations as $officeDesignation) {
+                $officeAccount = $this->representativeOfficeAccountForDesignation($officeDesignation);
+
+                if (!$officeAccount) {
+                    throw new RuntimeException(
+                        'Missing office account holder for ' . $officeDesignation->display_name . '.'
+                    );
+                }
+
                 $step = $clearance->steps()->create([
                     'office_account_id' => $officeAccount->id,
+                    'office_designation_id' => $officeDesignation->id,
                     'status' => ClearanceStep::STATUS_AWAITING_ACTION,
-                    'office_label' => $officeAccount->display_name,
-                    'office_type' => $officeAccount->office_type,
-                    'scope_label' => $officeAccount->scopeLabel(),
+                    'office_label' => $officeDesignation->display_name,
+                    'office_type' => $officeDesignation->office_type,
+                    'scope_label' => $officeDesignation->scopeLabel(),
                 ]);
 
                 $step->events()->create([
@@ -73,7 +83,7 @@ class ClearanceWorkflowService
                 ]);
             }
 
-            return $clearance->load(['steps.officeAccount.user', 'steps.events']);
+            return $clearance->load(['steps.officeDesignation.activeUsers', 'steps.events']);
         });
     }
 
@@ -112,7 +122,7 @@ class ClearanceWorkflowService
             $this->syncClearanceStatus($step->clearance);
         });
 
-        return $step->fresh(['officeAccount.user', 'events']);
+        return $step->fresh(['officeDesignation.activeUsers', 'events']);
     }
 
     public function syncClearanceStatus(Clearance $clearance): Clearance
@@ -135,7 +145,7 @@ class ClearanceWorkflowService
             $pdfPath = $this->pdfService->generate($clearance->fresh('steps'));
             $clearance->update(['pdf_path' => $pdfPath]);
 
-            return $clearance->fresh(['steps.officeAccount.user', 'steps.events']);
+            return $clearance->fresh(['steps.officeDesignation.activeUsers', 'steps.events']);
         }
 
         $clearance->update([
@@ -145,37 +155,42 @@ class ClearanceWorkflowService
             'completed_at' => null,
         ]);
 
-        return $clearance->fresh(['steps.officeAccount.user', 'steps.events']);
+        return $clearance->fresh(['steps.officeDesignation.activeUsers', 'steps.events']);
     }
 
     /**
-     * @return array<int, OfficeAccount>
+     * @return array<int, OfficeDesignation>
      */
-    protected function resolveOfficeAccounts(Student $student): array
+    protected function resolveOfficeDesignations(Student $student): array
     {
         $student->loadMissing('program');
 
-        $programTreasurer = OfficeAccount::query()
-            ->where('office_type', OfficeAccount::TYPE_ACAD_ORG_TREASURER)
+        $programTreasurer = OfficeDesignation::query()
+            ->where('is_active', true)
+            ->where('office_type', OfficeDesignation::TYPE_ACAD_ORG_TREASURER)
             ->where('program_id', $student->program_id)
             ->first();
 
-        $programAdviser = OfficeAccount::query()
-            ->where('office_type', OfficeAccount::TYPE_ACAD_ORG_ADVISER)
+        $programAdviser = OfficeDesignation::query()
+            ->where('is_active', true)
+            ->where('office_type', OfficeDesignation::TYPE_ACAD_ORG_ADVISER)
             ->where('program_id', $student->program_id)
             ->first();
 
-        $yearTreasurer = OfficeAccount::query()
-            ->where('office_type', OfficeAccount::TYPE_YEAR_LEVEL_TREASURER)
+        $yearTreasurer = OfficeDesignation::query()
+            ->where('is_active', true)
+            ->where('office_type', OfficeDesignation::TYPE_YEAR_LEVEL_TREASURER)
             ->where('year_level', $student->year_level)
             ->first();
 
-        $librarian = OfficeAccount::query()
-            ->where('office_type', OfficeAccount::TYPE_LIBRARIAN)
+        $librarian = OfficeDesignation::query()
+            ->where('is_active', true)
+            ->where('office_type', OfficeDesignation::TYPE_LIBRARIAN)
             ->first();
 
-        $vpsd = OfficeAccount::query()
-            ->where('office_type', OfficeAccount::TYPE_VPSD)
+        $vpsd = OfficeDesignation::query()
+            ->where('is_active', true)
+            ->where('office_type', OfficeDesignation::TYPE_VPSD)
             ->first();
 
         $required = [
@@ -188,7 +203,7 @@ class ClearanceWorkflowService
 
         foreach ($required as $label => $account) {
             if (!$account) {
-                throw new RuntimeException('Missing office account for ' . $label . '.');
+                throw new RuntimeException('Missing office designation for ' . $label . '.');
             }
         }
 
@@ -202,9 +217,14 @@ class ClearanceWorkflowService
         string $action,
         ?string $remarks = null
     ): ClearanceStep {
-        $step->loadMissing('clearance', 'officeAccount.user');
+        $step->loadMissing('clearance', 'officeDesignation');
 
-        if (!$actor->isOffice() || $step->officeAccount?->user_id !== $actor->id) {
+        if (
+            !$actor->isOffice()
+            || !$actor->activeOfficeDesignations()
+                ->where('office_designations.id', $step->office_designation_id)
+                ->exists()
+        ) {
             throw new RuntimeException('You are not allowed to process this clearance step.');
         }
 
@@ -229,7 +249,18 @@ class ClearanceWorkflowService
             $this->syncClearanceStatus($step->clearance);
         });
 
-        return $step->fresh(['clearance.steps', 'officeAccount.user', 'events']);
+        return $step->fresh(['clearance.steps', 'officeDesignation.activeUsers', 'events']);
+    }
+
+    protected function representativeOfficeAccountForDesignation(
+        OfficeDesignation $officeDesignation
+    ): ?OfficeAccount {
+        return OfficeAccount::query()
+            ->where('office_type', $officeDesignation->office_type)
+            ->where('program_id', $officeDesignation->program_id)
+            ->where('year_level', $officeDesignation->year_level)
+            ->orderBy('id')
+            ->first();
     }
 
     protected function generateReferenceNumber(Clearance $clearance): string
