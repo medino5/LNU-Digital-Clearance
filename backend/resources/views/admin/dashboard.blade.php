@@ -8,7 +8,7 @@
         </div>
         <div class="toolbar">
             <span>{{ auth()->user()->name }}</span>
-            <a class="button topbar-action" href="{{ route('office.login') }}">Switch to Office Portal</a>
+            <a class="button topbar-action" href="{{ route('portal.login') }}">Open Shared Login</a>
             <form method="POST" action="{{ route('portal.logout') }}" class="topbar-form">
                 @csrf
                 <button type="submit" class="topbar-action">Log Out / Switch Account</button>

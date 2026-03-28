@@ -11,13 +11,16 @@ use App\Http\Controllers\SemesterAdminController;
 use App\Http\Controllers\StudentAdminController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => redirect()->route('office.login'));
+Route::get('/', [PortalAuthController::class, 'landing'])->name('portal.landing');
 
-Route::get('/admin/login', [PortalAuthController::class, 'showAdminLogin'])->name('admin.login');
-Route::post('/admin/login', [PortalAuthController::class, 'loginAdmin'])->name('admin.login.submit');
+Route::get('/login', [PortalAuthController::class, 'showLogin'])->name('portal.login');
+Route::post('/login', [PortalAuthController::class, 'login'])->name('portal.login.submit');
 
-Route::get('/office/login', [PortalAuthController::class, 'showOfficeLogin'])->name('office.login');
-Route::post('/office/login', [PortalAuthController::class, 'loginOffice'])->name('office.login.submit');
+Route::redirect('/admin/login', '/login')->name('admin.login');
+Route::post('/admin/login', [PortalAuthController::class, 'login'])->name('admin.login.submit');
+
+Route::redirect('/office/login', '/login')->name('office.login');
+Route::post('/office/login', [PortalAuthController::class, 'login'])->name('office.login.submit');
 
 Route::post('/logout', [PortalAuthController::class, 'logout'])
     ->middleware('auth')

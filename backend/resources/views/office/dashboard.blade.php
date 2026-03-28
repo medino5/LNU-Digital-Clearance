@@ -10,7 +10,7 @@
             </p>
         </div>
         <div class="toolbar">
-            <a class="button topbar-action" href="{{ route('admin.login') }}">Switch to Admin Portal</a>
+            <a class="button topbar-action" href="{{ route('portal.login') }}">Open Shared Login</a>
             <form method="POST" action="{{ route('portal.logout') }}" class="topbar-form">
                 @csrf
                 <button type="submit" class="topbar-action">Log Out / Switch Account</button>

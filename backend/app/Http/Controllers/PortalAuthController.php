@@ -7,50 +7,50 @@ use Illuminate\Support\Facades\Auth;
 
 class PortalAuthController extends Controller
 {
-    public function showAdminLogin()
+    public function landing(Request $request)
+    {
+        if (! $request->user()) {
+            return redirect()->route('portal.login');
+        }
+
+        $dashboardRoute = $this->dashboardRouteForRole($request->user()->role);
+
+        if (! $dashboardRoute) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('portal.login');
+        }
+
+        return redirect()->route($dashboardRoute);
+    }
+
+    public function showLogin()
     {
         return view('auth.login', [
-            'portalTitle' => 'Super Admin Login',
-            'portalSubtitle' => 'MIS account access',
-            'submitRoute' => route('admin.login.submit'),
+            'portalTitle' => 'Shared Portal Login',
+            'portalSubtitle' => 'Super admin and office account access',
+            'submitRoute' => route('portal.login.submit'),
             'usernameLabel' => 'Username',
         ]);
     }
 
-    public function showOfficeLogin()
+    public function login(Request $request)
     {
-        return view('auth.login', [
-            'portalTitle' => 'Office Login',
-            'portalSubtitle' => 'Position-based office account access',
-            'submitRoute' => route('office.login.submit'),
-            'usernameLabel' => 'Username',
-        ]);
-    }
-
-    public function loginAdmin(Request $request)
-    {
-        return $this->attemptLogin($request, 'admin', 'admin.dashboard');
-    }
-
-    public function loginOffice(Request $request)
-    {
-        return $this->attemptLogin($request, 'office', 'office.dashboard');
+        return $this->attemptLogin($request);
     }
 
     public function logout(Request $request)
     {
-        $redirectRoute = $request->user()?->role === 'admin'
-            ? 'admin.login'
-            : 'office.login';
-
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route($redirectRoute);
+        return redirect()->route('portal.login');
     }
 
-    protected function attemptLogin(Request $request, string $role, string $routeName)
+    protected function attemptLogin(Request $request)
     {
         $credentials = $request->validate([
             'username' => ['required', 'string'],
@@ -71,16 +71,27 @@ class PortalAuthController extends Controller
 
         $request->session()->regenerate();
 
-        if ($request->user()->role !== $role) {
+        $dashboardRoute = $this->dashboardRouteForRole($request->user()->role);
+
+        if (! $dashboardRoute) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
             return back()->withErrors([
-                'username' => 'This account is not allowed to sign in here.',
+                'username' => 'This account is not allowed to sign in to the web portal.',
             ])->onlyInput('username');
         }
 
-        return redirect()->route($routeName);
+        return redirect()->route($dashboardRoute);
+    }
+
+    protected function dashboardRouteForRole(?string $role): ?string
+    {
+        return match ($role) {
+            'admin' => 'admin.dashboard',
+            'office' => 'office.dashboard',
+            default => null,
+        };
     }
 }
