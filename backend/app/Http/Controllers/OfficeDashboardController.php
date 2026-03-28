@@ -22,29 +22,38 @@ class OfficeDashboardController extends Controller
             ->sortBy('display_name')
             ->values();
 
-        if ($officeDesignations->isEmpty()) {
-            abort(404, 'Office designation not found.');
+        $hasActiveDesignation = $officeDesignations->isNotEmpty();
+
+        $pendingSteps = collect();
+        $processedSteps = collect();
+
+        if ($hasActiveDesignation) {
+            $baseQuery = ClearanceStep::with([
+                    'clearance.student.user',
+                    'clearance.student.program',
+                    'officeDesignation.program',
+                ])
+                ->whereIn('office_designation_id', $officeDesignations->pluck('id'))
+                ->orderByDesc('updated_at');
+
+            $pendingSteps = (clone $baseQuery)
+                ->where('status', ClearanceStep::STATUS_AWAITING_ACTION)
+                ->get();
+
+            $processedSteps = (clone $baseQuery)
+                ->whereIn('status', [
+                    ClearanceStep::STATUS_APPROVED,
+                    ClearanceStep::STATUS_FLAGGED,
+                ])
+                ->get();
         }
 
-        $baseQuery = ClearanceStep::with([
-                'clearance.student.user',
-                'clearance.student.program',
-                'officeDesignation.program',
-            ])
-            ->whereIn('office_designation_id', $officeDesignations->pluck('id'))
-            ->orderByDesc('updated_at');
-
         return view('office.dashboard', [
-            'dashboardTitle' => $officeDesignations->count() === 1
-                ? $officeDesignations->first()->display_name
-                : $request->user()->name,
+            'dashboardTitle' => 'Office Dashboard',
+            'hasActiveDesignation' => $hasActiveDesignation,
             'officeDesignations' => $officeDesignations,
-            'pendingSteps' => (clone $baseQuery)
-                ->where('status', ClearanceStep::STATUS_AWAITING_ACTION)
-                ->get(),
-            'processedSteps' => (clone $baseQuery)
-                ->whereIn('status', [ClearanceStep::STATUS_APPROVED, ClearanceStep::STATUS_FLAGGED])
-                ->get(),
+            'pendingSteps' => $pendingSteps,
+            'processedSteps' => $processedSteps,
         ]);
     }
 
@@ -55,7 +64,7 @@ class OfficeDashboardController extends Controller
             ->where('office_designations.id', $step->office_designation_id)
             ->exists();
 
-        if (!$hasDesignationAccess) {
+        if (! $hasDesignationAccess) {
             abort(403, 'Unauthorized.');
         }
 
