@@ -92,7 +92,7 @@
                                 <div class="record-meta">
                                     <p class="mini">
                                         <strong>Designation:</strong>
-                                        {{ $step->officeDesignation?->display_name ?? '—' }}
+                                        {{ $step->office_label ?: '—' }}
                                     </p>
 
                                     <p class="mini">
@@ -141,7 +141,7 @@
                                 <div class="record-meta">
                                     <p class="mini">
                                         <strong>Designation:</strong>
-                                        {{ $step->officeDesignation?->display_name ?? '—' }}
+                                        {{ $step->office_label ?: '—' }}
                                     </p>
 
                                     <p class="mini">

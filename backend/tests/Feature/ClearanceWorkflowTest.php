@@ -7,6 +7,7 @@ use App\Models\ClearanceStep;
 use App\Models\OfficeAccount;
 use App\Models\OfficeDesignation;
 use App\Models\Student;
+use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -205,6 +206,61 @@ class ClearanceWorkflowTest extends TestCase
             ->get('/office')
             ->assertOk()
             ->assertDontSee('John A. Doe');
+    }
+
+    public function test_office_dashboard_shows_empty_state_when_user_has_no_active_designation(): void
+    {
+        // Ticket 42 replaces the old 404 with a real empty state so office
+        // users without an active designation can still reach the portal.
+        $officeUser = User::factory()->create([
+            'name' => 'Unassigned Office User',
+            'username' => 'office.unassigned',
+            'role' => User::ROLE_OFFICE,
+            'is_student' => false,
+            'is_staff' => true,
+        ]);
+
+        OfficeAccount::create([
+            'user_id' => $officeUser->id,
+            'display_name' => 'Unassigned Office User',
+            'office_type' => OfficeAccount::TYPE_LIBRARIAN,
+            'program_id' => null,
+            'year_level' => null,
+        ]);
+
+        $this->actingAs($officeUser)
+            ->get('/office')
+            ->assertOk()
+            ->assertSee('No Active Designation Assigned')
+            ->assertSee('Please contact the super admin to assign your designation.');
+    }
+
+    public function test_office_dashboard_uses_step_snapshot_label_for_designation_cards(): void
+    {
+        // The dashboard should show the routed step label so the record stays
+        // readable even if the live designation title changes later.
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        Sanctum::actingAs($student->user);
+        $this->postJson('/api/clearance')->assertOk();
+
+        $step = ClearanceStep::query()
+            ->where('office_label', 'DIGITS Academic Organization Treasurer')
+            ->firstOrFail();
+
+        $step->update([
+            'office_label' => 'Snapshot Treasurer Label',
+        ]);
+
+        $officeUser = OfficeAccount::where(
+            'display_name',
+            'DIGITS Academic Organization Treasurer'
+        )->firstOrFail()->user;
+
+        $this->actingAs($officeUser)
+            ->get('/office')
+            ->assertOk()
+            ->assertSee('Designation:')
+            ->assertSee('Snapshot Treasurer Label');
     }
 
     public function test_office_user_cannot_process_a_step_owned_by_a_different_office(): void

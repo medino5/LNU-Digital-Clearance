@@ -64,7 +64,7 @@ class OfficeDashboardController extends Controller
             ->where('office_designations.id', $step->office_designation_id)
             ->exists();
 
-        if (!$hasDesignationAccess) {
+        if (! $hasDesignationAccess) {
             abort(403, 'Unauthorized.');
         }
 
