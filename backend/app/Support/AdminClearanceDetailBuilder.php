@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Clearance;
+use App\Models\OfficeDesignation;
 
 class AdminClearanceDetailBuilder
 {
@@ -15,8 +16,7 @@ class AdminClearanceDetailBuilder
             'semester',
             'student.user',
             'student.program',
-            'steps.officeAccount.user',
-            'steps.officeAccount.program',
+            'steps.officeDesignation',
             'steps.events.actor',
         ]);
 
@@ -77,9 +77,6 @@ class AdminClearanceDetailBuilder
                 'awaiting_action' => $steps->where('status', 'awaiting_action')->count(),
             ],
             'steps' => $steps->map(function ($step) {
-                $officeAccount = $step->officeAccount;
-                $officeUser = $officeAccount?->user;
-
                 return [
                     'id' => $step->id,
                     'status' => $step->status,
@@ -88,24 +85,14 @@ class AdminClearanceDetailBuilder
                     'office_label' => $step->office_label,
                     'office_type' => $step->office_type,
                     'scope_label' => $step->scope_label,
-                    'office_account' => $officeAccount ? [
-                        'id' => $officeAccount->id,
-                        'display_name' => $officeAccount->display_name,
-                        'office_type' => $officeAccount->office_type,
-                        'office_type_label' => $officeAccount->officeTypeLabel(),
-                        'scope_label' => $officeAccount->scopeLabel(),
-                        'year_level' => $officeAccount->year_level,
-                        'program' => $officeAccount->program ? [
-                            'id' => $officeAccount->program->id,
-                            'code' => $officeAccount->program->code,
-                            'name' => $officeAccount->program->name,
-                        ] : null,
-                        'user' => $officeUser ? [
-                            'id' => $officeUser->id,
-                            'name' => $officeUser->name,
-                            'username' => $officeUser->username,
-                        ] : null,
-                    ] : null,
+                    'office_designation' => [
+                        'id' => $step->office_designation_id,
+                        'key' => $step->officeDesignation?->key,
+                        'display_name' => $step->office_label,
+                        'office_type' => $step->office_type,
+                        'office_type_label' => OfficeDesignation::typeOptions()[$step->office_type] ?? $step->office_type,
+                        'scope_label' => $step->scope_label,
+                    ],
                     'events' => $step->events->map(function ($event) {
                         $actor = $event->actor;
 

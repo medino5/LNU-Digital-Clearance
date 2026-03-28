@@ -32,10 +32,13 @@ class AdminClearanceDetailBuilderTest extends TestCase
         Sanctum::actingAs($studentUser);
         $this->postJson('/api/clearance')->assertOk();
 
-        $clearance = Clearance::with('steps.officeAccount.user')->firstOrFail();
+        $clearance = Clearance::with('steps.officeDesignation.activeUsers')->firstOrFail();
 
         foreach ($clearance->steps as $step) {
-            $this->actingAs($step->officeAccount->user)
+            $officeUser = $step->officeDesignation->activeUsers->first();
+            $this->assertNotNull($officeUser);
+
+            $this->actingAs($officeUser)
                 ->post(route('office.steps.process', $step), [
                     'action' => 'approve',
                     'remarks' => 'Approved for builder coverage.',
@@ -52,6 +55,8 @@ class AdminClearanceDetailBuilderTest extends TestCase
         $this->assertSame('2nd Semester 2024-2025', $payload['semester']['label']);
         $this->assertCount(5, $payload['steps']);
         $this->assertNotEmpty($payload['timeline']);
+        $this->assertArrayNotHasKey('office_account', $payload['steps'][0]);
+        $this->assertArrayHasKey('office_designation', $payload['steps'][0]);
 
         $actions = collect($payload['timeline'])->pluck('action')->all();
 

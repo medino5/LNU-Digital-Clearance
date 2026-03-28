@@ -40,10 +40,12 @@ class AdminClearanceDetailTest extends TestCase
             ->assertJsonPath('data.semester.label', '2nd Semester 2024-2025')
             ->assertJsonPath('data.reference_number', $clearance->reference_number)
             ->assertJsonPath('data.counts.total', 5)
-            ->assertJsonPath('data.counts.approved', 5);
+            ->assertJsonPath('data.counts.approved', 5)
+            ->assertJsonPath('data.steps.0.office_designation.display_name', 'DIGITS Academic Organization Treasurer');
 
         $this->assertCount(5, $response->json('data.steps'));
         $this->assertNotEmpty($response->json('data.timeline'));
+        $this->assertArrayNotHasKey('office_account', $response->json('data.steps.0'));
     }
 
     public function test_admin_detail_endpoint_rejects_non_admin_users(): void
@@ -80,10 +82,13 @@ class AdminClearanceDetailTest extends TestCase
         Sanctum::actingAs($studentUser);
         $this->postJson('/api/clearance')->assertOk();
 
-        $clearance = Clearance::with('steps.officeAccount.user')->firstOrFail();
+        $clearance = Clearance::with('steps.officeDesignation.activeUsers')->firstOrFail();
 
         foreach ($clearance->steps as $step) {
-            $this->actingAs($step->officeAccount->user)
+            $officeUser = $step->officeDesignation->activeUsers->first();
+            $this->assertNotNull($officeUser);
+
+            $this->actingAs($officeUser)
                 ->post(route('office.steps.process', $step), [
                     'action' => 'approve',
                     'remarks' => 'Approved for admin history detail testing.',
@@ -95,8 +100,7 @@ class AdminClearanceDetailTest extends TestCase
             'semester',
             'student.user',
             'student.program',
-            'steps.officeAccount.user',
-            'steps.officeAccount.program',
+            'steps.officeDesignation',
             'steps.events.actor',
         ]);
     }

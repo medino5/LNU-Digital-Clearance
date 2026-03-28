@@ -17,7 +17,6 @@ class ClearanceStep extends Model
 
     protected $fillable = [
         'clearance_id',
-        'office_account_id',
         'office_designation_id',
         'status',
         'remarks',
@@ -34,11 +33,6 @@ class ClearanceStep extends Model
     public function clearance()
     {
         return $this->belongsTo(Clearance::class);
-    }
-
-    public function officeAccount()
-    {
-        return $this->belongsTo(OfficeAccount::class);
     }
 
     public function officeDesignation()

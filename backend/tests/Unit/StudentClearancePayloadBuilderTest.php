@@ -80,7 +80,6 @@ class StudentClearancePayloadBuilderTest extends TestCase
         $officeDesignation = app(OfficeDesignationBackfill::class)->syncOfficeAccount($office->fresh('program'));
 
         $approvedStep = $clearance->steps()->create([
-            'office_account_id' => $office->id,
             'office_designation_id' => $officeDesignation->id,
             'status' => ClearanceStep::STATUS_APPROVED,
             'office_label' => $office->display_name,
@@ -110,7 +109,6 @@ class StudentClearancePayloadBuilderTest extends TestCase
         $yearDesignation = app(OfficeDesignationBackfill::class)->syncOfficeAccount($yearOffice);
 
         $flaggedStep = $clearance->steps()->create([
-            'office_account_id' => $yearOffice->id,
             'office_designation_id' => $yearDesignation->id,
             'status' => ClearanceStep::STATUS_FLAGGED,
             'office_label' => '3rd Year Level Organization Treasurer',
