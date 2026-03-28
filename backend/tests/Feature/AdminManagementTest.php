@@ -114,6 +114,156 @@ class AdminManagementTest extends TestCase
         $response->assertSessionHasErrors('program_id');
     }
 
+    public function test_admin_dashboard_shows_designation_assignment_section_without_search_filter(): void
+    {
+        // This keeps ticket 40 aligned with the agreed scope: the assignment
+        // controls should be visible on the dashboard, but the extra search UI
+        // should not be present.
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('DESIGNATION ASSIGNMENT')
+            ->assertSee('Manage Designation Assignments')
+            ->assertDontSee('Search designation');
+    }
+
+    public function test_admin_can_reassign_designation_to_an_eligible_office_user(): void
+    {
+        // This covers the super-admin routing control introduced in ticket 40:
+        // an eligible office account can be assigned as the current holder of
+        // an existing designation and the previous holder is released.
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+        $program = Program::where('code', 'BSIT')->firstOrFail();
+        $designation = OfficeDesignation::where('key', 'bsit-acad-org-treasurer')->firstOrFail();
+        $currentAssignment = OfficeDesignationAssignment::query()
+            ->where('office_designation_id', $designation->id)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $replacementUser = User::create([
+            'name' => 'DIGITS Treasurer Alternate',
+            'username' => 'digits.alt.treasurer',
+            'password' => bcrypt('password'),
+            'role' => User::ROLE_OFFICE,
+            'is_student' => false,
+            'is_staff' => true,
+        ]);
+
+        OfficeAccount::create([
+            'user_id' => $replacementUser->id,
+            'display_name' => 'DIGITS Treasurer Alternate',
+            'office_type' => OfficeAccount::TYPE_ACAD_ORG_TREASURER,
+            'program_id' => $program->id,
+            'year_level' => null,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->from(route('admin.dashboard'))
+            ->put(route('admin.office-designations.assignment.update', $designation), [
+                'user_id' => $replacementUser->id,
+            ]);
+
+        $response->assertRedirect(route('admin.dashboard'));
+        $response->assertSessionHas('success', 'Designation assignment updated successfully.');
+
+        $this->assertDatabaseHas('office_designation_assignments', [
+            'office_designation_id' => $designation->id,
+            'user_id' => $replacementUser->id,
+            'assigned_by_user_id' => $admin->id,
+            'is_active' => true,
+        ]);
+
+        $this->assertDatabaseHas('office_designation_assignments', [
+            'id' => $currentAssignment->id,
+            'is_active' => false,
+        ]);
+    }
+
+    public function test_admin_cannot_assign_an_ineligible_office_user_to_a_designation(): void
+    {
+        // This protects the assignment rules behind the UI: only office
+        // accounts whose type and scope match the designation are assignable.
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+        $designation = OfficeDesignation::where('key', 'bsit-acad-org-treasurer')->firstOrFail();
+        $currentAssignment = OfficeDesignationAssignment::query()
+            ->where('office_designation_id', $designation->id)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $ineligibleUser = User::create([
+            'name' => 'College Librarian Alternate',
+            'username' => 'librarian.alt',
+            'password' => bcrypt('password'),
+            'role' => User::ROLE_OFFICE,
+            'is_student' => false,
+            'is_staff' => true,
+        ]);
+
+        OfficeAccount::create([
+            'user_id' => $ineligibleUser->id,
+            'display_name' => 'College Librarian Alternate',
+            'office_type' => OfficeAccount::TYPE_LIBRARIAN,
+            'program_id' => null,
+            'year_level' => null,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->from(route('admin.dashboard'))
+            ->put(route('admin.office-designations.assignment.update', $designation), [
+                'user_id' => $ineligibleUser->id,
+            ]);
+
+        $response->assertRedirect(route('admin.dashboard'));
+        $response->assertSessionHas('error', 'The selected office user is not eligible for this designation.');
+
+        $this->assertDatabaseMissing('office_designation_assignments', [
+            'office_designation_id' => $designation->id,
+            'user_id' => $ineligibleUser->id,
+            'is_active' => true,
+        ]);
+
+        $this->assertDatabaseHas('office_designation_assignments', [
+            'id' => $currentAssignment->id,
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_reassigning_the_current_designation_holder_does_not_create_duplicate_history(): void
+    {
+        // The current holder is preselected in the UI, so re-saving without a
+        // change should stay a no-op instead of creating extra history rows.
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+        $designation = OfficeDesignation::where('key', 'bsit-acad-org-treasurer')->firstOrFail();
+        $currentAssignment = OfficeDesignationAssignment::query()
+            ->where('office_designation_id', $designation->id)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $response = $this->actingAs($admin)
+            ->from(route('admin.dashboard'))
+            ->put(route('admin.office-designations.assignment.update', $designation), [
+                'user_id' => $currentAssignment->user_id,
+            ]);
+
+        $response->assertRedirect(route('admin.dashboard'));
+        $response->assertSessionHas('info', 'Designation assignment is already up to date.');
+
+        $this->assertSame(
+            1,
+            OfficeDesignationAssignment::query()
+                ->where('office_designation_id', $designation->id)
+                ->where('user_id', $currentAssignment->user_id)
+                ->count()
+        );
+
+        $this->assertDatabaseHas('office_designation_assignments', [
+            'id' => $currentAssignment->id,
+            'is_active' => true,
+        ]);
+    }
+
     public function test_student_role_cannot_open_admin_dashboard(): void
     {
         // This keeps the admin portal isolated from student accounts even if a

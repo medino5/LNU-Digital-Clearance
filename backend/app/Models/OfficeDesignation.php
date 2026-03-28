@@ -87,6 +87,31 @@ class OfficeDesignation extends Model
         return self::typeOptions()[$this->office_type] ?? $this->office_type;
     }
 
+    public function matchesOfficeAccount(?OfficeAccount $officeAccount): bool
+    {
+        if (! $officeAccount) {
+            return false;
+        }
+
+        if ($officeAccount->office_type !== $this->office_type) {
+            return false;
+        }
+
+        if ((int) $this->program_id !== (int) $officeAccount->program_id) {
+            if ($this->program_id || $officeAccount->program_id) {
+                return false;
+            }
+        }
+
+        if ((int) $this->year_level !== (int) $officeAccount->year_level) {
+            if ($this->year_level || $officeAccount->year_level) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function scopeLabel(): ?string
     {
         return match ($this->office_type) {

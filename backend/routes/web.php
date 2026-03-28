@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminClearanceDetailController;
+use App\Http\Controllers\AdminOfficeDesignationController;
 use App\Http\Controllers\OfficeAccountAdminController;
 use App\Http\Controllers\OfficeDashboardController;
 use App\Http\Controllers\PortalAuthController;
@@ -41,6 +42,9 @@ Route::prefix('admin')
         Route::post('/office-accounts', [OfficeAccountAdminController::class, 'store'])->name('admin.office-accounts.store');
         Route::put('/office-accounts/{officeAccount}', [OfficeAccountAdminController::class, 'update'])
             ->name('admin.office-accounts.update');
+
+        Route::put('/office-designations/{officeDesignation}/assignment', [AdminOfficeDesignationController::class, 'updateAssignment'])
+            ->name('admin.office-designations.assignment.update');
     });
 
 Route::prefix('office')
