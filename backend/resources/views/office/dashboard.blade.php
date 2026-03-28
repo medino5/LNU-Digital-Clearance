@@ -4,10 +4,17 @@
     <div class="topbar">
         <div>
             <h1>{{ $dashboardTitle }}</h1>
-            <p class="muted" style="margin: 8px 0 0;">
-                Current designation{{ $officeDesignations->count() === 1 ? '' : 's' }}:
-                {{ $officeDesignations->pluck('display_name')->implode(' | ') }}
-            </p>
+
+            @if($hasActiveDesignation)
+                <p class="muted" style="margin: 8px 0 0;">
+                    Current designation{{ $officeDesignations->count() === 1 ? '' : 's' }}:
+                    {{ $officeDesignations->pluck('display_name')->implode(' | ') }}
+                </p>
+            @else
+                <p class="muted" style="margin: 8px 0 0;">
+                    No active designation assigned
+                </p>
+            @endif
         </div>
         <div class="toolbar">
             <a class="button topbar-action" href="{{ route('portal.login') }}">Open Shared Login</a>
@@ -35,121 +42,133 @@
             <div class="callout error">{{ $errors->first() }}</div>
         @endif
 
-        <div class="office-columns">
-            <section class="card office-column">
-                <div class="eyebrow">Pending</div>
-                <h2>Awaiting your action</h2>
+        @if(!$hasActiveDesignation)
+            <section class="card office-empty-dashboard">
+                <div class="eyebrow">Assignment Status</div>
+                <div class="office-empty-dashboard-body">
+                    <h2>No Active Designation Assigned</h2>
+                    <p>Your account currently has no active designation assignment.</p>
+                    <p>No clearance items can be routed to you yet.</p>
+                    <p>Please contact the super admin to assign your designation.</p>
+                </div>
+            </section>
+        @else
+            <div class="office-columns">
+                <section class="card office-column">
+                    <div class="eyebrow">Pending</div>
+                    <h2>Awaiting your action</h2>
 
-                <div class="list">
-                    @forelse($pendingSteps as $step)
-                        @php($student = $step->clearance->student)
+                    <div class="list">
+                        @forelse($pendingSteps as $step)
+                            @php($student = $step->clearance->student)
 
-                        <div class="record office-record pending-record">
-                            <div class="record-top">
-                                <div>
-                                    <strong class="record-name">{{ $student->user->name }}</strong>
-                                    <div class="mini">
-                                        {{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}
+                            <div class="record office-record pending-record">
+                                <div class="record-top">
+                                    <div>
+                                        <strong class="record-name">{{ $student->user->name }}</strong>
+                                        <div class="mini">
+                                            {{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}
+                                        </div>
+                                    </div>
+
+                                    <div class="record-actions">
+                                        <span class="badge awaiting_action">Awaiting Action</span>
+                                        <button
+                                            type="button"
+                                            class="button ghost detail-trigger"
+                                            data-modal-student-name="{{ $student->user->name }}"
+                                            data-modal-student-meta="{{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}"
+                                            data-modal-step-status="Awaiting Action"
+                                            data-modal-clearance-status="{{ ucwords(str_replace('_', ' ', $step->clearance->status)) }}"
+                                            data-modal-last-processed="{{ optional($step->signed_at)->format('M d, Y h:i A') ?? '—' }}"
+                                            data-modal-previous-note="{{ $step->remarks ?: '—' }}"
+                                            data-modal-action="{{ route('office.steps.process', $step) }}"
+                                        >
+                                            View Details
+                                        </button>
                                     </div>
                                 </div>
 
-                                <div class="record-actions">
-                                    <span class="badge awaiting_action">Awaiting Action</span>
-                                    <button
-                                        type="button"
-                                        class="button ghost detail-trigger"
-                                        data-modal-student-name="{{ $student->user->name }}"
-                                        data-modal-student-meta="{{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}"
-                                        data-modal-step-status="Awaiting Action"
-                                        data-modal-clearance-status="{{ ucwords(str_replace('_', ' ', $step->clearance->status)) }}"
-                                        data-modal-last-processed="{{ optional($step->signed_at)->format('M d, Y h:i A') ?? '—' }}"
-                                        data-modal-previous-note="{{ $step->remarks ?: '—' }}"
-                                        data-modal-action="{{ route('office.steps.process', $step) }}"
-                                    >
-                                        View Details
-                                    </button>
+                                <div class="record-meta">
+                                    <p class="mini">
+                                        <strong>Designation:</strong>
+                                        {{ $step->officeDesignation?->display_name ?? '—' }}
+                                    </p>
+
+                                    <p class="mini">
+                                        <strong>Clearance status:</strong>
+                                        {{ ucwords(str_replace('_', ' ', $step->clearance->status)) }}
+                                    </p>
+
+                                    <p class="mini">
+                                        <strong>Last note:</strong>
+                                        {{ $step->remarks ?: '—' }}
+                                    </p>
                                 </div>
                             </div>
-
-                            <div class="record-meta">
-                                <p class="mini">
-                                    <strong>Assigned office:</strong>
-                                    {{ $step->office_label }}
-                                </p>
-
-                                <p class="mini">
-                                    <strong>Clearance status:</strong>
-                                    {{ ucwords(str_replace('_', ' ', $step->clearance->status)) }}
-                                </p>
-
-                                <p class="mini">
-                                    <strong>Last note:</strong>
-                                    {{ $step->remarks ?: '—' }}
-                                </p>
+                        @empty
+                            <div class="record office-empty-state">
+                                <p class="muted" style="margin: 0;">No routed students are waiting on your current designation set right now.</p>
                             </div>
-                        </div>
-                    @empty
-                        <div class="record office-empty-state">
-                            <p class="muted" style="margin: 0;">No routed students are waiting on your current designation set right now.</p>
-                        </div>
-                    @endforelse
-                </div>
-            </section>
+                        @endforelse
+                    </div>
+                </section>
 
-            <section class="card office-column">
-                <div class="eyebrow">Processed</div>
-                <h2>Recently completed office actions</h2>
+                <section class="card office-column">
+                    <div class="eyebrow">Processed</div>
+                    <h2>Recently completed</h2>
 
-                <div class="list">
-                    @forelse($processedSteps as $step)
-                        @php($student = $step->clearance->student)
+                    <div class="list">
+                        @forelse($processedSteps as $step)
+                            @php($student = $step->clearance->student)
 
-                        <div class="record office-record processed-record">
-                            <div class="record-top">
-                                <div>
-                                    <strong class="record-name">{{ $student->user->name }}</strong>
-                                    <div class="mini">
-                                        {{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}
+                            <div class="record office-record processed-record">
+                                <div class="record-top">
+                                    <div>
+                                        <strong class="record-name">{{ $student->user->name }}</strong>
+                                        <div class="mini">
+                                            {{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}
+                                        </div>
+                                    </div>
+
+                                    <div class="record-actions">
+                                        <span class="badge {{ $step->status }}">
+                                            {{ ucwords(str_replace('_', ' ', $step->status)) }}
+                                        </span>
                                     </div>
                                 </div>
 
-                                <div class="record-actions">
-                                    <span class="badge {{ $step->status }}">
-                                        {{ ucwords(str_replace('_', ' ', $step->status)) }}
-                                    </span>
+                                <div class="record-meta">
+                                    <p class="mini">
+                                        <strong>Designation:</strong>
+                                        {{ $step->officeDesignation?->display_name ?? '—' }}
+                                    </p>
+
+                                    <p class="mini">
+                                        <strong>Processed:</strong>
+                                        {{ optional($step->signed_at)->format('M d, Y h:i A') ?? 'Pending timestamp' }}
+                                    </p>
+
+                                    <p class="mini">
+                                        <strong>Remarks:</strong>
+                                        {{ $step->remarks ?: '—' }}
+                                    </p>
+
+                                    <p class="mini">
+                                        <strong>Student clearance status:</strong>
+                                        {{ ucwords(str_replace('_', ' ', $step->clearance->status)) }}
+                                    </p>
                                 </div>
                             </div>
-
-                            <div class="record-meta">
-                                <p class="mini">
-                                    <strong>Assigned office:</strong>
-                                    {{ $step->office_label }}
-                                </p>
-
-                                <p class="mini">
-                                    <strong>Processed:</strong>
-                                    {{ optional($step->signed_at)->format('M d, Y h:i A') ?? 'Pending timestamp' }}
-                                </p>
-
-                                <p class="mini">
-                                    <strong>Remarks:</strong>
-                                    {{ $step->remarks ?: '—' }}
-                                </p>
-
-                                <p class="mini">
-                                    <strong>Student clearance status:</strong>
-                                    {{ ucwords(str_replace('_', ' ', $step->clearance->status)) }}
-                                </p>
+                        @empty
+                            <div class="record office-empty-state">
+                                <p class="muted" style="margin: 0;">No processed records yet for your current designation set.</p>
                             </div>
-                        </div>
-                    @empty
-                        <div class="record office-empty-state">
-                            <p class="muted" style="margin: 0;">No processed records yet for your current designation set.</p>
-                        </div>
-                    @endforelse
-                </div>
-            </section>
-        </div>
+                        @endforelse
+                    </div>
+                </section>
+            </div>
+        @endif
     </div>
 
     <div class="office-modal-backdrop" id="officeDetailModal" hidden>
@@ -272,6 +291,33 @@
 
         .office-empty-state {
             padding: 24px 20px;
+        }
+
+        .office-empty-dashboard {
+            max-width: 780px;
+            margin: 0 auto;
+        }
+
+        .office-empty-dashboard-body {
+            text-align: center;
+            padding: 28px 24px 30px;
+            border-top: 1px solid #e5dfd4;
+        }
+
+        .office-empty-dashboard-body h2 {
+            margin: 0 0 18px;
+            font-size: 2rem;
+            line-height: 1.2;
+        }
+
+        .office-empty-dashboard-body p {
+            margin: 0 0 14px;
+            color: #444;
+            font-size: 1.02rem;
+        }
+
+        .office-empty-dashboard-body p:last-child {
+            margin-bottom: 0;
         }
 
         .badge.neutral {
