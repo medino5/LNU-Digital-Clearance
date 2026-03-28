@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Clearance;
 use App\Models\ClearanceStep;
-use App\Models\OfficeAccount;
 use App\Models\OfficeDesignation;
 use App\Models\Semester;
 use App\Models\Student;
@@ -60,16 +59,7 @@ class ClearanceWorkflowService
             ]);
 
             foreach ($officeDesignations as $officeDesignation) {
-                $officeAccount = $this->representativeOfficeAccountForDesignation($officeDesignation);
-
-                if (!$officeAccount) {
-                    throw new RuntimeException(
-                        'Missing office account holder for ' . $officeDesignation->display_name . '.'
-                    );
-                }
-
                 $step = $clearance->steps()->create([
-                    'office_account_id' => $officeAccount->id,
                     'office_designation_id' => $officeDesignation->id,
                     'status' => ClearanceStep::STATUS_AWAITING_ACTION,
                     'office_label' => $officeDesignation->display_name,
@@ -250,17 +240,6 @@ class ClearanceWorkflowService
         });
 
         return $step->fresh(['clearance.steps', 'officeDesignation.activeUsers', 'events']);
-    }
-
-    protected function representativeOfficeAccountForDesignation(
-        OfficeDesignation $officeDesignation
-    ): ?OfficeAccount {
-        return OfficeAccount::query()
-            ->where('office_type', $officeDesignation->office_type)
-            ->where('program_id', $officeDesignation->program_id)
-            ->where('year_level', $officeDesignation->year_level)
-            ->orderBy('id')
-            ->first();
     }
 
     protected function generateReferenceNumber(Clearance $clearance): string

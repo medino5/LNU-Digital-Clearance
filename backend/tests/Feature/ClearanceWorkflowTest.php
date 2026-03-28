@@ -319,8 +319,6 @@ class ClearanceWorkflowTest extends TestCase
             ->where('office_label', 'DIGITS Academic Organization Treasurer')
             ->firstOrFail();
 
-        $this->assertNotSame($secondaryOfficeAccount->id, $step->office_account_id);
-
         $this->actingAs($secondaryHolder)
             ->post(route('office.steps.process', $step), [
                 'action' => 'approve',
@@ -332,5 +330,82 @@ class ClearanceWorkflowTest extends TestCase
 
         $this->assertSame(ClearanceStep::STATUS_APPROVED, $step->status);
         $this->assertSame('Approved by secondary holder.', $step->remarks);
+    }
+
+    public function test_student_can_initiate_clearance_even_when_required_designation_has_no_active_holder(): void
+    {
+        // The final restructure should keep designation routing available even
+        // if a required designation is temporarily unassigned.
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        $designation = OfficeDesignation::query()
+            ->where('key', 'bsit-acad-org-treasurer')
+            ->firstOrFail();
+
+        \App\Models\OfficeDesignationAssignment::query()
+            ->where('office_designation_id', $designation->id)
+            ->where('is_active', true)
+            ->update([
+                'is_active' => false,
+                'released_at' => now(),
+            ]);
+
+        Sanctum::actingAs($student->user);
+        $response = $this->postJson('/api/clearance');
+
+        $response->assertOk()
+            ->assertJsonPath('clearance.counts.total', 5);
+
+        $this->assertDatabaseHas('clearance_steps', [
+            'clearance_id' => $response->json('clearance.id'),
+            'office_designation_id' => $designation->id,
+            'office_label' => 'DIGITS Academic Organization Treasurer',
+        ]);
+    }
+
+    public function test_unassigned_designation_step_becomes_visible_after_a_later_assignment(): void
+    {
+        // Steps routed while a designation is unassigned should appear on the
+        // office dashboard once a matching holder is assigned later.
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        $program = \App\Models\Program::where('code', 'BSIT')->firstOrFail();
+        $designation = OfficeDesignation::query()
+            ->where('key', 'bsit-acad-org-treasurer')
+            ->firstOrFail();
+
+        \App\Models\OfficeDesignationAssignment::query()
+            ->where('office_designation_id', $designation->id)
+            ->where('is_active', true)
+            ->update([
+                'is_active' => false,
+                'released_at' => now(),
+            ]);
+
+        Sanctum::actingAs($student->user);
+        $this->postJson('/api/clearance')->assertOk();
+
+        $newHolder = User::factory()->create([
+            'name' => 'Retroactive DIGITS Treasurer',
+            'username' => 'digits.retroactive',
+            'role' => User::ROLE_OFFICE,
+            'is_student' => false,
+            'is_staff' => true,
+        ]);
+
+        $newOfficeAccount = OfficeAccount::create([
+            'user_id' => $newHolder->id,
+            'display_name' => 'Retroactive DIGITS Treasurer',
+            'office_type' => OfficeAccount::TYPE_ACAD_ORG_TREASURER,
+            'program_id' => $program->id,
+            'year_level' => null,
+        ]);
+
+        app(\App\Support\OfficeDesignationBackfill::class)
+            ->syncOfficeAccount($newOfficeAccount->fresh('program'));
+
+        $this->actingAs($newHolder)
+            ->get('/office')
+            ->assertOk()
+            ->assertSee('John A. Doe')
+            ->assertSee('DIGITS Academic Organization Treasurer');
     }
 }
