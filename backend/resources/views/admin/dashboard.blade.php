@@ -324,7 +324,18 @@
                             <div class="field-grid">
                                 <label>
                                     Student ID
-                                    <input type="text" name="student_id_number" value="{{ $activeFormKey === $studentCreateFormKey ? old('student_id_number') : '' }}" required>
+                                    <input
+                                        type="text"
+                                        name="student_id_number"
+                                        value="{{ $activeFormKey === $studentCreateFormKey ? old('student_id_number') : '' }}"
+                                        inputmode="numeric"
+                                        pattern="[0-9]{7}"
+                                        maxlength="7"
+                                        placeholder="2302314"
+                                        data-student-id-input
+                                        required
+                                    >
+                                    <span class="mini">Use the 7-digit format, for example 2302314.</span>
                                     @if($activeFormKey === $studentCreateFormKey)
                                         <x-field-error field="student_id_number" bag="studentCreate" />
                                     @endif
@@ -426,7 +437,18 @@
                                         <div class="field-grid">
                                             <label>
                                                 Student ID
-                                                <input type="text" name="student_id_number" value="{{ $activeFormKey === $studentUpdateFormKey ? old('student_id_number', $student->student_id_number) : $student->student_id_number }}" required>
+                                                <input
+                                                    type="text"
+                                                    name="student_id_number"
+                                                    value="{{ $activeFormKey === $studentUpdateFormKey ? old('student_id_number', $student->student_id_number) : $student->student_id_number }}"
+                                                    inputmode="numeric"
+                                                    pattern="[0-9]{7}"
+                                                    maxlength="7"
+                                                    placeholder="2302314"
+                                                    data-student-id-input
+                                                    required
+                                                >
+                                                <span class="mini">Use the 7-digit format, for example 2302314.</span>
                                                 @if($activeFormKey === $studentUpdateFormKey)
                                                     <x-field-error field="student_id_number" bag="studentUpdate" />
                                                 @endif
@@ -734,5 +756,41 @@
             </div>
         </section>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const normalizeStudentId = (value) => value.replace(/\D+/g, '').slice(0, 7);
+
+            document.querySelectorAll('input[data-student-id-input]').forEach((input) => {
+                input.addEventListener('beforeinput', (event) => {
+                    if (event.inputType === 'insertText' && event.data && /\D/.test(event.data)) {
+                        event.preventDefault();
+                    }
+                });
+
+                input.addEventListener('input', () => {
+                    const normalized = normalizeStudentId(input.value);
+
+                    if (input.value !== normalized) {
+                        input.value = normalized;
+                    }
+                });
+
+                input.addEventListener('paste', (event) => {
+                    event.preventDefault();
+
+                    const clipboard = event.clipboardData || window.clipboardData;
+                    const pastedText = clipboard ? clipboard.getData('text') : '';
+                    const selectionStart = input.selectionStart ?? input.value.length;
+                    const selectionEnd = input.selectionEnd ?? input.value.length;
+                    const nextValue = normalizeStudentId(
+                        input.value.slice(0, selectionStart) + pastedText + input.value.slice(selectionEnd)
+                    );
+
+                    input.value = nextValue;
+                });
+            });
+        });
+    </script>
 
 @endsection
