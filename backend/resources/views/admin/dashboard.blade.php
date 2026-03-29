@@ -284,21 +284,51 @@
                             <input type="hidden" name="_form_key" value="{{ $studentCreateFormKey }}">
                             <div class="field-grid">
                                 <label>
+                                    First Name
+                                    <input type="text" name="first_name" value="{{ $activeFormKey === $studentCreateFormKey ? old('first_name') : '' }}" required>
+                                    @if($activeFormKey === $studentCreateFormKey)
+                                        <x-field-error field="first_name" bag="studentCreate" />
+                                    @endif
+                                </label>
+                                <label>
+                                    Last Name
+                                    <input type="text" name="last_name" value="{{ $activeFormKey === $studentCreateFormKey ? old('last_name') : '' }}" required>
+                                    @if($activeFormKey === $studentCreateFormKey)
+                                        <x-field-error field="last_name" bag="studentCreate" />
+                                    @endif
+                                </label>
+                            </div>
+                            <div class="field-grid">
+                                <label>
+                                    Middle Initial
+                                    <input type="text" name="middle_initial" value="{{ $activeFormKey === $studentCreateFormKey ? old('middle_initial') : '' }}" maxlength="1" placeholder="A">
+                                    @if($activeFormKey === $studentCreateFormKey)
+                                        <x-field-error field="middle_initial" bag="studentCreate" />
+                                    @endif
+                                </label>
+                                <label>
+                                    Extension
+                                    <select name="name_extension">
+                                        <option value="">No extension</option>
+                                        @foreach($studentNameExtensions as $extension)
+                                            <option value="{{ $extension }}" {{ $activeFormKey === $studentCreateFormKey && old('name_extension') === $extension ? 'selected' : '' }}>
+                                                {{ $extension }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @if($activeFormKey === $studentCreateFormKey)
+                                        <x-field-error field="name_extension" bag="studentCreate" />
+                                    @endif
+                                </label>
+                            </div>
+                            <div class="field-grid">
+                                <label>
                                     Student ID
                                     <input type="text" name="student_id_number" value="{{ $activeFormKey === $studentCreateFormKey ? old('student_id_number') : '' }}" required>
                                     @if($activeFormKey === $studentCreateFormKey)
                                         <x-field-error field="student_id_number" bag="studentCreate" />
                                     @endif
                                 </label>
-                                <label>
-                                    Full Name
-                                    <input type="text" name="name" value="{{ $activeFormKey === $studentCreateFormKey ? old('name') : '' }}" required>
-                                    @if($activeFormKey === $studentCreateFormKey)
-                                        <x-field-error field="name" bag="studentCreate" />
-                                    @endif
-                                </label>
-                            </div>
-                            <div class="field-grid">
                                 <label>
                                     Program
                                     <select name="program_id" required>
@@ -311,6 +341,8 @@
                                         <x-field-error field="program_id" bag="studentCreate" />
                                     @endif
                                 </label>
+                            </div>
+                            <div class="field-grid">
                                 <label>
                                     Year Level
                                     <select name="year_level" required>
@@ -322,14 +354,14 @@
                                         <x-field-error field="year_level" bag="studentCreate" />
                                     @endif
                                 </label>
+                                <label>
+                                    Password
+                                    <input type="password" name="password" required>
+                                    @if($activeFormKey === $studentCreateFormKey)
+                                        <x-field-error field="password" bag="studentCreate" />
+                                    @endif
+                                </label>
                             </div>
-                            <label>
-                                Password
-                                <input type="password" name="password" required>
-                                @if($activeFormKey === $studentCreateFormKey)
-                                    <x-field-error field="password" bag="studentCreate" />
-                                @endif
-                            </label>
                             <button type="submit">Create Student</button>
                         </form>
                     </div>
@@ -340,8 +372,9 @@
                         <div class="list scrollable-list">
                             @foreach($students as $student)
                                 @php($studentUpdateFormKey = 'student-update-' . $student->id)
+                                @php($studentNameParts = $student->user->studentNameParts())
                                 <details class="record" {{ $activeFormKey === $studentUpdateFormKey ? 'open' : '' }}>
-                                    <summary>{{ $student->student_id_number }} - {{ $student->user->name }}</summary>
+                                    <summary>{{ $student->student_id_number }} - {{ $student->displayName() }}</summary>
                                     <p class="mini">{{ $student->program->code }} | {{ $student->yearLevelLabel() }}</p>
                                     <div class="divider"></div>
                                     <form method="POST" action="{{ route('admin.students.update', $student) }}">
@@ -350,21 +383,54 @@
                                         <input type="hidden" name="_form_key" value="{{ $studentUpdateFormKey }}">
                                         <div class="field-grid">
                                             <label>
+                                                First Name
+                                                <input type="text" name="first_name" value="{{ $activeFormKey === $studentUpdateFormKey ? old('first_name', $studentNameParts['first_name']) : $studentNameParts['first_name'] }}" required>
+                                                @if($activeFormKey === $studentUpdateFormKey)
+                                                    <x-field-error field="first_name" bag="studentUpdate" />
+                                                @endif
+                                            </label>
+                                            <label>
+                                                Last Name
+                                                <input type="text" name="last_name" value="{{ $activeFormKey === $studentUpdateFormKey ? old('last_name', $studentNameParts['last_name']) : $studentNameParts['last_name'] }}" required>
+                                                @if($activeFormKey === $studentUpdateFormKey)
+                                                    <x-field-error field="last_name" bag="studentUpdate" />
+                                                @endif
+                                            </label>
+                                        </div>
+                                        <div class="field-grid">
+                                            <label>
+                                                Middle Initial
+                                                <input type="text" name="middle_initial" value="{{ $activeFormKey === $studentUpdateFormKey ? old('middle_initial', $studentNameParts['middle_initial']) : $studentNameParts['middle_initial'] }}" maxlength="1" placeholder="A">
+                                                @if($activeFormKey === $studentUpdateFormKey)
+                                                    <x-field-error field="middle_initial" bag="studentUpdate" />
+                                                @endif
+                                            </label>
+                                            <label>
+                                                Extension
+                                                <select name="name_extension">
+                                                    <option value="">No extension</option>
+                                                    @foreach($studentNameExtensions as $extension)
+                                                        <option
+                                                            value="{{ $extension }}"
+                                                            {{ ($activeFormKey === $studentUpdateFormKey ? old('name_extension', $studentNameParts['name_extension']) === $extension : $studentNameParts['name_extension'] === $extension) ? 'selected' : '' }}
+                                                        >
+                                                            {{ $extension }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                                @if($activeFormKey === $studentUpdateFormKey)
+                                                    <x-field-error field="name_extension" bag="studentUpdate" />
+                                                @endif
+                                            </label>
+                                        </div>
+                                        <div class="field-grid">
+                                            <label>
                                                 Student ID
                                                 <input type="text" name="student_id_number" value="{{ $activeFormKey === $studentUpdateFormKey ? old('student_id_number', $student->student_id_number) : $student->student_id_number }}" required>
                                                 @if($activeFormKey === $studentUpdateFormKey)
                                                     <x-field-error field="student_id_number" bag="studentUpdate" />
                                                 @endif
                                             </label>
-                                            <label>
-                                                Full Name
-                                                <input type="text" name="name" value="{{ $activeFormKey === $studentUpdateFormKey ? old('name', $student->user->name) : $student->user->name }}" required>
-                                                @if($activeFormKey === $studentUpdateFormKey)
-                                                    <x-field-error field="name" bag="studentUpdate" />
-                                                @endif
-                                            </label>
-                                        </div>
-                                        <div class="field-grid">
                                             <label>
                                                 Program
                                                 <select name="program_id" required>
@@ -381,6 +447,8 @@
                                                     <x-field-error field="program_id" bag="studentUpdate" />
                                                 @endif
                                             </label>
+                                        </div>
+                                        <div class="field-grid">
                                             <label>
                                                 Year Level
                                                 <select name="year_level" required>
@@ -397,14 +465,14 @@
                                                     <x-field-error field="year_level" bag="studentUpdate" />
                                                 @endif
                                             </label>
+                                            <label>
+                                                Reset Password
+                                                <input type="password" name="password" placeholder="Leave blank to keep the current password">
+                                                @if($activeFormKey === $studentUpdateFormKey)
+                                                    <x-field-error field="password" bag="studentUpdate" />
+                                                @endif
+                                            </label>
                                         </div>
-                                        <label>
-                                            Reset Password
-                                            <input type="password" name="password" placeholder="Leave blank to keep the current password">
-                                            @if($activeFormKey === $studentUpdateFormKey)
-                                                <x-field-error field="password" bag="studentUpdate" />
-                                            @endif
-                                        </label>
                                         <button type="submit">Update Student</button>
                                     </form>
                                 </details>

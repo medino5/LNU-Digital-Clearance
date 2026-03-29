@@ -8,6 +8,7 @@ use App\Models\Semester;
 use App\Models\Student;
 use App\Models\User;
 use App\Support\OfficeDesignationBackfill;
+use App\Support\StudentNameFormatter;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -144,7 +145,11 @@ class CoreSystemSeeder extends Seeder
         $studentUser = User::updateOrCreate(
             ['username' => '2302314'],
             [
-                'name' => 'John A. Doe',
+                'name' => StudentNameFormatter::compose('John', 'A', 'Doe', null),
+                'first_name' => 'John',
+                'middle_initial' => 'A',
+                'last_name' => 'Doe',
+                'name_extension' => null,
                 'email' => null,
                 'password' => $defaultPassword,
                 'role' => User::ROLE_STUDENT,

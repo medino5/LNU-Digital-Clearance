@@ -31,6 +31,10 @@ class StudentClearancePayloadBuilderTest extends TestCase
 
         $user = User::factory()->create([
             'name' => 'John A. Doe',
+            'first_name' => 'John',
+            'middle_initial' => 'A',
+            'last_name' => 'Doe',
+            'name_extension' => null,
             'username' => '2302314',
             'password' => Hash::make('password'),
             'role' => User::ROLE_STUDENT,
@@ -130,6 +134,10 @@ class StudentClearancePayloadBuilderTest extends TestCase
         );
 
         $this->assertSame('John A. Doe', $payload['student']['name']);
+        $this->assertSame('John', $payload['student']['first_name']);
+        $this->assertSame('A', $payload['student']['middle_initial']);
+        $this->assertSame('Doe', $payload['student']['last_name']);
+        $this->assertNull($payload['student']['name_extension']);
         $this->assertSame('BSIT', $payload['student']['program']['code']);
         $this->assertSame('2nd Semester 2024-2025', $payload['active_semester']['label']);
         $this->assertSame(Clearance::STATUS_FLAGGED, $payload['clearance']['status']);
