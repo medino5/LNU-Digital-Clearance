@@ -80,6 +80,105 @@ class AdminManagementTest extends TestCase
         );
     }
 
+    public function test_admin_dashboard_student_forms_show_the_7_digit_student_id_constraints(): void
+    {
+        // This keeps the admin-side guardrails visible in the markup: the
+        // student ID inputs should guide the expected 7-digit format and
+        // expose the client-side hooks that strip non-digit characters.
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('Use the 7-digit format, for example 2302314.')
+            ->assertSee('data-student-id-input', false)
+            ->assertSee('inputmode="numeric"', false)
+            ->assertSee('maxlength="7"', false)
+            ->assertSee('pattern="[0-9]{7}"', false);
+    }
+
+    public function test_student_create_rejects_non_digit_student_ids_and_keeps_old_input(): void
+    {
+        // This protects the new format rule behind the UI: even if a request
+        // bypasses the browser guard, the server should reject non-digit IDs
+        // and return the admin to the same form with their original input.
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+        $program = Program::where('code', 'BSIT')->firstOrFail();
+
+        $response = $this->actingAs($admin)->from(route('admin.dashboard'))->post(
+            route('admin.students.store'),
+            [
+                'student_id_number' => '24A0-0😊1',
+                'first_name' => 'Jamie',
+                'middle_initial' => '',
+                'last_name' => 'Digits',
+                'name_extension' => '',
+                'program_id' => $program->id,
+                'year_level' => 2,
+                'password' => 'password',
+            ]
+        );
+
+        $response->assertRedirect(route('admin.dashboard') . '#accounts-records');
+        $response->assertSessionHasErrorsIn('studentCreate', ['student_id_number']);
+        $response->assertSessionHasInput('student_id_number', '24A0-0😊1');
+
+        $this->assertDatabaseMissing('students', [
+            'student_id_number' => '24A0-0😊1',
+        ]);
+    }
+
+    public function test_student_create_rejects_future_enrollment_year_prefixes(): void
+    {
+        // This enforces the ticket's year-prefix rule: the first two digits
+        // of a student ID cannot point to an enrollment year after today.
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+        $program = Program::where('code', 'BSIT')->firstOrFail();
+        $futureStudentId = now()->addYear()->format('y') . '02314';
+
+        $response = $this->actingAs($admin)->from(route('admin.dashboard'))->post(
+            route('admin.students.store'),
+            [
+                'student_id_number' => $futureStudentId,
+                'first_name' => 'Future',
+                'middle_initial' => '',
+                'last_name' => 'Enrollee',
+                'name_extension' => '',
+                'program_id' => $program->id,
+                'year_level' => 1,
+                'password' => 'password',
+            ]
+        );
+
+        $response->assertRedirect(route('admin.dashboard') . '#accounts-records');
+        $response->assertSessionHasErrorsIn('studentCreate', ['student_id_number']);
+        $response->assertSessionHasInput('student_id_number', $futureStudentId);
+    }
+
+    public function test_updating_student_id_also_updates_the_linked_student_username(): void
+    {
+        // Mobile login still depends on users.username, so changing the
+        // student ID from the admin side must keep both records aligned.
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+
+        $this->actingAs($admin)->put(route('admin.students.update', $student), [
+            'student_id_number' => '2400123',
+            'first_name' => 'John',
+            'middle_initial' => 'A',
+            'last_name' => 'Doe',
+            'name_extension' => '',
+            'program_id' => $student->program_id,
+            'year_level' => $student->year_level,
+            'password' => '',
+        ])->assertRedirect();
+
+        $student->refresh()->load('user');
+
+        $this->assertSame('2400123', $student->student_id_number);
+        $this->assertSame('2400123', $student->user->username);
+    }
+
     public function test_activating_a_new_semester_turns_off_the_previous_one(): void
     {
         // This checks the active-semester rule that drives clearance creation:

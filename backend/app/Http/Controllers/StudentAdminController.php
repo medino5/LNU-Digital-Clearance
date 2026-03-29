@@ -18,16 +18,17 @@ class StudentAdminController extends Controller
             $request,
             'studentCreate',
             [
-            'student_id_number' => ['required', 'string', 'max:50', 'unique:students,student_id_number'],
-            'first_name' => ['required', 'string', 'max:100', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
-            'middle_initial' => ['nullable', 'string', 'size:1', 'alpha'],
-            'last_name' => ['required', 'string', 'max:100', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
-            'name_extension' => ['nullable', Rule::in(User::studentNameExtensionOptions())],
-            'program_id' => ['required', 'exists:programs,id'],
-            'year_level' => ['required', 'integer', 'between:1,4'],
-            'password' => ['required', 'string', 'min:8'],
+                'student_id_number' => $this->studentIdRules(),
+                'first_name' => ['required', 'string', 'max:100', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
+                'middle_initial' => ['nullable', 'string', 'size:1', 'alpha'],
+                'last_name' => ['required', 'string', 'max:100', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
+                'name_extension' => ['nullable', Rule::in(User::studentNameExtensionOptions())],
+                'program_id' => ['required', 'exists:programs,id'],
+                'year_level' => ['required', 'integer', 'between:1,4'],
+                'password' => ['required', 'string', 'min:8'],
             ],
             $this->adminSectionUrl('accounts-records'),
+            $this->studentValidationMessages(),
         );
 
         $nameParts = $this->normalizedStudentNameData($data);
@@ -73,16 +74,17 @@ class StudentAdminController extends Controller
             $request,
             'studentUpdate',
             [
-            'student_id_number' => ['required', 'string', 'max:50', Rule::unique('students', 'student_id_number')->ignore($student->id)],
-            'first_name' => ['required', 'string', 'max:100', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
-            'middle_initial' => ['nullable', 'string', 'size:1', 'alpha'],
-            'last_name' => ['required', 'string', 'max:100', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
-            'name_extension' => ['nullable', Rule::in(User::studentNameExtensionOptions())],
-            'program_id' => ['required', 'exists:programs,id'],
-            'year_level' => ['required', 'integer', 'between:1,4'],
-            'password' => ['nullable', 'string', 'min:8'],
+                'student_id_number' => $this->studentIdRules($student),
+                'first_name' => ['required', 'string', 'max:100', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
+                'middle_initial' => ['nullable', 'string', 'size:1', 'alpha'],
+                'last_name' => ['required', 'string', 'max:100', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
+                'name_extension' => ['nullable', Rule::in(User::studentNameExtensionOptions())],
+                'program_id' => ['required', 'exists:programs,id'],
+                'year_level' => ['required', 'integer', 'between:1,4'],
+                'password' => ['nullable', 'string', 'min:8'],
             ],
             $this->adminSectionUrl('accounts-records'),
+            $this->studentValidationMessages(),
         );
 
         $nameParts = $this->normalizedStudentNameData($data);
@@ -138,6 +140,47 @@ class StudentAdminController extends Controller
             'middle_initial' => StudentNameFormatter::normalizeMiddleInitial($data['middle_initial'] ?? null),
             'last_name' => StudentNameFormatter::normalizeNamePart($data['last_name']) ?? '',
             'name_extension' => StudentNameFormatter::normalizeExtension($data['name_extension'] ?? null),
+        ];
+    }
+
+    /**
+     * @return array<int, mixed>
+     */
+    protected function studentIdRules(?Student $student = null): array
+    {
+        $uniqueRule = Rule::unique('students', 'student_id_number');
+
+        if ($student) {
+            $uniqueRule = $uniqueRule->ignore($student->id);
+        }
+
+        return [
+            'bail',
+            'required',
+            'string',
+            'regex:/^\d+$/',
+            'size:7',
+            function (string $attribute, mixed $value, \Closure $fail): void {
+                $studentId = (string) $value;
+                $currentYearPrefix = (int) now()->format('y');
+                $enrollmentYearPrefix = (int) substr($studentId, 0, 2);
+
+                if ($enrollmentYearPrefix > $currentYearPrefix) {
+                    $fail('Student ID cannot use a future enrollment year.');
+                }
+            },
+            $uniqueRule,
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function studentValidationMessages(): array
+    {
+        return [
+            'student_id_number.regex' => 'Student ID cannot contain letters or special characters.',
+            'student_id_number.size' => 'Student ID must be exactly 7 digits.',
         ];
     }
 }
