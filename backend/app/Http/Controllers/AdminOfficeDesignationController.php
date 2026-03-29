@@ -13,24 +13,46 @@ class AdminOfficeDesignationController extends Controller
 {
     public function updateAssignment(Request $request, OfficeDesignation $officeDesignation): RedirectResponse
     {
-        $validated = $request->validate([
-            'user_id' => ['required', 'integer', 'exists:users,id'],
-        ]);
+        $redirectTo = $this->adminSectionUrl('routing-configuration');
+
+        $validated = $this->validateForm(
+            $request,
+            'designationAssignment',
+            [
+                'user_id' => ['required', 'integer', 'exists:users,id'],
+            ],
+            $redirectTo,
+        );
 
         $user = User::with('officeAccount')->findOrFail($validated['user_id']);
 
         if (! $user->isOffice() || ! $user->officeAccount) {
-            return back()->with('error', 'The selected user is not a valid office account.');
+            return $this->redirectWithInputAndMessage(
+                $request,
+                $redirectTo,
+                'error',
+                'The selected user is not a valid office account.',
+            );
         }
 
         if (! $officeDesignation->matchesOfficeAccount($user->officeAccount)) {
-            return back()->with('error', 'The selected office user is not eligible for this designation.');
+            return $this->redirectWithInputAndMessage(
+                $request,
+                $redirectTo,
+                'error',
+                'The selected office user is not eligible for this designation.',
+            );
         }
 
         $activeAssignment = $officeDesignation->activeAssignments()->first();
 
         if ($activeAssignment && $activeAssignment->user_id === $user->id) {
-            return back()->with('info', 'Designation assignment is already up to date.');
+            return $this->redirectWithInputAndMessage(
+                $request,
+                $redirectTo,
+                'info',
+                'Designation assignment is already up to date.',
+            );
         }
 
         DB::transaction(function () use ($officeDesignation, $user) {
@@ -53,6 +75,10 @@ class AdminOfficeDesignationController extends Controller
             ]);
         });
 
-        return back()->with('success', 'Designation assignment updated successfully.');
+        return $this->redirectWithMessage(
+            $redirectTo,
+            'success',
+            'Designation assignment updated successfully.',
+        );
     }
 }

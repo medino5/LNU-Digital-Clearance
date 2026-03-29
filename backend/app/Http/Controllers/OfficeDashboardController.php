@@ -59,6 +59,8 @@ class OfficeDashboardController extends Controller
 
     public function process(Request $request, ClearanceStep $step)
     {
+        $redirectTo = $this->officeDashboardUrl();
+
         $hasDesignationAccess = $request->user()
             ->activeOfficeDesignations()
             ->where('office_designations.id', $step->office_designation_id)
@@ -68,12 +70,19 @@ class OfficeDashboardController extends Controller
             abort(403, 'Unauthorized.');
         }
 
-        $data = $request->validate([
-            'action' => ['required', 'in:approve,flag'],
-            'remarks' => ['nullable', 'string', 'required_if:action,flag'],
-        ], [
-            'remarks.required_if' => 'Flag reason is required before marking this clearance step as flagged.',
-        ]);
+        $data = $this->validateForm(
+            $request,
+            'officeProcess',
+            [
+                'action' => ['required', 'in:approve,flag'],
+                'remarks' => ['nullable', 'string', 'required_if:action,flag'],
+                'step_id' => ['nullable', 'integer'],
+            ],
+            $redirectTo,
+            [
+                'remarks.required_if' => 'Flag reason is required before marking this clearance step as flagged.',
+            ],
+        );
 
         try {
             if ($data['action'] === 'approve') {
@@ -82,9 +91,18 @@ class OfficeDashboardController extends Controller
                 $this->workflow->flag($step, $request->user(), $data['remarks'] ?? null);
             }
         } catch (RuntimeException $exception) {
-            return back()->with('error', $exception->getMessage());
+            return $this->redirectWithInputAndMessage(
+                $request,
+                $redirectTo,
+                'error',
+                $exception->getMessage(),
+            );
         }
 
-        return back()->with('success', 'Clearance step updated successfully.');
+        return $this->redirectWithMessage(
+            $redirectTo,
+            'success',
+            'Clearance step updated successfully.',
+        );
     }
 }

@@ -11,10 +11,15 @@ class SemesterAdminController extends Controller
 {
     public function store(Request $request)
     {
-        $data = $request->validate([
+        $data = $this->validateForm(
+            $request,
+            'semesterCreate',
+            [
             'label' => ['required', 'string', 'max:255', 'unique:semesters,label'],
             'is_active' => ['nullable', 'boolean'],
-        ]);
+            ],
+            $this->adminSectionUrl('academic-configuration'),
+        );
 
         DB::transaction(function () use ($data) {
             if (!empty($data['is_active'])) {
@@ -27,15 +32,24 @@ class SemesterAdminController extends Controller
             ]);
         });
 
-        return back()->with('success', 'Semester saved successfully.');
+        return $this->redirectWithMessage(
+            $this->adminSectionUrl('academic-configuration'),
+            'success',
+            'Semester saved successfully.',
+        );
     }
 
     public function update(Request $request, Semester $semester)
     {
-        $data = $request->validate([
+        $data = $this->validateForm(
+            $request,
+            'semesterUpdate',
+            [
             'label' => ['required', 'string', 'max:255', Rule::unique('semesters', 'label')->ignore($semester->id)],
             'is_active' => ['nullable', 'boolean'],
-        ]);
+            ],
+            $this->adminSectionUrl('academic-configuration'),
+        );
 
         DB::transaction(function () use ($data, $semester) {
             if (!empty($data['is_active'])) {
@@ -48,6 +62,10 @@ class SemesterAdminController extends Controller
             ]);
         });
 
-        return back()->with('success', 'Semester updated successfully.');
+        return $this->redirectWithMessage(
+            $this->adminSectionUrl('academic-configuration'),
+            'success',
+            'Semester updated successfully.',
+        );
     }
 }

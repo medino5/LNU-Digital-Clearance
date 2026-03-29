@@ -110,8 +110,9 @@ class AdminManagementTest extends TestCase
             ]
         );
 
-        $response->assertRedirect(route('admin.dashboard'));
-        $response->assertSessionHasErrors('program_id');
+        $response->assertRedirect(route('admin.dashboard') . '#accounts-records');
+        $response->assertSessionHasErrorsIn('officeAccountCreate', ['program_id']);
+        $response->assertSessionHasInput('display_name', 'Broken Treasurer');
     }
 
     public function test_admin_dashboard_shows_designation_assignment_section_without_search_filter(): void
@@ -165,7 +166,7 @@ class AdminManagementTest extends TestCase
                 'user_id' => $replacementUser->id,
             ]);
 
-        $response->assertRedirect(route('admin.dashboard'));
+        $response->assertRedirect(route('admin.dashboard') . '#routing-configuration');
         $response->assertSessionHas('success', 'Designation assignment updated successfully.');
 
         $this->assertDatabaseHas('office_designation_assignments', [
@@ -215,7 +216,7 @@ class AdminManagementTest extends TestCase
                 'user_id' => $ineligibleUser->id,
             ]);
 
-        $response->assertRedirect(route('admin.dashboard'));
+        $response->assertRedirect(route('admin.dashboard') . '#routing-configuration');
         $response->assertSessionHas('error', 'The selected office user is not eligible for this designation.');
 
         $this->assertDatabaseMissing('office_designation_assignments', [
@@ -247,7 +248,7 @@ class AdminManagementTest extends TestCase
                 'user_id' => $currentAssignment->user_id,
             ]);
 
-        $response->assertRedirect(route('admin.dashboard'));
+        $response->assertRedirect(route('admin.dashboard') . '#routing-configuration');
         $response->assertSessionHas('info', 'Designation assignment is already up to date.');
 
         $this->assertSame(

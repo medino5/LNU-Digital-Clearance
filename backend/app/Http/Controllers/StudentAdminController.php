@@ -13,13 +13,18 @@ class StudentAdminController extends Controller
 {
     public function store(Request $request)
     {
-        $data = $request->validate([
+        $data = $this->validateForm(
+            $request,
+            'studentCreate',
+            [
             'student_id_number' => ['required', 'string', 'max:50', 'unique:students,student_id_number'],
             'name' => ['required', 'string', 'max:255'],
             'program_id' => ['required', 'exists:programs,id'],
             'year_level' => ['required', 'integer', 'between:1,4'],
             'password' => ['required', 'string', 'min:8'],
-        ]);
+            ],
+            $this->adminSectionUrl('accounts-records'),
+        );
 
         DB::transaction(function () use ($data) {
             $user = User::create([
@@ -40,18 +45,27 @@ class StudentAdminController extends Controller
             ]);
         });
 
-        return back()->with('success', 'Student account created successfully.');
+        return $this->redirectWithMessage(
+            $this->adminSectionUrl('accounts-records'),
+            'success',
+            'Student account created successfully.',
+        );
     }
 
     public function update(Request $request, Student $student)
     {
-        $data = $request->validate([
+        $data = $this->validateForm(
+            $request,
+            'studentUpdate',
+            [
             'student_id_number' => ['required', 'string', 'max:50', Rule::unique('students', 'student_id_number')->ignore($student->id)],
             'name' => ['required', 'string', 'max:255'],
             'program_id' => ['required', 'exists:programs,id'],
             'year_level' => ['required', 'integer', 'between:1,4'],
             'password' => ['nullable', 'string', 'min:8'],
-        ]);
+            ],
+            $this->adminSectionUrl('accounts-records'),
+        );
 
         DB::transaction(function () use ($data, $student) {
             $student->user->update([
@@ -72,6 +86,10 @@ class StudentAdminController extends Controller
             ]);
         });
 
-        return back()->with('success', 'Student account updated successfully.');
+        return $this->redirectWithMessage(
+            $this->adminSectionUrl('accounts-records'),
+            'success',
+            'Student account updated successfully.',
+        );
     }
 }

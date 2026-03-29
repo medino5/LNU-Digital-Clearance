@@ -50,6 +50,23 @@ class StudentAuthApiTest extends TestCase
             ->assertJsonPath('message', 'Invalid student ID or password.');
     }
 
+    public function test_student_login_validation_errors_return_message_and_errors_payload(): void
+    {
+        $this->postJson('/api/login', [
+            'student_id' => '',
+            'password' => '',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'The student id field is required. (and 1 more error)')
+            ->assertJsonStructure([
+                'message',
+                'errors' => [
+                    'student_id',
+                    'password',
+                ],
+            ]);
+    }
+
     public function test_student_login_replaces_previous_mobile_tokens(): void
     {
         // This confirms the current single-device token rule: logging in again

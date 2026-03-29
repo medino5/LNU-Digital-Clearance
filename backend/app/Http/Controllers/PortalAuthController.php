@@ -52,10 +52,15 @@ class PortalAuthController extends Controller
 
     protected function attemptLogin(Request $request)
     {
-        $credentials = $request->validate([
-            'username' => ['required', 'string'],
-            'password' => ['required', 'string'],
-        ]);
+        $credentials = $this->validateForm(
+            $request,
+            'portalLogin',
+            [
+                'username' => ['required', 'string'],
+                'password' => ['required', 'string'],
+            ],
+            route('portal.login'),
+        );
 
         if ($request->user()) {
             Auth::logout();
@@ -64,9 +69,11 @@ class PortalAuthController extends Controller
         }
 
         if (!Auth::attempt($credentials)) {
-            return back()->withErrors([
-                'username' => 'Invalid credentials.',
-            ])->onlyInput('username');
+            return redirect()->to(route('portal.login'))
+                ->withErrors([
+                    'username' => 'Invalid credentials.',
+                ], 'portalLogin')
+                ->withInput($request->only('username'));
         }
 
         $request->session()->regenerate();
@@ -78,9 +85,11 @@ class PortalAuthController extends Controller
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return back()->withErrors([
-                'username' => 'This account is not allowed to sign in to the web portal.',
-            ])->onlyInput('username');
+            return redirect()->to(route('portal.login'))
+                ->withErrors([
+                    'username' => 'This account is not allowed to sign in to the web portal.',
+                ], 'portalLogin')
+                ->withInput($request->only('username'));
         }
 
         return redirect()->route($dashboardRoute);

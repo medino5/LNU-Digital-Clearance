@@ -1,6 +1,8 @@
 @extends('layouts.portal', ['title' => $portalTitle])
 
 @section('page')
+    @php($validationErrors = collect($errors->getBags())->flatMap(fn ($bag) => $bag->all()))
+
     <div class="topbar">
         <div>
             <h1>{{ $portalTitle }}</h1>
@@ -34,9 +36,9 @@
             </div>
         @endif
 
-        @if($errors->any())
+        @if($validationErrors->isNotEmpty())
             <div class="callout error" style="margin-bottom: 20px;">
-                {{ $errors->first() }}
+                {{ $validationErrors->first() }}
             </div>
         @endif
 
@@ -56,11 +58,13 @@
                 <label>
                     {{ $usernameLabel }}
                     <input type="text" name="username" value="{{ old('username') }}" required autofocus>
+                    <x-field-error field="username" bag="portalLogin" />
                 </label>
 
                 <label>
                     Password
                     <input type="password" name="password" required>
+                    <x-field-error field="password" bag="portalLogin" />
                 </label>
 
                 <button type="submit">Sign In</button>

@@ -155,6 +155,12 @@
             color: var(--navy-deep);
         }
 
+        .field-error {
+            color: var(--danger);
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
         input, select, textarea {
             width: 100%;
             border: 1px solid #cfc7b7;

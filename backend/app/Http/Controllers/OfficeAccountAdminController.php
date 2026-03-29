@@ -22,7 +22,11 @@ class OfficeAccountAdminController extends Controller
 
     public function store(Request $request)
     {
-        $data = $this->validateOfficeAccount($request);
+        $data = $this->validateOfficeAccount(
+            $request,
+            'officeAccountCreate',
+            $this->adminSectionUrl('accounts-records'),
+        );
 
         DB::transaction(function () use ($data) {
             $user = User::create([
@@ -46,12 +50,21 @@ class OfficeAccountAdminController extends Controller
             $this->designationBackfill->syncOfficeAccount($officeAccount->load('program'));
         });
 
-        return back()->with('success', 'Office account created successfully.');
+        return $this->redirectWithMessage(
+            $this->adminSectionUrl('accounts-records'),
+            'success',
+            'Office account created successfully.',
+        );
     }
 
     public function update(Request $request, OfficeAccount $officeAccount)
     {
-        $data = $this->validateOfficeAccount($request, $officeAccount);
+        $data = $this->validateOfficeAccount(
+            $request,
+            'officeAccountUpdate',
+            $this->adminSectionUrl('accounts-records'),
+            $officeAccount,
+        );
 
         DB::transaction(function () use ($data, $officeAccount) {
             $officeAccount->loadMissing('program');
@@ -96,14 +109,26 @@ class OfficeAccountAdminController extends Controller
             }
         });
 
-        return back()->with('success', 'Office account updated successfully.');
+        return $this->redirectWithMessage(
+            $this->adminSectionUrl('accounts-records'),
+            'success',
+            'Office account updated successfully.',
+        );
     }
 
-    protected function validateOfficeAccount(Request $request, ?OfficeAccount $officeAccount = null): array
+    protected function validateOfficeAccount(
+        Request $request,
+        string $errorBag,
+        string $redirectTo,
+        ?OfficeAccount $officeAccount = null,
+    ): array
     {
         $officeTypes = array_keys(OfficeAccount::typeOptions());
 
-        $data = $request->validate([
+        $data = $this->validateForm(
+            $request,
+            $errorBag,
+            [
             'display_name' => ['required', 'string', 'max:255'],
             'office_type' => ['required', Rule::in($officeTypes)],
             'program_id' => ['nullable', 'exists:programs,id'],
@@ -115,7 +140,9 @@ class OfficeAccountAdminController extends Controller
                 Rule::unique('users', 'username')->ignore($officeAccount?->user_id),
             ],
             'password' => [$officeAccount ? 'nullable' : 'required', 'string', 'min:8'],
-        ]);
+            ],
+            $redirectTo,
+        );
 
         $data['program_id'] = in_array($data['office_type'], [
             OfficeAccount::TYPE_ACAD_ORG_TREASURER,
@@ -130,15 +157,19 @@ class OfficeAccountAdminController extends Controller
             OfficeAccount::TYPE_ACAD_ORG_TREASURER,
             OfficeAccount::TYPE_ACAD_ORG_ADVISER,
         ], true) && !$data['program_id']) {
-            throw ValidationException::withMessages([
-                'program_id' => 'Program scope is required for this office type.',
-            ]);
+            throw $this->formValidationException(
+                ['program_id' => 'Program scope is required for this office type.'],
+                $errorBag,
+                $redirectTo,
+            );
         }
 
         if ($data['office_type'] === OfficeAccount::TYPE_YEAR_LEVEL_TREASURER && !$data['year_level']) {
-            throw ValidationException::withMessages([
-                'year_level' => 'Year level scope is required for this office type.',
-            ]);
+            throw $this->formValidationException(
+                ['year_level' => 'Year level scope is required for this office type.'],
+                $errorBag,
+                $redirectTo,
+            );
         }
 
         return $data;

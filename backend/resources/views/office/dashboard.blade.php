@@ -1,6 +1,8 @@
 @extends('layouts.portal', ['title' => 'Office Dashboard'])
 
 @section('page')
+    @php($validationErrors = collect($errors->getBags())->flatMap(fn ($bag) => $bag->all()))
+
     <div class="topbar">
         <div>
             <h1>{{ $dashboardTitle }}</h1>
@@ -38,8 +40,8 @@
             <div class="callout error">{{ session('error') }}</div>
         @endif
 
-        @if($errors->any())
-            <div class="callout error">{{ $errors->first() }}</div>
+        @if($validationErrors->isNotEmpty())
+            <div class="callout error">{{ $validationErrors->first() }}</div>
         @endif
 
         @if(!$hasActiveDesignation)
@@ -76,6 +78,7 @@
                                         <button
                                             type="button"
                                             class="button ghost detail-trigger"
+                                            data-modal-step-id="{{ $step->id }}"
                                             data-modal-student-name="{{ $student->user->name }}"
                                             data-modal-student-meta="{{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}"
                                             data-modal-step-status="Awaiting Action"
@@ -201,6 +204,7 @@
 
                 <form method="POST" id="officeDetailForm">
                     @csrf
+                    <input type="hidden" name="step_id" id="modalStepId" value="{{ old('step_id') }}">
 
                     <label class="office-label" for="modalRemarks">Remarks / Flag Reason</label>
                     <p class="mini" style="margin: -8px 0 0;">Required when flagging. Optional when approving.</p>
@@ -210,7 +214,8 @@
                         name="remarks"
                         rows="5"
                         placeholder="Add notes for the student or office history"
-                    ></textarea>
+                    >{{ old('remarks') }}</textarea>
+                    <x-field-error field="remarks" bag="officeProcess" />
 
                     <div class="office-modal-actions">
                         <button type="submit" name="action" value="approve">Approve</button>
@@ -483,20 +488,24 @@
             const modalLastProcessed = document.getElementById('modalLastProcessed');
             const modalPreviousNote = document.getElementById('modalPreviousNote');
             const modalForm = document.getElementById('officeDetailForm');
+            const modalStepId = document.getElementById('modalStepId');
             const modalRemarks = document.getElementById('modalRemarks');
             const openButtons = document.querySelectorAll('.detail-trigger');
             const closeButton = document.getElementById('closeOfficeModal');
             const cancelButton = document.getElementById('cancelOfficeModal');
+            const reopenStepId = @json(old('step_id'));
+            const oldRemarks = @json(old('remarks'));
 
-            function openModal(button) {
+            function openModal(button, preserveRemarks) {
                 modalTitle.textContent = button.dataset.modalStudentName;
                 modalMeta.textContent = button.dataset.modalStudentMeta;
                 modalStepStatus.textContent = button.dataset.modalStepStatus;
                 modalClearanceStatus.textContent = 'Full Clearance Status: ' + button.dataset.modalClearanceStatus;
                 modalLastProcessed.textContent = button.dataset.modalLastProcessed;
                 modalPreviousNote.textContent = button.dataset.modalPreviousNote;
+                modalStepId.value = button.dataset.modalStepId;
                 modalForm.action = button.dataset.modalAction;
-                modalRemarks.value = '';
+                modalRemarks.value = preserveRemarks ? (oldRemarks || '') : '';
 
                 modal.hidden = false;
                 document.body.style.overflow = 'hidden';
@@ -509,9 +518,17 @@
 
             openButtons.forEach(button => {
                 button.addEventListener('click', function () {
-                    openModal(button);
+                    openModal(button, false);
                 });
             });
+
+            if (reopenStepId) {
+                const matchingButton = Array.from(openButtons).find(button => button.dataset.modalStepId === String(reopenStepId));
+
+                if (matchingButton) {
+                    openModal(matchingButton, true);
+                }
+            }
 
             closeButton.addEventListener('click', closeModal);
             cancelButton.addEventListener('click', closeModal);

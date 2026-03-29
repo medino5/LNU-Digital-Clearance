@@ -161,8 +161,21 @@ class PortalRoutingTest extends TestCase
         ]);
 
         $response->assertRedirect(route('portal.login'));
-        $response->assertSessionHasErrors('username');
+        $response->assertSessionHasErrorsIn('portalLogin', ['username']);
         $this->assertGuest();
+    }
+
+    public function test_shared_login_renders_inline_validation_feedback_for_missing_fields(): void
+    {
+        $this->from(route('portal.login'))
+            ->followingRedirects()
+            ->post(route('portal.login.submit'), [
+                'username' => '',
+                'password' => '',
+            ])
+            ->assertOk()
+            ->assertSee('The username field is required.')
+            ->assertSee('The password field is required.');
     }
 
     public function test_legacy_portal_login_urls_redirect_to_shared_login(): void
