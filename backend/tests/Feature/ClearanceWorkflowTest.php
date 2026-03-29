@@ -289,6 +289,41 @@ class ClearanceWorkflowTest extends TestCase
         $this->assertSame(ClearanceStep::STATUS_AWAITING_ACTION, $step->status);
     }
 
+    public function test_office_dashboard_shows_validation_feedback_when_flag_reason_is_missing(): void
+    {
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        Sanctum::actingAs($student->user);
+        $this->postJson('/api/clearance')->assertOk();
+
+        $step = ClearanceStep::query()
+            ->where('office_label', 'DIGITS Academic Organization Treasurer')
+            ->firstOrFail();
+        $officeUser = $step->officeDesignation->activeUsers->first();
+        $this->assertNotNull($officeUser);
+
+        $response = $this->actingAs($officeUser)
+            ->from(route('office.dashboard'))
+            ->post(route('office.steps.process', $step), [
+                'action' => 'flag',
+                'remarks' => '',
+                'step_id' => $step->id,
+            ]);
+
+        $response->assertRedirect(route('office.dashboard'));
+        $response->assertSessionHasErrorsIn('officeProcess', ['remarks']);
+
+        $this->actingAs($officeUser)
+            ->followingRedirects()
+            ->from(route('office.dashboard'))
+            ->post(route('office.steps.process', $step), [
+                'action' => 'flag',
+                'remarks' => '',
+                'step_id' => $step->id,
+            ])
+            ->assertOk()
+            ->assertSee('Flag reason is required before marking this clearance step as flagged.');
+    }
+
     public function test_any_active_holder_of_a_designation_can_process_the_step(): void
     {
         $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
