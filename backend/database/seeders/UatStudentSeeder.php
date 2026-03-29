@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Program;
 use App\Models\Student;
 use App\Models\User;
+use App\Support\StudentNameFormatter;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use RuntimeException;
@@ -28,10 +29,16 @@ class UatStudentSeeder extends Seeder
                 throw new RuntimeException('Missing program for UAT roster: ' . $studentData['program_code']);
             }
 
+            $parsedName = StudentNameFormatter::parse($studentData['name']);
+
             $user = User::updateOrCreate(
                 ['username' => $studentData['student_id_number']],
                 [
-                    'name' => $studentData['name'],
+                    'name' => $parsedName['composed_name'],
+                    'first_name' => $parsedName['first_name'],
+                    'middle_initial' => $parsedName['middle_initial'],
+                    'last_name' => $parsedName['last_name'],
+                    'name_extension' => $parsedName['name_extension'],
                     'email' => null,
                     'password' => $defaultPassword,
                     'role' => User::ROLE_STUDENT,

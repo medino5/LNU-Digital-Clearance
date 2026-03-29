@@ -49,7 +49,7 @@ class ClearanceWorkflowService
                 'student_id' => $student->id,
                 'semester_id' => $semester->id,
                 'status' => Clearance::STATUS_IN_PROGRESS,
-                'student_name' => $student->user->name,
+                'student_name' => $student->displayName(),
                 'student_id_number' => $student->student_id_number,
                 'year_level' => $student->year_level,
                 'program_code' => $student->program->code,

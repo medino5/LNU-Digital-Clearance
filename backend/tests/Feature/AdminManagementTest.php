@@ -41,7 +41,10 @@ class AdminManagementTest extends TestCase
 
         $this->actingAs($admin)->post(route('admin.students.store'), [
             'student_id_number' => '2400001',
-            'name' => 'Jane Systems',
+            'first_name' => 'Jane',
+            'middle_initial' => '',
+            'last_name' => 'Systems',
+            'name_extension' => '',
             'program_id' => $program->id,
             'year_level' => 2,
             'password' => 'password',
@@ -61,6 +64,10 @@ class AdminManagementTest extends TestCase
         $designation = OfficeDesignation::where('key', 'bsis-acad-org-treasurer')->firstOrFail();
 
         $this->assertSame('Jane Systems', $student->user->name);
+        $this->assertSame('Jane', $student->user->first_name);
+        $this->assertNull($student->user->middle_initial);
+        $this->assertSame('Systems', $student->user->last_name);
+        $this->assertNull($student->user->name_extension);
         $this->assertSame($program->id, $student->program_id);
         $this->assertSame($program->id, $officeAccount->program_id);
         $this->assertSame($program->id, $designation->program_id);

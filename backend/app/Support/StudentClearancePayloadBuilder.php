@@ -20,10 +20,14 @@ class StudentClearancePayloadBuilder
 
         return [
             'student' => [
-                'name' => $student->user->name,
+                'name' => $student->displayName(),
                 'student_id_number' => $student->student_id_number,
                 'year_level' => $student->year_level,
                 'year_level_label' => $student->yearLevelLabel(),
+                'first_name' => $student->user->first_name,
+                'middle_initial' => $student->user->middle_initial,
+                'last_name' => $student->user->last_name,
+                'name_extension' => $student->user->name_extension,
                 'program' => [
                     'id' => $student->program->id,
                     'code' => $student->program->code,

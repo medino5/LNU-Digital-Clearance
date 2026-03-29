@@ -31,6 +31,13 @@ class Student extends Model
         return $this->hasMany(Clearance::class);
     }
 
+    public function displayName(): string
+    {
+        $this->loadMissing('user');
+
+        return $this->user?->formattedName() ?? '';
+    }
+
     public function yearLevelLabel(): string
     {
         return match ((int) $this->year_level) {

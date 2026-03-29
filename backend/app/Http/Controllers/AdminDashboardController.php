@@ -66,6 +66,7 @@ class AdminDashboardController extends Controller
             'history' => $history,
             'selectedSemesterId' => $selectedSemesterId,
             'designations' => $designations,
+            'studentNameExtensions' => User::studentNameExtensionOptions(),
         ]);
     }
 }

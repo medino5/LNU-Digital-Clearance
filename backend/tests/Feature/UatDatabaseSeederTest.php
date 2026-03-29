@@ -75,11 +75,24 @@ class UatDatabaseSeederTest extends TestCase
         $this->assertDatabaseHas('users', [
             'username' => '2400001',
             'name' => 'Adrian A. Abad',
+            'first_name' => 'Adrian',
+            'middle_initial' => 'A',
+            'last_name' => 'Abad',
+            'name_extension' => null,
         ]);
 
         $this->assertDatabaseHas('students', [
             'student_id_number' => '2400100',
             'year_level' => 4,
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'username' => '2302314',
+            'name' => 'John A. Doe',
+            'first_name' => 'John',
+            'middle_initial' => 'A',
+            'last_name' => 'Doe',
+            'name_extension' => null,
         ]);
     }
 }

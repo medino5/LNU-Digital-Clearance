@@ -67,7 +67,7 @@
                             <div class="record office-record pending-record">
                                 <div class="record-top">
                                     <div>
-                                        <strong class="record-name">{{ $student->user->name }}</strong>
+                                        <strong class="record-name">{{ $student->displayName() }}</strong>
                                         <div class="mini">
                                             {{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}
                                         </div>
@@ -79,7 +79,7 @@
                                             type="button"
                                             class="button ghost detail-trigger"
                                             data-modal-step-id="{{ $step->id }}"
-                                            data-modal-student-name="{{ $student->user->name }}"
+                                            data-modal-student-name="{{ $student->displayName() }}"
                                             data-modal-student-meta="{{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}"
                                             data-modal-step-status="Awaiting Action"
                                             data-modal-clearance-status="{{ ucwords(str_replace('_', ' ', $step->clearance->status)) }}"
@@ -128,7 +128,7 @@
                             <div class="record office-record processed-record">
                                 <div class="record-top">
                                     <div>
-                                        <strong class="record-name">{{ $student->user->name }}</strong>
+                                        <strong class="record-name">{{ $student->displayName() }}</strong>
                                         <div class="mini">
                                             {{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}
                                         </div>
