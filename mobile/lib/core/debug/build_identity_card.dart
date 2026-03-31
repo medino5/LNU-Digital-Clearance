@@ -13,8 +13,6 @@ class BuildIdentityCard extends StatefulWidget {
   final String title;
   final bool compact;
 
-  static const String debugBuildLabel = 'dbg-20260314-01';
-
   @override
   State<BuildIdentityCard> createState() => _BuildIdentityCardState();
 }
@@ -56,18 +54,12 @@ class _BuildIdentityCardState extends State<BuildIdentityCard> {
                 'Package: ${info?.packageName ?? 'Loading...'}',
                 style: valueStyle,
               ),
+              Text('Version: ${_versionText(info)}', style: valueStyle),
               Text(
-                'Version: ${_versionText(info)}',
+                'Build label: ${NetworkConfig.buildLabel}',
                 style: valueStyle,
               ),
-              Text(
-                'Build label: ${BuildIdentityCard.debugBuildLabel}',
-                style: valueStyle,
-              ),
-              Text(
-                'Host: ${NetworkConfig.baseUrl}',
-                style: valueStyle,
-              ),
+              Text('Host: ${NetworkConfig.baseUrl}', style: valueStyle),
             ],
           ),
         );

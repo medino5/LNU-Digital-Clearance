@@ -1,0 +1,132 @@
+name: Mobile Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mobile-release
+  cancel-in-progress: true
+
+jobs:
+  build-android-release:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: mobile
+
+    env:
+      APK_NAME: digital-clearance-latest.apk
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Validate required release settings
+        run: |
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "::error::Missing GitHub secret ANDROID_KEYSTORE_BASE64."
+            exit 1
+          fi
+
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ]; then
+            echo "::error::Missing GitHub secret ANDROID_KEYSTORE_PASSWORD."
+            exit 1
+          fi
+
+          if [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ]; then
+            echo "::error::Missing GitHub secret ANDROID_KEY_ALIAS."
+            exit 1
+          fi
+
+          if [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ]; then
+            echo "::error::Missing GitHub secret ANDROID_KEY_PASSWORD."
+            exit 1
+          fi
+
+          if [ -z "${{ vars.MOBILE_API_BASE_URL }}" ]; then
+            echo "::error::Missing GitHub repository variable MOBILE_API_BASE_URL."
+            exit 1
+          fi
+
+      - name: Create Android signing files
+        working-directory: mobile/android
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > upload-keystore.jks
+          cat <<EOF > key.properties
+          storeFile=upload-keystore.jks
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          EOF
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Prepare release metadata
+        id: release_meta
+        run: |
+          BASE_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/+.*//')
+          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
+          BUILD_NAME="${BASE_VERSION}.${BUILD_NUMBER}"
+          BUILD_LABEL="latest-testing-${GITHUB_SHA::7}-run${BUILD_NUMBER}"
+
+          echo "build_number=${BUILD_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "build_name=${BUILD_NAME}" >> "$GITHUB_OUTPUT"
+          echo "build_label=${BUILD_LABEL}" >> "$GITHUB_OUTPUT"
+
+      - name: Build signed Android APK
+        run: |
+          flutter build apk --release \
+            --build-name="${{ steps.release_meta.outputs.build_name }}" \
+            --build-number="${{ steps.release_meta.outputs.build_number }}" \
+            --dart-define=APP_API_BASE_URL=${{ vars.MOBILE_API_BASE_URL }} \
+            --dart-define=BUILD_LABEL=${{ steps.release_meta.outputs.build_label }}
+
+      - name: Rename release APK
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk "build/app/outputs/flutter-apk/${APK_NAME}"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-latest-testing-apk
+          path: mobile/build/app/outputs/flutter-apk/digital-clearance-latest.apk
+
+      - name: Update rolling release tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f latest-testing
+          git push origin refs/tags/latest-testing --force
+
+      - name: Publish GitHub release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RELEASE_NOTES="Latest tester APK from ${GITHUB_SHA::7} (run #${GITHUB_RUN_NUMBER})."
+
+          if gh release view latest-testing >/dev/null 2>&1; then
+            gh release edit latest-testing --title "latest-testing" --notes "${RELEASE_NOTES}" --prerelease
+            gh release upload latest-testing "build/app/outputs/flutter-apk/${APK_NAME}#${APK_NAME}" --clobber
+          else
+            gh release create latest-testing "build/app/outputs/flutter-apk/${APK_NAME}#${APK_NAME}" --title "latest-testing" --notes "${RELEASE_NOTES}" --prerelease
+          fi

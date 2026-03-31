@@ -26,9 +26,7 @@ class ApiClient {
     } on TimeoutException {
       throw Exception(_timeoutMessage());
     } on HandshakeException {
-      throw Exception(
-        'Secure connection setup failed. Verify the app is still pointing to the local Docker backend.',
-      );
+      throw Exception(_tlsHandshakeMessage());
     }
   }
 
@@ -47,9 +45,7 @@ class ApiClient {
     } on TimeoutException {
       throw Exception(_timeoutMessage());
     } on HandshakeException {
-      throw Exception(
-        'Secure connection setup failed. Verify the app is still pointing to the local Docker backend.',
-      );
+      throw Exception(_tlsHandshakeMessage());
     }
   }
 
@@ -68,19 +64,36 @@ class ApiClient {
     } on TimeoutException {
       throw Exception(_timeoutMessage());
     } on HandshakeException {
-      throw Exception(
-        'Secure connection setup failed. Verify the app is still pointing to the local Docker backend.',
-      );
+      throw Exception(_tlsHandshakeMessage());
     }
   }
 
   String _deviceReachabilityMessage() {
-    return 'Unable to reach the local backend. For phone testing, keep Docker running, '
-        'connect the device by USB, and run `${NetworkConfig.adbReverseCommand}` before opening the app.';
+    if (NetworkConfig.usesLocalDockerBackend) {
+      return 'Unable to reach the local backend. For phone testing, keep Docker running, '
+          'connect the device by USB, and run `${NetworkConfig.adbReverseCommand}` before opening the app.';
+    }
+
+    return 'Unable to reach the deployed backend at ${NetworkConfig.baseUrl}. '
+        'Check your internet connection and confirm the Railway service is running.';
   }
 
   String _timeoutMessage() {
-    return 'The request timed out before the backend responded. This is usually a local connection issue, '
-        'not a student ID/password problem. Confirm Docker is up and `${NetworkConfig.adbReverseCommand}` is active.';
+    if (NetworkConfig.usesLocalDockerBackend) {
+      return 'The request timed out before the backend responded. This is usually a local connection issue, '
+          'not a student ID/password problem. Confirm Docker is up and `${NetworkConfig.adbReverseCommand}` is active.';
+    }
+
+    return 'The deployed backend at ${NetworkConfig.baseUrl} did not respond in time. '
+        'Check Railway logs or verify the server is still online.';
+  }
+
+  String _tlsHandshakeMessage() {
+    if (NetworkConfig.usesLocalDockerBackend) {
+      return 'Secure connection setup failed. Verify the app is still pointing to the local Docker backend.';
+    }
+
+    return 'Secure connection setup failed for ${NetworkConfig.baseUrl}. '
+        'Check the public Railway URL and SSL settings.';
   }
 }
