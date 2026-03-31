@@ -16,41 +16,73 @@ class OfficeDashboardController extends Controller
 
     public function index(Request $request)
     {
-        $officeAccount = $request->user()->loadMissing('officeAccount.program')->officeAccount;
+        $officeDesignations = $request->user()
+            ->loadMissing('activeOfficeDesignations.program')
+            ->activeOfficeDesignations
+            ->sortBy('display_name')
+            ->values();
 
-        if (!$officeAccount) {
-            abort(404, 'Office account not found.');
+        $hasActiveDesignation = $officeDesignations->isNotEmpty();
+
+        $pendingSteps = collect();
+        $processedSteps = collect();
+
+        if ($hasActiveDesignation) {
+            $baseQuery = ClearanceStep::with([
+                    'clearance.student.user',
+                    'clearance.student.program',
+                    'officeDesignation.program',
+                ])
+                ->whereIn('office_designation_id', $officeDesignations->pluck('id'))
+                ->orderByDesc('updated_at');
+
+            $pendingSteps = (clone $baseQuery)
+                ->where('status', ClearanceStep::STATUS_AWAITING_ACTION)
+                ->get();
+
+            $processedSteps = (clone $baseQuery)
+                ->whereIn('status', [
+                    ClearanceStep::STATUS_APPROVED,
+                    ClearanceStep::STATUS_FLAGGED,
+                ])
+                ->get();
         }
 
-        $baseQuery = ClearanceStep::with(['clearance.student.user', 'clearance.student.program', 'officeAccount.program'])
-            ->where('office_account_id', $officeAccount->id)
-            ->orderByDesc('updated_at');
-
         return view('office.dashboard', [
-            'officeAccount' => $officeAccount,
-            'pendingSteps' => (clone $baseQuery)
-                ->where('status', ClearanceStep::STATUS_AWAITING_ACTION)
-                ->get(),
-            'processedSteps' => (clone $baseQuery)
-                ->whereIn('status', [ClearanceStep::STATUS_APPROVED, ClearanceStep::STATUS_FLAGGED])
-                ->get(),
+            'dashboardTitle' => 'Office Dashboard',
+            'hasActiveDesignation' => $hasActiveDesignation,
+            'officeDesignations' => $officeDesignations,
+            'pendingSteps' => $pendingSteps,
+            'processedSteps' => $processedSteps,
         ]);
     }
 
     public function process(Request $request, ClearanceStep $step)
     {
-        $officeAccount = $request->user()->loadMissing('officeAccount')->officeAccount;
+        $redirectTo = $this->officeDashboardUrl();
 
-        if (!$officeAccount || $step->office_account_id !== $officeAccount->id) {
+        $hasDesignationAccess = $request->user()
+            ->activeOfficeDesignations()
+            ->where('office_designations.id', $step->office_designation_id)
+            ->exists();
+
+        if (! $hasDesignationAccess) {
             abort(403, 'Unauthorized.');
         }
 
-        $data = $request->validate([
-            'action' => ['required', 'in:approve,flag'],
-            'remarks' => ['nullable', 'string', 'required_if:action,flag'],
-        ], [
-            'remarks.required_if' => 'Flag reason is required before marking this clearance step as flagged.',
-        ]);
+        $data = $this->validateForm(
+            $request,
+            'officeProcess',
+            [
+                'action' => ['required', 'in:approve,flag'],
+                'remarks' => ['nullable', 'string', 'required_if:action,flag'],
+                'step_id' => ['nullable', 'integer'],
+            ],
+            $redirectTo,
+            [
+                'remarks.required_if' => 'Flag reason is required before marking this clearance step as flagged.',
+            ],
+        );
 
         try {
             if ($data['action'] === 'approve') {
@@ -59,9 +91,18 @@ class OfficeDashboardController extends Controller
                 $this->workflow->flag($step, $request->user(), $data['remarks'] ?? null);
             }
         } catch (RuntimeException $exception) {
-            return back()->with('error', $exception->getMessage());
+            return $this->redirectWithInputAndMessage(
+                $request,
+                $redirectTo,
+                'error',
+                $exception->getMessage(),
+            );
         }
 
-        return back()->with('success', 'Clearance step updated successfully.');
+        return $this->redirectWithMessage(
+            $redirectTo,
+            'success',
+            'Clearance step updated successfully.',
+        );
     }
 }

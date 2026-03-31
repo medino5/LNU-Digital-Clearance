@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\StudentNameFormatter;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -19,6 +20,10 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
+        'first_name',
+        'middle_initial',
+        'last_name',
+        'name_extension',
         'username',
         'email',
         'password',
@@ -47,6 +52,26 @@ class User extends Authenticatable
     public function officeAccount()
     {
         return $this->hasOne(OfficeAccount::class);
+    }
+
+    public function officeDesignationAssignments()
+    {
+        return $this->hasMany(OfficeDesignationAssignment::class);
+    }
+
+    public function officeDesignations()
+    {
+        return $this->belongsToMany(OfficeDesignation::class, 'office_designation_assignments')
+            ->withPivot(['assigned_by_user_id', 'assigned_at', 'released_at', 'is_active'])
+            ->withTimestamps();
+    }
+
+    public function activeOfficeDesignations()
+    {
+        return $this->belongsToMany(OfficeDesignation::class, 'office_designation_assignments')
+            ->wherePivot('is_active', true)
+            ->withPivot(['assigned_by_user_id', 'assigned_at', 'released_at', 'is_active'])
+            ->withTimestamps();
     }
 
     public function program()
@@ -91,5 +116,41 @@ class User extends Authenticatable
     public function isStudent(): bool
     {
         return $this->role === self::ROLE_STUDENT;
+    }
+
+    public function formattedName(): string
+    {
+        if ($this->isStudent() || $this->is_student) {
+            return StudentNameFormatter::compose(
+                $this->first_name,
+                $this->middle_initial,
+                $this->last_name,
+                $this->name_extension,
+                $this->name,
+            );
+        }
+
+        return $this->name;
+    }
+
+    /**
+     * @return array<string, ?string>
+     */
+    public function studentNameParts(): array
+    {
+        return [
+            'first_name' => StudentNameFormatter::normalizeNamePart($this->first_name),
+            'middle_initial' => StudentNameFormatter::normalizeMiddleInitial($this->middle_initial),
+            'last_name' => StudentNameFormatter::normalizeNamePart($this->last_name),
+            'name_extension' => StudentNameFormatter::normalizeExtension($this->name_extension),
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function studentNameExtensionOptions(): array
+    {
+        return StudentNameFormatter::extensionOptions();
     }
 }

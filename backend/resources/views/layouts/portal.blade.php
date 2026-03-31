@@ -155,6 +155,12 @@
             color: var(--navy-deep);
         }
 
+        .field-error {
+            color: var(--danger);
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
         input, select, textarea {
             width: 100%;
             border: 1px solid #cfc7b7;
@@ -351,6 +357,40 @@
         .scrollable-list::-webkit-scrollbar-thumb {
             background: rgba(14, 39, 66, 0.2);
             border-radius: 999px;
+        }
+
+        #routing-configuration .section-subheader {
+            margin-bottom: 14px;
+        }
+
+        #routing-configuration .list {
+            margin-top: 8px;
+        }
+
+        #routing-configuration .record {
+            padding: 18px 20px;
+        }
+
+        #routing-configuration .record + .record {
+            margin-top: 12px;
+        }
+
+        .routing-list {
+            max-height: 520px;
+            overflow-y: auto;
+        }
+
+        .routing-list::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .routing-list::-webkit-scrollbar-thumb {
+            background: #c7bca8;
+            border-radius: 999px;
+        }
+
+        .routing-list::-webkit-scrollbar-track {
+            background: transparent;
         }
     </style>
 </head>

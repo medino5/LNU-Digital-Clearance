@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\OfficeAccount;
 use App\Models\User;
+use App\Support\OfficeDesignationBackfill;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -12,19 +13,16 @@ class PortalRoutingTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_root_redirects_to_office_login(): void
+    public function test_guest_root_redirects_to_shared_portal_login(): void
     {
-        // This documents the default browser entry point for the rehauled
-        // portal setup: the root URL should lead to the office login page.
+        // The shared portal login is the guest entry point for the web app.
         $this->get('/')
-            ->assertRedirect(route('office.login'));
+            ->assertRedirect(route('portal.login'));
     }
 
-    public function test_authenticated_admin_can_view_office_login_page(): void
+    public function test_authenticated_admin_root_redirects_to_admin_dashboard(): void
     {
-        // This covers the portal-switching fix: an authenticated admin should
-        // still be able to open the office login page instead of being trapped
-        // on the admin dashboard.
+        // Root now acts as a role-based landing route for signed-in users.
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN,
             'is_student' => false,
@@ -32,17 +30,80 @@ class PortalRoutingTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->get(route('office.login'))
+            ->get('/')
+            ->assertRedirect(route('admin.dashboard'));
+    }
+
+    public function test_authenticated_office_root_redirects_to_office_dashboard(): void
+    {
+        $officeUser = User::factory()->create([
+            'name' => 'Office User',
+            'username' => 'office.user',
+            'password' => Hash::make('password'),
+            'role' => User::ROLE_OFFICE,
+            'is_student' => false,
+            'is_staff' => true,
+        ]);
+
+        $officeAccount = OfficeAccount::create([
+            'user_id' => $officeUser->id,
+            'display_name' => 'College Chief Librarian',
+            'office_type' => OfficeAccount::TYPE_LIBRARIAN,
+            'program_id' => null,
+            'year_level' => null,
+        ]);
+
+        app(OfficeDesignationBackfill::class)->syncOfficeAccount($officeAccount);
+
+        $this->actingAs($officeUser)
+            ->get('/')
+            ->assertRedirect(route('office.dashboard'));
+    }
+
+    public function test_authenticated_admin_can_view_shared_login_page(): void
+    {
+        // Signed-in users can still open the shared login page to switch
+        // accounts without getting trapped on the dashboard.
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN,
+            'is_student' => false,
+            'is_staff' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('portal.login'))
             ->assertOk()
-            ->assertSee('Office Login')
+            ->assertSee('Shared Portal Login')
             ->assertSee('Signing in here will replace the current portal session.')
             ->assertSee('Log Out / Switch Account');
     }
 
-    public function test_authenticated_admin_can_switch_to_office_portal(): void
+    public function test_shared_login_routes_admin_to_admin_dashboard(): void
     {
-        // This proves that signing into another portal replaces the current
-        // browser session and lands on the correct office dashboard.
+        // The shared login should route admins to the admin dashboard after a
+        // successful sign-in.
+        $admin = User::factory()->create([
+            'name' => 'MIS Admin',
+            'username' => 'mis.admin.test',
+            'password' => Hash::make('password'),
+            'role' => User::ROLE_ADMIN,
+            'is_student' => false,
+            'is_staff' => true,
+        ]);
+
+        $response = $this->post(route('portal.login.submit'), [
+            'username' => $admin->username,
+            'password' => 'password',
+        ]);
+
+        $response->assertRedirect(route('admin.dashboard'));
+        $this->assertAuthenticatedAs($admin);
+    }
+
+    public function test_authenticated_admin_can_switch_to_office_account_from_shared_login(): void
+    {
+        // Signing into another role from the shared login replaces the active
+        // session and lands on the correct dashboard.
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN,
             'is_student' => false,
@@ -58,7 +119,7 @@ class PortalRoutingTest extends TestCase
             'is_staff' => true,
         ]);
 
-        OfficeAccount::create([
+        $officeAccount = OfficeAccount::create([
             'user_id' => $officeUser->id,
             'display_name' => 'College Chief Librarian',
             'office_type' => OfficeAccount::TYPE_LIBRARIAN,
@@ -66,7 +127,9 @@ class PortalRoutingTest extends TestCase
             'year_level' => null,
         ]);
 
-        $response = $this->actingAs($admin)->post(route('office.login.submit'), [
+        app(OfficeDesignationBackfill::class)->syncOfficeAccount($officeAccount);
+
+        $response = $this->actingAs($admin)->post(route('portal.login.submit'), [
             'username' => 'office.user',
             'password' => 'password',
         ]);
@@ -80,10 +143,53 @@ class PortalRoutingTest extends TestCase
             ->assertSee('Log Out / Switch Account');
     }
 
+    public function test_shared_login_rejects_student_accounts(): void
+    {
+        // Students are intentionally kept on the mobile app and should not be
+        // able to enter the shared web portal.
+        $student = User::factory()->create([
+            'username' => 'student.user',
+            'password' => Hash::make('password'),
+            'role' => User::ROLE_STUDENT,
+            'is_student' => true,
+            'is_staff' => false,
+        ]);
+
+        $response = $this->from(route('portal.login'))->post(route('portal.login.submit'), [
+            'username' => $student->username,
+            'password' => 'password',
+        ]);
+
+        $response->assertRedirect(route('portal.login'));
+        $response->assertSessionHasErrorsIn('portalLogin', ['username']);
+        $this->assertGuest();
+    }
+
+    public function test_shared_login_renders_inline_validation_feedback_for_missing_fields(): void
+    {
+        $this->from(route('portal.login'))
+            ->followingRedirects()
+            ->post(route('portal.login.submit'), [
+                'username' => '',
+                'password' => '',
+            ])
+            ->assertOk()
+            ->assertSee('The username field is required.')
+            ->assertSee('The password field is required.');
+    }
+
+    public function test_legacy_portal_login_urls_redirect_to_shared_login(): void
+    {
+        // Old login entry points should stay usable while the shared portal
+        // route becomes the new canonical destination.
+        $this->get(route('admin.login'))->assertRedirect(route('portal.login'));
+        $this->get(route('office.login'))->assertRedirect(route('portal.login'));
+    }
+
     public function test_admin_dashboard_shows_logout_and_switch_actions(): void
     {
-        // This keeps the super admin dashboard usable by asserting the visible
-        // session controls that were added during the portal rehaul.
+        // The admin dashboard should expose the shared login entry point and
+        // logout action after the shared-portal update.
         $admin = User::factory()->create([
             'name' => 'MIS Admin',
             'role' => User::ROLE_ADMIN,
@@ -94,14 +200,13 @@ class PortalRoutingTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('Switch to Office Portal')
+            ->assertSee('Open Shared Login')
             ->assertSee('Log Out / Switch Account');
     }
 
     public function test_office_dashboard_shows_logout_and_switch_actions(): void
     {
-        // This mirrors the admin check for office users so logout and portal
-        // switching stay discoverable after future UI changes.
+        // Office users should see the same shared-login and logout actions.
         $officeUser = User::factory()->create([
             'name' => 'Office User',
             'username' => 'office.user',
@@ -111,7 +216,7 @@ class PortalRoutingTest extends TestCase
             'is_staff' => true,
         ]);
 
-        OfficeAccount::create([
+        $officeAccount = OfficeAccount::create([
             'user_id' => $officeUser->id,
             'display_name' => 'College Chief Librarian',
             'office_type' => OfficeAccount::TYPE_LIBRARIAN,
@@ -119,10 +224,12 @@ class PortalRoutingTest extends TestCase
             'year_level' => null,
         ]);
 
+        app(OfficeDesignationBackfill::class)->syncOfficeAccount($officeAccount);
+
         $this->actingAs($officeUser)
             ->get(route('office.dashboard'))
             ->assertOk()
-            ->assertSee('Switch to Admin Portal')
+            ->assertSee('Open Shared Login')
             ->assertSee('Log Out / Switch Account');
     }
 }

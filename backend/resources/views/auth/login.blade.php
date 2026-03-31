@@ -1,14 +1,12 @@
 @extends('layouts.portal', ['title' => $portalTitle])
 
 @section('page')
+    @php($validationErrors = collect($errors->getBags())->flatMap(fn ($bag) => $bag->all()))
+
     <div class="topbar">
         <div>
             <h1>{{ $portalTitle }}</h1>
             <p>{{ $portalSubtitle }}</p>
-        </div>
-        <div class="toolbar">
-            <a class="button topbar-action" href="{{ route('admin.login') }}">Admin</a>
-            <a class="button topbar-action" href="{{ route('office.login') }}">Office</a>
         </div>
     </div>
 
@@ -38,9 +36,9 @@
             </div>
         @endif
 
-        @if($errors->any())
+        @if($validationErrors->isNotEmpty())
             <div class="callout error" style="margin-bottom: 20px;">
-                {{ $errors->first() }}
+                {{ $validationErrors->first() }}
             </div>
         @endif
 
@@ -51,7 +49,8 @@
                 Use the credentials issued by MIS. Student accounts sign in through the mobile app.
             </p>
             <p class="muted" style="margin-top: 0;">
-                Sign in to the selected portal below. If another account is active, this sign-in will replace it.
+                Sign in once and the system will send you to the correct dashboard based on your role.
+                If another account is active, this sign-in will replace it.
             </p>
 
             <form method="POST" action="{{ $submitRoute }}">
@@ -59,11 +58,13 @@
                 <label>
                     {{ $usernameLabel }}
                     <input type="text" name="username" value="{{ old('username') }}" required autofocus>
+                    <x-field-error field="username" bag="portalLogin" />
                 </label>
 
                 <label>
                     Password
                     <input type="password" name="password" required>
+                    <x-field-error field="password" bag="portalLogin" />
                 </label>
 
                 <button type="submit">Sign In</button>

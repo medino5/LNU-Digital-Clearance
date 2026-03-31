@@ -43,29 +43,37 @@ class _ConnectionTestScreenState extends State<ConnectionTestScreen> {
     try {
       final response = await ApiClient().get('/me');
       if (response.statusCode == 401) {
+        final extraLines = NetworkConfig.usesLocalDockerBackend
+            ? 'Mobile host: ${NetworkConfig.androidDebugHost}\n'
+                  'adb reverse: ${NetworkConfig.adbReverseCommand}\n'
+            : 'Shared portal: ${NetworkConfig.sharedPortalUrl}\n';
         setState(() {
           _status =
               'OK: Backend reachable.\n'
               'GET /me returned 401, which is expected before login.\n\n'
-              'Mobile host: ${NetworkConfig.androidDebugHost}\n'
-              'adb reverse: ${NetworkConfig.adbReverseCommand}\n'
+              '$extraLines'
               'URL: ${NetworkConfig.baseUrl}';
         });
       } else {
         setState(() {
-          _status = 'Unexpected response from GET /me:\n'
+          _status =
+              'Unexpected response from GET /me:\n'
               'Status: ${response.statusCode}\n\n'
               'Body:\n${response.body}';
         });
       }
     } catch (e) {
+      final troubleshooting = NetworkConfig.usesLocalDockerBackend
+          ? '1. Docker is running and the backend is up\n'
+                '2. The phone is connected by USB\n'
+                '3. `${NetworkConfig.adbReverseCommand}` has been run\n'
+                '4. Reinstall the app after changing NetworkConfig'
+          : '1. The phone has internet access\n'
+                '2. The Railway deployment is healthy\n'
+                '3. APP_API_BASE_URL points to the live backend\n'
+                '4. The latest tester APK is installed';
       setState(() {
-        _status =
-            'Error: Connection failed.\n\n$e\n\nCheck:\n'
-            '1. Docker is running and the backend is up\n'
-            '2. The phone is connected by USB\n'
-            '3. `${NetworkConfig.adbReverseCommand}` has been run\n'
-            '4. Reinstall the app after changing NetworkConfig';
+        _status = 'Error: Connection failed.\n\n$e\n\nCheck:\n$troubleshooting';
       });
     } finally {
       setState(() {
@@ -100,7 +108,8 @@ class _ConnectionTestScreenState extends State<ConnectionTestScreen> {
       if (response.statusCode == 200 && token != null && token.isNotEmpty) {
         await _storage.write(key: 'auth_token', value: token);
         setState(() {
-          _status = 'OK: Student login succeeded.\n'
+          _status =
+              'OK: Student login succeeded.\n'
               'Message: ${message ?? 'Login successful.'}\n'
               'Token saved to secure storage.\n\n'
               'Student ID: ${_studentIdController.text.trim()}\n'
@@ -108,20 +117,27 @@ class _ConnectionTestScreenState extends State<ConnectionTestScreen> {
         });
       } else {
         setState(() {
-          _status = 'Login failed.\n'
+          _status =
+              'Login failed.\n'
               'Status: ${response.statusCode}\n'
               'Message: ${message ?? 'Unknown error'}\n\n'
               'Body:\n${response.body}';
         });
       }
     } catch (e) {
+      final troubleshooting = NetworkConfig.usesLocalDockerBackend
+          ? '1. Docker is still running\n'
+                '2. The USB cable is connected\n'
+                '3. `${NetworkConfig.adbReverseCommand}` is active\n'
+                '4. The app was rebuilt after config changes'
+          : '1. The Railway backend is reachable\n'
+                '2. The mobile build points at the live API URL\n'
+                '3. The deployed API has migrated successfully\n'
+                '4. The student credentials are correct';
       setState(() {
-        _status = 'Error: Student login request failed.\n\n$e\n\n'
-            'If the backend works on the laptop but not on the phone, check:\n'
-            '1. Docker is still running\n'
-            '2. The USB cable is connected\n'
-            '3. `${NetworkConfig.adbReverseCommand}` is active\n'
-            '4. The app was rebuilt after config changes';
+        _status =
+            'Error: Student login request failed.\n\n$e\n\n'
+            'Check:\n$troubleshooting';
       });
     } finally {
       setState(() {
@@ -167,15 +183,15 @@ class _ConnectionTestScreenState extends State<ConnectionTestScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              'Laptop portals stay on:\n'
-              '${NetworkConfig.adminPortalUrl}\n'
-              '${NetworkConfig.officePortalUrl}',
-              style: TextStyle(color: Colors.grey.shade700, fontSize: 13, height: 1.45),
+              'Shared portal login:\n${NetworkConfig.sharedPortalUrl}',
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontSize: 13,
+                height: 1.45,
+              ),
             ),
             const SizedBox(height: 24),
-            const BuildIdentityCard(
-              title: 'Running Build Identity',
-            ),
+            const BuildIdentityCard(title: 'Running Build Identity'),
             const SizedBox(height: 24),
             Container(
               padding: const EdgeInsets.all(14),
@@ -183,10 +199,14 @@ class _ConnectionTestScreenState extends State<ConnectionTestScreen> {
                 color: const Color(0xFFFFF3D9),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text(
-                'Local phone testing expects Docker on port 8000 and an active USB reverse tunnel. '
-                'Run `adb reverse tcp:8000 tcp:8000` before using the app. '
-                'Test Student Login stores the returned token in secure storage and can replace the current mobile session.',
+              child: Text(
+                NetworkConfig.usesLocalDockerBackend
+                    ? 'Local phone testing expects Docker on port 8000 and an active USB reverse tunnel. '
+                          'Run `adb reverse tcp:8000 tcp:8000` before using the app. '
+                          'Test Student Login stores the returned token in secure storage and can replace the current mobile session.'
+                    : 'This build is pointed at the deployed backend. '
+                          'Test Student Login stores the returned token in secure storage and can replace the current mobile session. '
+                          'If requests fail, check the Railway deployment and the configured APP_API_BASE_URL.',
                 style: TextStyle(
                   color: Color(0xFF1B3A6B),
                   fontWeight: FontWeight.w600,
@@ -261,9 +281,7 @@ class _ConnectionTestScreenState extends State<ConnectionTestScreen> {
                     )
                   : const Text(
                       'Test Student Login',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
             ),
             const SizedBox(height: 24),

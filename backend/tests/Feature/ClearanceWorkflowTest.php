@@ -4,7 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\Clearance;
 use App\Models\ClearanceStep;
+use App\Models\OfficeAccount;
+use App\Models\OfficeDesignation;
 use App\Models\Student;
+use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -55,6 +58,13 @@ class ClearanceWorkflowTest extends TestCase
             $secondResponse->json('clearance.id'),
         );
         $this->assertDatabaseCount('clearances', 1);
+        $this->assertDatabaseCount('clearance_steps', 5);
+        $this->assertDatabaseHas('clearance_steps', [
+            'clearance_id' => $response->json('clearance.id'),
+            'office_designation_id' => OfficeDesignation::query()
+                ->where('key', 'bsit-acad-org-treasurer')
+                ->value('id'),
+        ]);
     }
 
     public function test_clearance_snapshots_do_not_change_after_student_profile_edits(): void
@@ -90,7 +100,7 @@ class ClearanceWorkflowTest extends TestCase
         Sanctum::actingAs($student->user);
         $this->postJson('/api/clearance')->assertOk();
 
-        $clearance = Clearance::with('steps.officeAccount.user')->firstOrFail();
+        $clearance = Clearance::with('steps.officeDesignation.activeUsers')->firstOrFail();
 
         $flaggedStep = $clearance->steps->firstWhere(
             'office_label',
@@ -100,15 +110,20 @@ class ClearanceWorkflowTest extends TestCase
             'office_label',
             'DIGITS Academic Organization Treasurer'
         );
+        $approvedOfficeUser = $approvedStep->officeDesignation->activeUsers->first();
+        $this->assertNotNull($approvedOfficeUser);
 
-        $this->actingAs($approvedStep->officeAccount->user)
+        $this->actingAs($approvedOfficeUser)
             ->post(route('office.steps.process', $approvedStep), [
                 'action' => 'approve',
                 'remarks' => 'Approved by test office.',
             ])
             ->assertRedirect();
 
-        $this->actingAs($flaggedStep->officeAccount->user)
+        $flaggedOfficeUser = $flaggedStep->officeDesignation->activeUsers->first();
+        $this->assertNotNull($flaggedOfficeUser);
+
+        $this->actingAs($flaggedOfficeUser)
             ->post(route('office.steps.process', $flaggedStep), [
                 'action' => 'flag',
                 'remarks' => 'Please resolve your concern.',
@@ -136,10 +151,13 @@ class ClearanceWorkflowTest extends TestCase
         $this->assertSame(ClearanceStep::STATUS_AWAITING_ACTION, $flaggedStep->status);
 
         $clearance->refresh();
-        $clearance->load('steps.officeAccount.user');
+        $clearance->load('steps.officeDesignation.activeUsers');
 
         foreach ($clearance->steps as $step) {
-            $this->actingAs($step->officeAccount->user)
+            $officeUser = $step->officeDesignation->activeUsers->first();
+            $this->assertNotNull($officeUser);
+
+            $this->actingAs($officeUser)
                 ->post(route('office.steps.process', $step), [
                     'action' => 'approve',
                     'remarks' => 'Approved.',
@@ -169,12 +187,12 @@ class ClearanceWorkflowTest extends TestCase
         Sanctum::actingAs($student->user);
         $this->postJson('/api/clearance')->assertOk();
 
-        $bsitOfficeUser = \App\Models\OfficeAccount::where(
+        $bsitOfficeUser = OfficeAccount::where(
             'display_name',
             'DIGITS Academic Organization Treasurer'
         )->firstOrFail()->user;
 
-        $baelOfficeUser = \App\Models\OfficeAccount::where(
+        $baelOfficeUser = OfficeAccount::where(
             'display_name',
             'English Circle Academic Organization Treasurer'
         )->firstOrFail()->user;
@@ -190,6 +208,61 @@ class ClearanceWorkflowTest extends TestCase
             ->assertDontSee('John A. Doe');
     }
 
+    public function test_office_dashboard_shows_empty_state_when_user_has_no_active_designation(): void
+    {
+        // Ticket 42 replaces the old 404 with a real empty state so office
+        // users without an active designation can still reach the portal.
+        $officeUser = User::factory()->create([
+            'name' => 'Unassigned Office User',
+            'username' => 'office.unassigned',
+            'role' => User::ROLE_OFFICE,
+            'is_student' => false,
+            'is_staff' => true,
+        ]);
+
+        OfficeAccount::create([
+            'user_id' => $officeUser->id,
+            'display_name' => 'Unassigned Office User',
+            'office_type' => OfficeAccount::TYPE_LIBRARIAN,
+            'program_id' => null,
+            'year_level' => null,
+        ]);
+
+        $this->actingAs($officeUser)
+            ->get('/office')
+            ->assertOk()
+            ->assertSee('No Active Designation Assigned')
+            ->assertSee('Please contact the super admin to assign your designation.');
+    }
+
+    public function test_office_dashboard_uses_step_snapshot_label_for_designation_cards(): void
+    {
+        // The dashboard should show the routed step label so the record stays
+        // readable even if the live designation title changes later.
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        Sanctum::actingAs($student->user);
+        $this->postJson('/api/clearance')->assertOk();
+
+        $step = ClearanceStep::query()
+            ->where('office_label', 'DIGITS Academic Organization Treasurer')
+            ->firstOrFail();
+
+        $step->update([
+            'office_label' => 'Snapshot Treasurer Label',
+        ]);
+
+        $officeUser = OfficeAccount::where(
+            'display_name',
+            'DIGITS Academic Organization Treasurer'
+        )->firstOrFail()->user;
+
+        $this->actingAs($officeUser)
+            ->get('/office')
+            ->assertOk()
+            ->assertSee('Designation:')
+            ->assertSee('Snapshot Treasurer Label');
+    }
+
     public function test_office_user_cannot_process_a_step_owned_by_a_different_office(): void
     {
         // This ensures step processing stays locked to the assigned office
@@ -200,7 +273,7 @@ class ClearanceWorkflowTest extends TestCase
         $this->postJson('/api/clearance')->assertOk();
 
         $step = ClearanceStep::query()->firstOrFail();
-        $wrongOfficeUser = \App\Models\OfficeAccount::where(
+        $wrongOfficeUser = OfficeAccount::where(
             'display_name',
             'English Circle Academic Organization Treasurer'
         )->firstOrFail()->user;
@@ -214,5 +287,160 @@ class ClearanceWorkflowTest extends TestCase
 
         $step->refresh();
         $this->assertSame(ClearanceStep::STATUS_AWAITING_ACTION, $step->status);
+    }
+
+    public function test_office_dashboard_shows_validation_feedback_when_flag_reason_is_missing(): void
+    {
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        Sanctum::actingAs($student->user);
+        $this->postJson('/api/clearance')->assertOk();
+
+        $step = ClearanceStep::query()
+            ->where('office_label', 'DIGITS Academic Organization Treasurer')
+            ->firstOrFail();
+        $officeUser = $step->officeDesignation->activeUsers->first();
+        $this->assertNotNull($officeUser);
+
+        $response = $this->actingAs($officeUser)
+            ->from(route('office.dashboard'))
+            ->post(route('office.steps.process', $step), [
+                'action' => 'flag',
+                'remarks' => '',
+                'step_id' => $step->id,
+            ]);
+
+        $response->assertRedirect(route('office.dashboard'));
+        $response->assertSessionHasErrorsIn('officeProcess', ['remarks']);
+
+        $this->actingAs($officeUser)
+            ->followingRedirects()
+            ->from(route('office.dashboard'))
+            ->post(route('office.steps.process', $step), [
+                'action' => 'flag',
+                'remarks' => '',
+                'step_id' => $step->id,
+            ])
+            ->assertOk()
+            ->assertSee('Flag reason is required before marking this clearance step as flagged.');
+    }
+
+    public function test_any_active_holder_of_a_designation_can_process_the_step(): void
+    {
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        Sanctum::actingAs($student->user);
+        $this->postJson('/api/clearance')->assertOk();
+
+        $program = \App\Models\Program::where('code', 'BSIT')->firstOrFail();
+
+        $secondaryHolder = \App\Models\User::factory()->create([
+            'name' => 'Second DIGITS Treasurer',
+            'username' => 'digits.second',
+            'role' => \App\Models\User::ROLE_OFFICE,
+            'is_student' => false,
+            'is_staff' => true,
+        ]);
+
+        $secondaryOfficeAccount = OfficeAccount::create([
+            'user_id' => $secondaryHolder->id,
+            'display_name' => 'DIGITS Academic Organization Treasurer',
+            'office_type' => OfficeAccount::TYPE_ACAD_ORG_TREASURER,
+            'program_id' => $program->id,
+        ]);
+
+        app(\App\Support\OfficeDesignationBackfill::class)
+            ->syncOfficeAccount($secondaryOfficeAccount->fresh('program'));
+
+        $step = ClearanceStep::query()
+            ->where('office_label', 'DIGITS Academic Organization Treasurer')
+            ->firstOrFail();
+
+        $this->actingAs($secondaryHolder)
+            ->post(route('office.steps.process', $step), [
+                'action' => 'approve',
+                'remarks' => 'Approved by secondary holder.',
+            ])
+            ->assertRedirect();
+
+        $step->refresh();
+
+        $this->assertSame(ClearanceStep::STATUS_APPROVED, $step->status);
+        $this->assertSame('Approved by secondary holder.', $step->remarks);
+    }
+
+    public function test_student_can_initiate_clearance_even_when_required_designation_has_no_active_holder(): void
+    {
+        // The final restructure should keep designation routing available even
+        // if a required designation is temporarily unassigned.
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        $designation = OfficeDesignation::query()
+            ->where('key', 'bsit-acad-org-treasurer')
+            ->firstOrFail();
+
+        \App\Models\OfficeDesignationAssignment::query()
+            ->where('office_designation_id', $designation->id)
+            ->where('is_active', true)
+            ->update([
+                'is_active' => false,
+                'released_at' => now(),
+            ]);
+
+        Sanctum::actingAs($student->user);
+        $response = $this->postJson('/api/clearance');
+
+        $response->assertOk()
+            ->assertJsonPath('clearance.counts.total', 5);
+
+        $this->assertDatabaseHas('clearance_steps', [
+            'clearance_id' => $response->json('clearance.id'),
+            'office_designation_id' => $designation->id,
+            'office_label' => 'DIGITS Academic Organization Treasurer',
+        ]);
+    }
+
+    public function test_unassigned_designation_step_becomes_visible_after_a_later_assignment(): void
+    {
+        // Steps routed while a designation is unassigned should appear on the
+        // office dashboard once a matching holder is assigned later.
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        $program = \App\Models\Program::where('code', 'BSIT')->firstOrFail();
+        $designation = OfficeDesignation::query()
+            ->where('key', 'bsit-acad-org-treasurer')
+            ->firstOrFail();
+
+        \App\Models\OfficeDesignationAssignment::query()
+            ->where('office_designation_id', $designation->id)
+            ->where('is_active', true)
+            ->update([
+                'is_active' => false,
+                'released_at' => now(),
+            ]);
+
+        Sanctum::actingAs($student->user);
+        $this->postJson('/api/clearance')->assertOk();
+
+        $newHolder = User::factory()->create([
+            'name' => 'Retroactive DIGITS Treasurer',
+            'username' => 'digits.retroactive',
+            'role' => User::ROLE_OFFICE,
+            'is_student' => false,
+            'is_staff' => true,
+        ]);
+
+        $newOfficeAccount = OfficeAccount::create([
+            'user_id' => $newHolder->id,
+            'display_name' => 'Retroactive DIGITS Treasurer',
+            'office_type' => OfficeAccount::TYPE_ACAD_ORG_TREASURER,
+            'program_id' => $program->id,
+            'year_level' => null,
+        ]);
+
+        app(\App\Support\OfficeDesignationBackfill::class)
+            ->syncOfficeAccount($newOfficeAccount->fresh('program'));
+
+        $this->actingAs($newHolder)
+            ->get('/office')
+            ->assertOk()
+            ->assertSee('John A. Doe')
+            ->assertSee('DIGITS Academic Organization Treasurer');
     }
 }
