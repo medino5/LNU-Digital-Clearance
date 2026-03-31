@@ -74,7 +74,7 @@
                 <a href="#accounts-records" class="card stat-card clickable-card">
                     <div class="eyebrow">Office Accounts</div>
                     <p class="metric">{{ $officeAccounts->count() }}</p>
-                    <p class="metric-note">Position-based accounts used for routing and approvals.</p>
+                    <p class="metric-note">Named holder accounts linked to generated designation titles.</p>
                     <span class="manage-pill">Manage</span>
                 </a>
 
@@ -506,14 +506,17 @@
                 <div class="section-stack">
                     <div class="card">
                         <div class="eyebrow">Create Office Account</div>
-                        <h3>Set up route targets for approvals</h3>
+                        <h3>Create a holder account for a specific designation scope</h3>
                         @php($officeCreateFormKey = 'office-account-create')
-                        <form method="POST" action="{{ route('admin.office-accounts.store') }}">
+                        <form method="POST" action="{{ route('admin.office-accounts.store') }}" data-office-account-form>
                             @csrf
                             <input type="hidden" name="_form_key" value="{{ $officeCreateFormKey }}">
+                            <p class="section-copy" style="margin-top: 0;">
+                                Enter the holder's actual name here. The designation title is generated automatically from the office type and scope.
+                            </p>
                             <div class="field-grid">
                                 <label>
-                                    Display Name
+                                    Officer Name
                                     <input type="text" name="display_name" value="{{ $activeFormKey === $officeCreateFormKey ? old('display_name') : '' }}" required>
                                     @if($activeFormKey === $officeCreateFormKey)
                                         <x-field-error field="display_name" bag="officeAccountCreate" />
@@ -530,7 +533,7 @@
                             <div class="field-grid">
                                 <label>
                                     Office Type
-                                    <select name="office_type" required>
+                                    <select name="office_type" required data-office-type-select>
                                         <option value="">Select type</option>
                                         @foreach($officeTypeOptions as $value => $label)
                                             <option value="{{ $value }}" {{ $activeFormKey === $officeCreateFormKey && old('office_type') === $value ? 'selected' : '' }}>{{ $label }}</option>
@@ -548,11 +551,14 @@
                                     @endif
                                 </label>
                             </div>
+                            <p class="mini" data-scope-note style="margin: -2px 0 8px; color: #5b6578;">
+                                Choose an office type to see which scope fields are actually used.
+                            </p>
                             <div class="field-grid">
                                 <label>
                                     Program Scope
-                                    <select name="program_id">
-                                        <option value="">No program scope</option>
+                                    <select name="program_id" data-program-scope-select>
+                                        <option value="">Select program scope</option>
                                         @foreach($programs as $program)
                                             <option value="{{ $program->id }}" {{ $activeFormKey === $officeCreateFormKey && (string) old('program_id') === (string) $program->id ? 'selected' : '' }}>{{ $program->code }}</option>
                                         @endforeach
@@ -563,8 +569,8 @@
                                 </label>
                                 <label>
                                     Year Level Scope
-                                    <select name="year_level">
-                                        <option value="">No year level scope</option>
+                                    <select name="year_level" data-year-level-scope-select>
+                                        <option value="">Select year level scope</option>
                                         @foreach($yearLevels as $yearLevel)
                                             <option value="{{ $yearLevel }}" {{ $activeFormKey === $officeCreateFormKey && (string) old('year_level') === (string) $yearLevel ? 'selected' : '' }}>{{ $yearLevel }}{{ ['st', 'nd', 'rd', 'th'][$yearLevel - 1] ?? 'th' }} Year</option>
                                         @endforeach
@@ -580,29 +586,37 @@
 
                     <div class="card">
                         <div class="eyebrow">Office List</div>
-                        <h3>Routing targets and position logins</h3>
+                        <h3>Holder accounts and generated designation titles</h3>
                         <div class="list scrollable-list">
                             @foreach($officeAccounts as $officeAccount)
                                 @php($officeUpdateFormKey = 'office-account-update-' . $officeAccount->id)
                                 <details class="record" {{ $activeFormKey === $officeUpdateFormKey ? 'open' : '' }}>
                                     <summary>{{ $officeAccount->display_name }}</summary>
                                     <p class="mini">
-                                        {{ $officeAccount->officeTypeLabel() }}
-                                        @if($officeAccount->program)
-                                            | Program: {{ $officeAccount->program->code }}
-                                        @endif
-                                        @if($officeAccount->year_level)
-                                            | Year: {{ $officeAccount->year_level }}
-                                        @endif
+                                        {{ $officeAccount->designationDisplayName() }}
+                                        | {{ $officeAccount->scopeSummaryLabel() }}
+                                        | Username: {{ $officeAccount->user->username }}
                                     </p>
                                     <div class="divider"></div>
-                                    <form method="POST" action="{{ route('admin.office-accounts.update', $officeAccount) }}">
+                                    <form method="POST" action="{{ route('admin.office-accounts.update', $officeAccount) }}" data-office-account-form>
                                         @csrf
                                         @method('PUT')
                                         <input type="hidden" name="_form_key" value="{{ $officeUpdateFormKey }}">
                                         <div class="field-grid">
+                                            <div>
+                                                <div class="eyebrow">Generated Designation Title</div>
+                                                <p style="margin-top: 6px;">{{ $officeAccount->designationDisplayName() }}</p>
+                                            </div>
+
+                                            <div>
+                                                <div class="eyebrow">Scope Summary</div>
+                                                <p style="margin-top: 6px;">{{ $officeAccount->scopeSummaryLabel() }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="divider"></div>
+                                        <div class="field-grid">
                                             <label>
-                                                Display Name
+                                                Officer Name
                                                 <input type="text" name="display_name" value="{{ $activeFormKey === $officeUpdateFormKey ? old('display_name', $officeAccount->display_name) : $officeAccount->display_name }}" required>
                                                 @if($activeFormKey === $officeUpdateFormKey)
                                                     <x-field-error field="display_name" bag="officeAccountUpdate" />
@@ -619,7 +633,7 @@
                                         <div class="field-grid">
                                             <label>
                                                 Office Type
-                                                <select name="office_type" required>
+                                                <select name="office_type" required data-office-type-select>
                                                     @foreach($officeTypeOptions as $value => $label)
                                                         <option
                                                             value="{{ $value }}"
@@ -641,11 +655,14 @@
                                                 @endif
                                             </label>
                                         </div>
+                                        <p class="mini" data-scope-note style="margin: -2px 0 8px; color: #5b6578;">
+                                            {{ $officeTypeScopeMetadata[$officeAccount->office_type]['note'] ?? 'Choose an office type to see which scope fields are actually used.' }}
+                                        </p>
                                         <div class="field-grid">
                                             <label>
                                                 Program Scope
-                                                <select name="program_id">
-                                                    <option value="">No program scope</option>
+                                                <select name="program_id" data-program-scope-select>
+                                                    <option value="">Select program scope</option>
                                                     @foreach($programs as $program)
                                                         <option
                                                             value="{{ $program->id }}"
@@ -661,8 +678,8 @@
                                             </label>
                                             <label>
                                                 Year Level Scope
-                                                <select name="year_level">
-                                                    <option value="">No year level scope</option>
+                                                <select name="year_level" data-year-level-scope-select>
+                                                    <option value="">Select year level scope</option>
                                                     @foreach($yearLevels as $yearLevel)
                                                         <option
                                                             value="{{ $yearLevel }}"
@@ -760,6 +777,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const normalizeStudentId = (value) => value.replace(/\D+/g, '').slice(0, 7);
+            const officeTypeScopeMetadata = @json($officeTypeScopeMetadata);
 
             document.querySelectorAll('input[data-student-id-input]').forEach((input) => {
                 input.addEventListener('beforeinput', (event) => {
@@ -789,6 +807,43 @@
 
                     input.value = nextValue;
                 });
+            });
+
+            document.querySelectorAll('form[data-office-account-form]').forEach((form) => {
+                const officeTypeSelect = form.querySelector('[data-office-type-select]');
+                const programScopeSelect = form.querySelector('[data-program-scope-select]');
+                const yearLevelScopeSelect = form.querySelector('[data-year-level-scope-select]');
+                const scopeNote = form.querySelector('[data-scope-note]');
+
+                if (!officeTypeSelect || !programScopeSelect || !yearLevelScopeSelect || !scopeNote) {
+                    return;
+                }
+
+                const applyOfficeScopeState = () => {
+                    const officeType = officeTypeSelect.value;
+                    const scopeMeta = officeTypeScopeMetadata[officeType] ?? null;
+                    const scopeType = scopeMeta ? scopeMeta.scope : null;
+                    const requiresProgram = scopeType === 'program';
+                    const requiresYearLevel = scopeType === 'year_level';
+
+                    programScopeSelect.disabled = !requiresProgram;
+                    yearLevelScopeSelect.disabled = !requiresYearLevel;
+
+                    if (!requiresProgram) {
+                        programScopeSelect.value = '';
+                    }
+
+                    if (!requiresYearLevel) {
+                        yearLevelScopeSelect.value = '';
+                    }
+
+                    scopeNote.textContent = scopeMeta
+                        ? scopeMeta.note
+                        : 'Choose an office type to see which scope fields are actually used.';
+                };
+
+                officeTypeSelect.addEventListener('change', applyOfficeScopeState);
+                applyOfficeScopeState();
             });
         });
     </script>

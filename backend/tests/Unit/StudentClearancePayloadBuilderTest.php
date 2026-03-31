@@ -5,14 +5,10 @@ namespace Tests\Unit;
 use App\Models\Clearance;
 use App\Models\ClearanceStep;
 use App\Models\OfficeAccount;
-use App\Models\Program;
-use App\Models\Semester;
-use App\Models\Student;
 use App\Models\User;
 use App\Support\OfficeDesignationBackfill;
 use App\Support\StudentClearancePayloadBuilder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class StudentClearancePayloadBuilderTest extends TestCase
@@ -23,70 +19,51 @@ class StudentClearancePayloadBuilderTest extends TestCase
     {
         // This unit test focuses on the payload transformer that feeds the
         // Flutter app, so we can verify the JSON shape without hitting routes.
-        $program = Program::create([
+        // The goal is to prove that one builder call returns the full mobile
+        // dashboard payload: student snapshot, semester info, clearance counts,
+        // office steps, and the latest event details for flagged items.
+        $program = \App\Models\Program::factory()->create([
             'code' => 'BSIT',
             'name' => 'Bachelor of Science in Information Technology',
             'org_name' => 'DIGITS',
         ]);
 
-        $user = User::factory()->create([
-            'name' => 'John A. Doe',
-            'first_name' => 'John',
-            'middle_initial' => 'A',
-            'last_name' => 'Doe',
-            'name_extension' => null,
+        // Create the student and clearance snapshot data exactly the way the
+        // mobile app expects to receive it after login.
+        $user = User::factory()->namedStudent('John', 'A', 'Doe')->create([
             'username' => '2302314',
-            'password' => Hash::make('password'),
-            'role' => User::ROLE_STUDENT,
-            'is_student' => true,
-            'is_staff' => false,
         ]);
 
-        $student = Student::create([
-            'user_id' => $user->id,
+        $student = \App\Models\Student::factory()->for($user, 'user')->for($program, 'program')->create([
             'student_id_number' => '2302314',
-            'program_id' => $program->id,
             'year_level' => 3,
         ]);
 
-        $semester = Semester::create([
+        $semester = \App\Models\Semester::factory()->active()->create([
             'label' => '2nd Semester 2024-2025',
-            'is_active' => true,
         ]);
 
-        $clearance = Clearance::create([
-            'student_id' => $student->id,
-            'semester_id' => $semester->id,
+        $clearance = Clearance::create($this->clearanceSnapshotAttributes($student, $semester, [
             'status' => Clearance::STATUS_FLAGGED,
             'reference_number' => 'CLR-1-00001-1234',
-            'student_name' => 'John A. Doe',
-            'student_id_number' => '2302314',
-            'year_level' => 3,
-            'program_code' => 'BSIT',
-            'program_name' => 'Bachelor of Science in Information Technology',
-            'organization_name' => 'DIGITS',
-            'semester_label' => $semester->label,
-        ]);
+        ]));
 
-        $officeUser = User::factory()->create([
-            'role' => User::ROLE_OFFICE,
-            'is_student' => false,
-            'is_staff' => true,
-        ]);
+        // Build one approved program-scoped step so the payload has a
+        // completed office entry and a signed event actor.
+        $officeUser = User::factory()->office()->create();
 
-        $office = OfficeAccount::create([
-            'user_id' => $officeUser->id,
-            'display_name' => 'DIGITS Academic Organization Treasurer',
-            'office_type' => OfficeAccount::TYPE_ACAD_ORG_TREASURER,
-            'program_id' => $program->id,
-            'year_level' => null,
+        $office = OfficeAccount::factory()
+            ->for($officeUser, 'user')
+            ->academicOrgTreasurer($program)
+            ->create([
+            'display_name' => 'Alyssa Mendoza',
         ]);
         $officeDesignation = app(OfficeDesignationBackfill::class)->syncOfficeAccount($office->fresh('program'));
 
         $approvedStep = $clearance->steps()->create([
             'office_designation_id' => $officeDesignation->id,
             'status' => ClearanceStep::STATUS_APPROVED,
-            'office_label' => $office->display_name,
+            'office_label' => $officeDesignation->display_name,
             'office_type' => $office->office_type,
             'scope_label' => 'BSIT',
             'signed_at' => now(),
@@ -97,18 +74,15 @@ class StudentClearancePayloadBuilderTest extends TestCase
             'action' => 'approved',
         ]);
 
-        $yearOfficeUser = User::factory()->create([
-            'role' => User::ROLE_OFFICE,
-            'is_student' => false,
-            'is_staff' => true,
-        ]);
+        // Build one flagged year-level step so we can verify the mobile app's
+        // re-submit branch and the last-event remarks payload.
+        $yearOfficeUser = User::factory()->office()->create();
 
-        $yearOffice = OfficeAccount::create([
-            'user_id' => $yearOfficeUser->id,
-            'display_name' => '3rd Year Level Organization Treasurer',
-            'office_type' => OfficeAccount::TYPE_YEAR_LEVEL_TREASURER,
-            'program_id' => null,
-            'year_level' => 3,
+        $yearOffice = OfficeAccount::factory()
+            ->for($yearOfficeUser, 'user')
+            ->yearLevelTreasurer(3)
+            ->create([
+            'display_name' => 'Carlo Santos',
         ]);
         $yearDesignation = app(OfficeDesignationBackfill::class)->syncOfficeAccount($yearOffice);
 
@@ -127,12 +101,16 @@ class StudentClearancePayloadBuilderTest extends TestCase
             'remarks' => 'Please clear your issue first.',
         ]);
 
+        // Call the payload builder directly so the test stays narrowly focused
+        // on the response shape consumed by Flutter.
         $payload = app(StudentClearancePayloadBuilder::class)->build(
             $student,
             $semester,
             $clearance->fresh(['steps.events', 'steps.officeDesignation'])
         );
 
+        // These assertions protect the fields the mobile UI renders on the
+        // overview card, current-clearance summary, and flagged-step actions.
         $this->assertSame('John A. Doe', $payload['student']['name']);
         $this->assertSame('John', $payload['student']['first_name']);
         $this->assertSame('A', $payload['student']['middle_initial']);

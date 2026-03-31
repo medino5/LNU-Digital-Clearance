@@ -10,7 +10,7 @@
         <div class="section-subheader">
             <div>
                 <h3>Manage Designation Assignments</h3>
-                <p class="section-copy">Review each routing designation and choose which eligible office account currently holds it.</p>
+                <p class="section-copy">Review each routing designation and choose which eligible holder currently owns it.</p>
             </div>
         </div>
 
@@ -22,6 +22,16 @@
                     $eligibleUsers = $designation->getRelation('eligible_users');
                     $currentUser = $currentAssignment?->user;
                     $currentOfficeAccount = $currentUser?->officeAccount;
+                    $currentStudentProfile = $currentUser?->studentProfile;
+                    $currentHolderLabel = collect([
+                        $currentOfficeAccount?->display_name ?? $currentUser?->formattedName(),
+                        $currentOfficeAccount ? 'Office Account' : ($currentStudentProfile ? 'Student Holder' : null),
+                        $currentOfficeAccount?->designationDisplayName(),
+                        $currentOfficeAccount?->program?->code ?? $currentStudentProfile?->program?->code,
+                        ($currentOfficeAccount?->year_level ?? $currentStudentProfile?->year_level)
+                            ? 'Year ' . ($currentOfficeAccount?->year_level ?? $currentStudentProfile?->year_level)
+                            : null,
+                    ])->filter()->implode(' | ');
                 @endphp
 
                 <details class="record" {{ $activeFormKey === $designationFormKey ? 'open' : '' }}>
@@ -29,7 +39,7 @@
                         {{ $designation->display_name }}
                         <span class="mini" style="display:block; margin-top:6px;">
                             Current Assigned:
-                            {{ $currentOfficeAccount?->display_name ?? $currentUser?->name ?? 'No active assignment' }}
+                            {{ $currentHolderLabel ?: 'No active assignment' }}
                             @if($designation->scopeLabel())
                                 | Scope: {{ $designation->scopeLabel() }}
                             @endif
@@ -57,13 +67,13 @@
 
                         <div>
                             <div class="eyebrow">Scope</div>
-                            <p style="margin-top: 6px;">{{ $designation->scopeLabel() ?? 'No scope restriction' }}</p>
+                            <p style="margin-top: 6px;">{{ $designation->scopeLabel() ?? 'Global designation' }}</p>
                         </div>
 
                         <div>
-                            <div class="eyebrow">Current Assigned Office User</div>
+                            <div class="eyebrow">Current Assigned Holder</div>
                             <p style="margin-top: 6px;">
-                                {{ $currentOfficeAccount?->display_name ?? $currentUser?->name ?? 'No active assignment' }}
+                                {{ $currentHolderLabel ?: 'No active assignment' }}
                             </p>
                         </div>
                     </div>
@@ -76,17 +86,22 @@
                         <input type="hidden" name="_form_key" value="{{ $designationFormKey }}">
 
                         <label>
-                            Select Office User
+                            Select Holder
                             <select name="user_id" required>
-                                <option value="">Select office user</option>
+                                <option value="">Select holder</option>
                                 @foreach($eligibleUsers as $eligibleUser)
                                     @php
                                         $eligibleOfficeAccount = $eligibleUser->officeAccount;
+                                        $eligibleStudentProfile = $eligibleUser->studentProfile;
                                         $isSelected = $currentUser && $currentUser->id === $eligibleUser->id;
                                         $labelParts = collect([
-                                            $eligibleOfficeAccount?->display_name ?? $eligibleUser->name,
-                                            $eligibleOfficeAccount?->program?->code,
-                                            $eligibleOfficeAccount?->year_level ? 'Year ' . $eligibleOfficeAccount->year_level : null,
+                                            $eligibleOfficeAccount?->display_name ?? $eligibleUser->formattedName(),
+                                            $eligibleOfficeAccount ? 'Office Account' : ($eligibleStudentProfile ? 'Student Holder' : null),
+                                            $eligibleOfficeAccount?->designationDisplayName(),
+                                            $eligibleOfficeAccount?->program?->code ?? $eligibleStudentProfile?->program?->code,
+                                            ($eligibleOfficeAccount?->year_level ?? $eligibleStudentProfile?->year_level)
+                                                ? 'Year ' . ($eligibleOfficeAccount?->year_level ?? $eligibleStudentProfile?->year_level)
+                                                : null,
                                         ])->filter()->implode(' | ');
                                     @endphp
                                     <option
@@ -104,7 +119,7 @@
 
                         @if($eligibleUsers->isEmpty())
                             <p class="mini" style="margin-top: 10px; color: #b5442c;">
-                                No eligible office users found for this designation scope.
+                                No eligible holders found for this designation scope.
                             </p>
                         @endif
 

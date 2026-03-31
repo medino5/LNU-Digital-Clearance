@@ -24,23 +24,17 @@ class AdminOfficeDesignationController extends Controller
             $redirectTo,
         );
 
-        $user = User::with('officeAccount')->findOrFail($validated['user_id']);
+        $user = User::with([
+            'officeAccount.program',
+            'studentProfile.program',
+        ])->findOrFail($validated['user_id']);
 
-        if (! $user->isOffice() || ! $user->officeAccount) {
+        if (! $officeDesignation->matchesUser($user)) {
             return $this->redirectWithInputAndMessage(
                 $request,
                 $redirectTo,
                 'error',
-                'The selected user is not a valid office account.',
-            );
-        }
-
-        if (! $officeDesignation->matchesOfficeAccount($user->officeAccount)) {
-            return $this->redirectWithInputAndMessage(
-                $request,
-                $redirectTo,
-                'error',
-                'The selected office user is not eligible for this designation.',
+                'The selected user is not eligible for this designation.',
             );
         }
 

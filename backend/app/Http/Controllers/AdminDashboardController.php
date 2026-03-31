@@ -30,21 +30,28 @@ class AdminDashboardController extends Controller
         $designationQuery = OfficeDesignation::with([
             'program',
             'activeAssignments.user.officeAccount.program',
+            'activeAssignments.user.studentProfile.program',
         ])
             ->where('is_active', true)
             ->orderBy('office_type')
             ->orderBy('display_name');
 
-        $officeUsers = User::with(['officeAccount.program'])
-            ->where('role', User::ROLE_OFFICE)
-            ->whereHas('officeAccount')
+        $designationCandidates = User::with([
+            'officeAccount.program',
+            'studentProfile.program',
+        ])
+            ->where('role', '!=', User::ROLE_ADMIN)
+            ->where(function ($query) {
+                $query->whereHas('officeAccount')
+                    ->orWhereHas('studentProfile');
+            })
             ->get();
 
-        $designations = $designationQuery->get()->map(function (OfficeDesignation $designation) use ($officeUsers) {
-            $eligibleUsers = $officeUsers
-                ->filter(fn (User $user) => $designation->matchesOfficeAccount($user->officeAccount))
+        $designations = $designationQuery->get()->map(function (OfficeDesignation $designation) use ($designationCandidates) {
+            $eligibleUsers = $designationCandidates
+                ->filter(fn (User $user) => $designation->matchesUser($user))
                 ->sortBy(function (User $user) {
-                    return strtolower($user->officeAccount->display_name ?? $user->name);
+                    return strtolower($user->officeAccount->display_name ?? $user->formattedName());
                 })
                 ->values();
 
@@ -60,13 +67,19 @@ class AdminDashboardController extends Controller
             'programs' => Program::orderBy('code')->get(),
             'semesters' => Semester::orderByDesc('is_active')->orderByDesc('created_at')->get(),
             'students' => Student::with(['user', 'program'])->orderBy('student_id_number')->get(),
-            'officeAccounts' => OfficeAccount::with(['user', 'program'])->orderBy('display_name')->get(),
+            'officeAccounts' => OfficeAccount::with(['user', 'program'])
+                ->orderBy('office_type')
+                ->orderBy('program_id')
+                ->orderBy('year_level')
+                ->orderBy('display_name')
+                ->get(),
             'officeTypeOptions' => OfficeAccount::typeOptions(),
             'yearLevels' => [1, 2, 3, 4],
             'history' => $history,
             'selectedSemesterId' => $selectedSemesterId,
             'designations' => $designations,
             'studentNameExtensions' => User::studentNameExtensionOptions(),
+            'officeTypeScopeMetadata' => OfficeAccount::scopeMetadata(),
         ]);
     }
 }

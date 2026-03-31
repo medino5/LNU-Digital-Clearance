@@ -209,11 +209,9 @@ class ClearanceWorkflowService
     ): ClearanceStep {
         $step->loadMissing('clearance', 'officeDesignation');
 
-        if (
-            !$actor->isOffice()
-            || !$actor->activeOfficeDesignations()
-                ->where('office_designations.id', $step->office_designation_id)
-                ->exists()
+        if (! $actor->activeOfficeDesignations()
+            ->where('office_designations.id', $step->office_designation_id)
+            ->exists()
         ) {
             throw new RuntimeException('You are not allowed to process this clearance step.');
         }

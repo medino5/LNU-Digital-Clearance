@@ -187,15 +187,9 @@ class ClearanceWorkflowTest extends TestCase
         Sanctum::actingAs($student->user);
         $this->postJson('/api/clearance')->assertOk();
 
-        $bsitOfficeUser = OfficeAccount::where(
-            'display_name',
-            'DIGITS Academic Organization Treasurer'
-        )->firstOrFail()->user;
+        $bsitOfficeUser = User::where('username', 'bsit.treasurer')->firstOrFail();
 
-        $baelOfficeUser = OfficeAccount::where(
-            'display_name',
-            'English Circle Academic Organization Treasurer'
-        )->firstOrFail()->user;
+        $baelOfficeUser = User::where('username', 'bael.treasurer')->firstOrFail();
 
         $this->actingAs($bsitOfficeUser)
             ->get('/office')
@@ -251,10 +245,7 @@ class ClearanceWorkflowTest extends TestCase
             'office_label' => 'Snapshot Treasurer Label',
         ]);
 
-        $officeUser = OfficeAccount::where(
-            'display_name',
-            'DIGITS Academic Organization Treasurer'
-        )->firstOrFail()->user;
+        $officeUser = User::where('username', 'bsit.treasurer')->firstOrFail();
 
         $this->actingAs($officeUser)
             ->get('/office')
@@ -273,10 +264,7 @@ class ClearanceWorkflowTest extends TestCase
         $this->postJson('/api/clearance')->assertOk();
 
         $step = ClearanceStep::query()->firstOrFail();
-        $wrongOfficeUser = OfficeAccount::where(
-            'display_name',
-            'English Circle Academic Organization Treasurer'
-        )->firstOrFail()->user;
+        $wrongOfficeUser = User::where('username', 'bael.treasurer')->firstOrFail();
 
         $this->actingAs($wrongOfficeUser)
             ->post(route('office.steps.process', $step), [
@@ -342,7 +330,7 @@ class ClearanceWorkflowTest extends TestCase
 
         $secondaryOfficeAccount = OfficeAccount::create([
             'user_id' => $secondaryHolder->id,
-            'display_name' => 'DIGITS Academic Organization Treasurer',
+            'display_name' => 'Second DIGITS Treasurer',
             'office_type' => OfficeAccount::TYPE_ACAD_ORG_TREASURER,
             'program_id' => $program->id,
         ]);
@@ -365,6 +353,57 @@ class ClearanceWorkflowTest extends TestCase
 
         $this->assertSame(ClearanceStep::STATUS_APPROVED, $step->status);
         $this->assertSame('Approved by secondary holder.', $step->remarks);
+    }
+
+    public function test_student_designation_holder_can_process_matching_step(): void
+    {
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        Sanctum::actingAs($student->user);
+        $this->postJson('/api/clearance')->assertOk();
+
+        $program = \App\Models\Program::where('code', 'BSIT')->firstOrFail();
+
+        $workingStudentUser = User::factory()->create([
+            'name' => 'Working Student Holder',
+            'username' => 'working.student.holder',
+            'role' => User::ROLE_STUDENT,
+            'is_student' => true,
+            'is_staff' => false,
+        ]);
+
+        Student::create([
+            'user_id' => $workingStudentUser->id,
+            'student_id_number' => '2404321',
+            'program_id' => $program->id,
+            'year_level' => 3,
+        ]);
+
+        \App\Models\OfficeDesignationAssignment::create([
+            'office_designation_id' => OfficeDesignation::query()
+                ->where('key', 'year-3-treasurer')
+                ->value('id'),
+            'user_id' => $workingStudentUser->id,
+            'assigned_by_user_id' => null,
+            'assigned_at' => now(),
+            'released_at' => null,
+            'is_active' => true,
+        ]);
+
+        $step = ClearanceStep::query()
+            ->where('office_label', '3rd Year Level Organization Treasurer')
+            ->firstOrFail();
+
+        $this->actingAs($workingStudentUser)
+            ->post(route('office.steps.process', $step), [
+                'action' => 'approve',
+                'remarks' => 'Approved by working student holder.',
+            ])
+            ->assertRedirect();
+
+        $step->refresh();
+
+        $this->assertSame(ClearanceStep::STATUS_APPROVED, $step->status);
+        $this->assertSame('Approved by working student holder.', $step->remarks);
     }
 
     public function test_student_can_initiate_clearance_even_when_required_designation_has_no_active_holder(): void

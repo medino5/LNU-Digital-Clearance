@@ -2,13 +2,9 @@
 
 namespace Tests\Unit;
 
-use App\Models\Clearance;
-use App\Models\User;
 use App\Support\AdminClearanceDetailBuilder;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Storage;
-use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class AdminClearanceDetailBuilderTest extends TestCase
@@ -27,28 +23,17 @@ class AdminClearanceDetailBuilderTest extends TestCase
         // This keeps the payload builder honest: the admin detail endpoint
         // should expose a stable history shape with student snapshot data,
         // step metadata, and a flattened event timeline for future UI work.
-        Storage::disk('local')->deleteDirectory('clearances');
-        $studentUser = User::where('username', '2302314')->firstOrFail();
-        Sanctum::actingAs($studentUser);
-        $this->postJson('/api/clearance')->assertOk();
+        $clearance = $this->createCompletedSeededClearance(
+            remarks: 'Approved for builder coverage.',
+        );
 
-        $clearance = Clearance::with('steps.officeDesignation.activeUsers')->firstOrFail();
-
-        foreach ($clearance->steps as $step) {
-            $officeUser = $step->officeDesignation->activeUsers->first();
-            $this->assertNotNull($officeUser);
-
-            $this->actingAs($officeUser)
-                ->post(route('office.steps.process', $step), [
-                    'action' => 'approve',
-                    'remarks' => 'Approved for builder coverage.',
-                ])
-                ->assertRedirect();
-        }
-
+        // Build the admin detail payload directly instead of going through the
+        // controller so this test stays focused on the transformer itself.
         $payload = app(AdminClearanceDetailBuilder::class)
             ->build($clearance->fresh());
 
+        // Verify the snapshot and structure that the admin history UI depends
+        // on, including the new designation-based step shape.
         $this->assertSame($clearance->id, $payload['id']);
         $this->assertSame('John A. Doe', $payload['student']['name']);
         $this->assertSame('BSIT', $payload['student']['program']['code']);
@@ -60,6 +45,8 @@ class AdminClearanceDetailBuilderTest extends TestCase
 
         $actions = collect($payload['timeline'])->pluck('action')->all();
 
+        // The timeline should contain both the initial generation event and
+        // the later approval events performed by office holders.
         $this->assertContains('generated', $actions);
         $this->assertContains('approved', $actions);
     }
