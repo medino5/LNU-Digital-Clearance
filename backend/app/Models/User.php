@@ -118,6 +118,46 @@ class User extends Authenticatable
         return $this->role === self::ROLE_STUDENT;
     }
 
+    public function canAccessAdminPortal(): bool
+    {
+        return $this->isAdmin();
+    }
+
+    public function canAccessOfficePortal(): bool
+    {
+        if ($this->isOffice()) {
+            return true;
+        }
+
+        if ($this->relationLoaded('activeOfficeDesignations')) {
+            return $this->activeOfficeDesignations->isNotEmpty();
+        }
+
+        return $this->activeOfficeDesignations()->exists();
+    }
+
+    public function portalDashboardRoute(): ?string
+    {
+        if ($this->canAccessAdminPortal()) {
+            return 'admin.dashboard';
+        }
+
+        if ($this->canAccessOfficePortal()) {
+            return 'office.dashboard';
+        }
+
+        return null;
+    }
+
+    public function portalRoleLabel(): string
+    {
+        return match (true) {
+            $this->canAccessAdminPortal() => 'Super Admin',
+            $this->isStudent() || $this->is_student => 'Student Office Holder',
+            default => 'Office Holder',
+        };
+    }
+
     public function formattedName(): string
     {
         if ($this->isStudent() || $this->is_student) {

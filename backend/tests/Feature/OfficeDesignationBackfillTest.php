@@ -70,14 +70,14 @@ class OfficeDesignationBackfillTest extends TestCase
 
         OfficeAccount::create([
             'user_id' => $firstOfficeUser->id,
-            'display_name' => 'DIGITS Academic Organization Treasurer',
+            'display_name' => 'Alyssa Mendoza',
             'office_type' => OfficeAccount::TYPE_ACAD_ORG_TREASURER,
             'program_id' => $program->id,
         ]);
 
         OfficeAccount::create([
             'user_id' => $secondOfficeUser->id,
-            'display_name' => 'DIGITS Academic Organization Treasurer',
+            'display_name' => 'Brian Reyes',
             'office_type' => OfficeAccount::TYPE_ACAD_ORG_TREASURER,
             'program_id' => $program->id,
         ]);
@@ -89,6 +89,7 @@ class OfficeDesignationBackfillTest extends TestCase
         $designation = OfficeDesignation::query()->where('key', 'bsit-acad-org-treasurer')->firstOrFail();
 
         $this->assertSame(1, OfficeDesignation::query()->count());
+        $this->assertSame('DIGITS Academic Organization Treasurer', $designation->display_name);
         $this->assertSame(
             2,
             OfficeDesignationAssignment::query()

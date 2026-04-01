@@ -2,7 +2,6 @@ import 'dart:developer' as developer;
 import 'dart:convert';
 
 import '../core/api_client.dart';
-import '../core/debug/build_identity_card.dart';
 import '../core/network_config.dart';
 import '../core/session_expired_exception.dart';
 import 'auth_token_store.dart';
@@ -20,7 +19,7 @@ class AuthService {
 
     developer.log(
       'Student login request -> ${NetworkConfig.baseUrl}/login '
-      '(student_id=$normalizedStudentId, build=${BuildIdentityCard.debugBuildLabel})',
+      '(student_id=$normalizedStudentId, build=${NetworkConfig.buildLabel})',
       name: 'AuthService',
     );
 

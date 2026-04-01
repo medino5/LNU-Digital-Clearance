@@ -51,7 +51,7 @@ Route::prefix('admin')
     });
 
 Route::prefix('office')
-    ->middleware(['auth', 'role:office'])
+    ->middleware(['auth'])
     ->group(function () {
         Route::get('/', [OfficeDashboardController::class, 'index'])->name('office.dashboard');
         Route::post('/steps/{step}/process', [OfficeDashboardController::class, 'process'])->name('office.steps.process');

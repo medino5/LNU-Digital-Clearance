@@ -13,15 +13,18 @@
     <div class="content" style="max-width: 520px; margin: 0 auto;">
         @if(auth()->check())
             @php($activeUser = auth()->user())
+            @php($currentDashboardRoute = $activeUser->portalDashboardRoute())
             <div class="callout success" style="margin-bottom: 20px;">
                 <strong>Current session:</strong>
-                {{ $activeUser->name ?? $activeUser->username }}
-                ({{ $activeUser->role === 'admin' ? 'Super Admin' : 'Office' }}).
+                {{ $activeUser->formattedName() ?: ($activeUser->name ?? $activeUser->username) }}
+                ({{ $activeUser->portalRoleLabel() }}).
                 Signing in here will replace the current portal session.
                 <div class="actions-inline" style="margin-top: 12px;">
-                    <a class="button secondary" href="{{ $activeUser->role === 'admin' ? route('admin.dashboard') : route('office.dashboard') }}">
-                        Return to Current Dashboard
-                    </a>
+                    @if($currentDashboardRoute)
+                        <a class="button secondary" href="{{ route($currentDashboardRoute) }}">
+                            Return to Current Dashboard
+                        </a>
+                    @endif
                     <form method="POST" action="{{ route('portal.logout') }}" style="display: inline-grid;">
                         @csrf
                         <button type="submit" class="secondary">Log Out / Switch Account</button>
@@ -46,10 +49,10 @@
             <div class="eyebrow">Secure Access</div>
             <h2 style="margin-bottom: 8px;">Sign in to continue</h2>
             <p class="muted" style="margin-top: 0;">
-                Use the credentials issued by MIS. Student accounts sign in through the mobile app.
+                Use the credentials issued by MIS. Students normally sign in through the mobile app unless they currently hold an active office designation.
             </p>
             <p class="muted" style="margin-top: 0;">
-                Sign in once and the system will send you to the correct dashboard based on your role.
+                Sign in once and the system will send you to the correct dashboard based on your current portal access.
                 If another account is active, this sign-in will replace it.
             </p>
 

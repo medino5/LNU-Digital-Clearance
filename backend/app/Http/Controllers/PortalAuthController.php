@@ -13,7 +13,7 @@ class PortalAuthController extends Controller
             return redirect()->route('portal.login');
         }
 
-        $dashboardRoute = $this->dashboardRouteForRole($request->user()->role);
+        $dashboardRoute = $this->dashboardRouteForUser($request->user());
 
         if (! $dashboardRoute) {
             Auth::logout();
@@ -30,7 +30,7 @@ class PortalAuthController extends Controller
     {
         return view('auth.login', [
             'portalTitle' => 'Shared Portal Login',
-            'portalSubtitle' => 'Super admin and office account access',
+            'portalSubtitle' => 'Super admin and active office designation access',
             'submitRoute' => route('portal.login.submit'),
             'usernameLabel' => 'Username',
         ]);
@@ -78,7 +78,7 @@ class PortalAuthController extends Controller
 
         $request->session()->regenerate();
 
-        $dashboardRoute = $this->dashboardRouteForRole($request->user()->role);
+        $dashboardRoute = $this->dashboardRouteForUser($request->user());
 
         if (! $dashboardRoute) {
             Auth::logout();
@@ -95,12 +95,8 @@ class PortalAuthController extends Controller
         return redirect()->route($dashboardRoute);
     }
 
-    protected function dashboardRouteForRole(?string $role): ?string
+    protected function dashboardRouteForUser($user): ?string
     {
-        return match ($role) {
-            'admin' => 'admin.dashboard',
-            'office' => 'office.dashboard',
-            default => null,
-        };
+        return $user?->portalDashboardRoute();
     }
 }

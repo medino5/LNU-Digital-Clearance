@@ -16,6 +16,10 @@ class OfficeDashboardController extends Controller
 
     public function index(Request $request)
     {
+        if (! $request->user()->canAccessOfficePortal()) {
+            abort(403, 'Unauthorized.');
+        }
+
         $officeDesignations = $request->user()
             ->loadMissing('activeOfficeDesignations.program')
             ->activeOfficeDesignations
@@ -60,6 +64,10 @@ class OfficeDashboardController extends Controller
     public function process(Request $request, ClearanceStep $step)
     {
         $redirectTo = $this->officeDashboardUrl();
+
+        if (! $request->user()->canAccessOfficePortal()) {
+            abort(403, 'Unauthorized.');
+        }
 
         $hasDesignationAccess = $request->user()
             ->activeOfficeDesignations()

@@ -87,6 +87,17 @@ class OfficeDesignation extends Model
         return self::typeOptions()[$this->office_type] ?? $this->office_type;
     }
 
+    public function matchesUser(User $user): bool
+    {
+        $user->loadMissing([
+            'officeAccount.program',
+            'studentProfile.program',
+        ]);
+
+        return $this->matchesOfficeAccount($user->officeAccount)
+            || $this->matchesStudent($user->studentProfile);
+    }
+
     public function matchesOfficeAccount(?OfficeAccount $officeAccount): bool
     {
         if (! $officeAccount) {
@@ -110,6 +121,21 @@ class OfficeDesignation extends Model
         }
 
         return true;
+    }
+
+    public function matchesStudent(?Student $student): bool
+    {
+        if (! $student) {
+            return false;
+        }
+
+        return match ($this->office_type) {
+            self::TYPE_ACAD_ORG_TREASURER => (int) $this->program_id !== 0
+                && (int) $student->program_id === (int) $this->program_id,
+            self::TYPE_YEAR_LEVEL_TREASURER => (int) $this->year_level !== 0
+                && (int) $student->year_level === (int) $this->year_level,
+            default => false,
+        };
     }
 
     public function scopeLabel(): ?string
