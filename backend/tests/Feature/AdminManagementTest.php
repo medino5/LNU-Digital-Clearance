@@ -82,6 +82,78 @@ class AdminManagementTest extends TestCase
         );
     }
 
+    public function test_program_create_normalizes_code_and_collapses_extra_spaces(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+
+        $this->actingAs($admin)->post(route('admin.programs.store'), [
+            'code' => ' bs-is ',
+            'name' => '  Bachelor   of   Science in   Information Systems  ',
+            'org_name' => '  BITS   Circle  ',
+        ])->assertRedirect();
+
+        $program = Program::where('code', 'BS-IS')->firstOrFail();
+
+        $this->assertSame('BS-IS', $program->code);
+        $this->assertSame('Bachelor of Science in Information Systems', $program->name);
+        $this->assertSame('BITS Circle', $program->org_name);
+    }
+
+    public function test_program_create_rejects_case_insensitive_duplicate_codes(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+
+        $response = $this->actingAs($admin)->from(route('admin.dashboard'))->post(
+            route('admin.programs.store'),
+            [
+                'code' => 'bsit',
+                'name' => 'Bachelor of Science in Information Technology Copy',
+                'org_name' => 'DIGITS Copy',
+            ]
+        );
+
+        $response->assertRedirect(route('admin.dashboard') . '#academic-configuration');
+        $response->assertSessionHasErrorsIn('programCreate', ['code']);
+        $response->assertSessionHasInput('code', 'bsit');
+    }
+
+    public function test_program_create_rejects_unsupported_symbols_in_name_and_organization(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+
+        $response = $this->actingAs($admin)->from(route('admin.dashboard'))->post(
+            route('admin.programs.store'),
+            [
+                'code' => 'BSTM-2',
+                'name' => 'Bachelor of Science in Tourism Management ✨',
+                'org_name' => 'Tourism 😊 Circle',
+            ]
+        );
+
+        $response->assertRedirect(route('admin.dashboard') . '#academic-configuration');
+        $response->assertSessionHasErrorsIn('programCreate', ['name', 'org_name']);
+        $response->assertSessionHasInput('name', 'Bachelor of Science in Tourism Management ✨');
+        $response->assertSessionHasInput('org_name', 'Tourism 😊 Circle');
+    }
+
+    public function test_program_update_normalizes_fields_and_keeps_same_code_record_valid(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+        $program = Program::where('code', 'BAEL')->firstOrFail();
+
+        $this->actingAs($admin)->put(route('admin.programs.update', $program), [
+            'code' => ' bael ',
+            'name' => '  Bachelor of Arts in English Language (Advanced)  ',
+            'org_name' => '  English & Debate   Circle  ',
+        ])->assertRedirect();
+
+        $program->refresh();
+
+        $this->assertSame('BAEL', $program->code);
+        $this->assertSame('Bachelor of Arts in English Language (Advanced)', $program->name);
+        $this->assertSame('English & Debate Circle', $program->org_name);
+    }
+
     public function test_admin_dashboard_student_forms_show_the_7_digit_student_id_constraints(): void
     {
         // This keeps the admin-side guardrails visible in the markup: the

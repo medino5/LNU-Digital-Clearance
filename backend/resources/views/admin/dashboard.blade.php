@@ -115,6 +115,7 @@
                                 <label>
                                     Program Code
                                     <input type="text" name="code" placeholder="BSIT" value="{{ $activeFormKey === $programCreateFormKey ? old('code') : '' }}" required>
+                                    <span class="mini">Letters, numbers, and hyphens only. Saved in uppercase.</span>
                                     @if($activeFormKey === $programCreateFormKey)
                                         <x-field-error field="code" bag="programCreate" />
                                     @endif
@@ -155,6 +156,7 @@
                                             <label>
                                                 Program Code
                                                 <input type="text" name="code" value="{{ $activeFormKey === $programUpdateFormKey ? old('code', $program->code) : $program->code }}" required>
+                                                <span class="mini">Letters, numbers, and hyphens only. Saved in uppercase.</span>
                                                 @if($activeFormKey === $programUpdateFormKey)
                                                     <x-field-error field="code" bag="programUpdate" />
                                                 @endif
