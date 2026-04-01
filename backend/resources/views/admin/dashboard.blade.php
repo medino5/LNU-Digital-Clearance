@@ -143,7 +143,13 @@
                                     <x-field-error field="name" bag="programCreate" />
                                 @endif
                             </label>
-                            <button type="submit">Save Program</button>
+                            <button 
+                                type="submit"
+                                data-loading-button
+                                data-loading-text="Saving Program..."
+                            >
+                                Save Program
+                            </button>
                         </form>
                     </div>
 
@@ -183,7 +189,13 @@
                                                 <x-field-error field="name" bag="programUpdate" />
                                             @endif
                                         </label>
-                                        <button type="submit">Update Program</button>
+                                        <button 
+                                            type="submit"
+                                            data-loading-button
+                                            data-loading-text="Updating Program..."
+                                        >
+                                            Update Program
+                                        </button>
                                     </form>
                                 </details>
                             @endforeach
@@ -210,7 +222,13 @@
                                 <input type="checkbox" name="is_active" value="1" {{ $activeFormKey === $semesterCreateFormKey && old('is_active') ? 'checked' : '' }}>
                                 Set as the active semester
                             </label>
-                            <button type="submit">Save Semester</button>
+                            <button 
+                                type="submit"
+                                data-loading-button
+                                data-loading-text="Saving Semester..."
+                            >
+                                Save Semester
+                            </button>
                         </form>
                     </div>
 
@@ -249,7 +267,13 @@
                                             >
                                             Keep this semester active
                                         </label>
-                                        <button type="submit">Update Semester</button>
+                                        <button 
+                                            type="submit"
+                                            data-loading-button
+                                            data-loading-text="Updating Semester..."
+                                        >
+                                            Update Semester
+                                        </button>
                                     </form>
                                 </details>
                             @endforeach
@@ -373,7 +397,13 @@
                                     @endif
                                 </label>
                             </div>
-                            <button type="submit">Create Student</button>
+                            <button 
+                                type="submit"
+                                data-loading-button
+                                data-loading-text="Creating Student..."
+                            >
+                                Create Student
+                            </button>
                         </form>
                     </div>
 
@@ -495,7 +525,13 @@
                                                 @endif
                                             </label>
                                         </div>
-                                        <button type="submit">Update Student</button>
+                                        <button 
+                                            type="submit"
+                                            data-loading-button
+                                            data-loading-text="Updating Student..."
+                                        >
+                                            Update Student
+                                        </button>
                                     </form>
                                 </details>
                             @endforeach
@@ -574,7 +610,13 @@
                                     @endif
                                 </label>
                             </div>
-                            <button type="submit">Create Office Account</button>
+                            <button 
+                                type="submit"
+                                data-loading-button
+                                data-loading-text="Creating Office Account..."
+                            >
+                                Create Office Account
+                            </button>
                         </form>
                     </div>
 
@@ -677,7 +719,13 @@
                                                 @endif
                                             </label>
                                         </div>
-                                        <button type="submit">Update Office Account</button>
+                                        <button 
+                                            type="submit"
+                                            data-loading-button
+                                            data-loading-text="Updating Office Account..."
+                                        >
+                                            Update Office Account
+                                        </button>
                                     </form>
                                 </details>
                             @endforeach
@@ -757,40 +805,65 @@
         </section>
     </div>
 
+    @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const normalizeStudentId = (value) => value.replace(/\D+/g, '').slice(0, 7);
+    document.addEventListener('DOMContentLoaded', () => {
+        const normalizeStudentId = (value) => value.replace(/\D+/g, '').slice(0, 7);
 
-            document.querySelectorAll('input[data-student-id-input]').forEach((input) => {
-                input.addEventListener('beforeinput', (event) => {
-                    if (event.inputType === 'insertText' && event.data && /\D/.test(event.data)) {
-                        event.preventDefault();
-                    }
-                });
-
-                input.addEventListener('input', () => {
-                    const normalized = normalizeStudentId(input.value);
-
-                    if (input.value !== normalized) {
-                        input.value = normalized;
-                    }
-                });
-
-                input.addEventListener('paste', (event) => {
+        document.querySelectorAll('input[data-student-id-input]').forEach((input) => {
+            input.addEventListener('beforeinput', (event) => {
+                if (event.inputType === 'insertText' && event.data && /\D/.test(event.data)) {
                     event.preventDefault();
+                }
+            });
 
-                    const clipboard = event.clipboardData || window.clipboardData;
-                    const pastedText = clipboard ? clipboard.getData('text') : '';
-                    const selectionStart = input.selectionStart ?? input.value.length;
-                    const selectionEnd = input.selectionEnd ?? input.value.length;
-                    const nextValue = normalizeStudentId(
-                        input.value.slice(0, selectionStart) + pastedText + input.value.slice(selectionEnd)
-                    );
+            input.addEventListener('input', () => {
+                const normalized = normalizeStudentId(input.value);
 
-                    input.value = nextValue;
-                });
+                if (input.value !== normalized) {
+                    input.value = normalized;
+                }
+            });
+
+            input.addEventListener('paste', (event) => {
+                event.preventDefault();
+
+                const clipboard = event.clipboardData || window.clipboardData;
+                const pastedText = clipboard ? clipboard.getData('text') : '';
+                const selectionStart = input.selectionStart ?? input.value.length;
+                const selectionEnd = input.selectionEnd ?? input.value.length;
+
+                const nextValue = normalizeStudentId(
+                    input.value.slice(0, selectionStart) +
+                    pastedText +
+                    input.value.slice(selectionEnd)
+                );
+
+                input.value = nextValue;
             });
         });
+
+        document.querySelectorAll('form').forEach((form) => {
+            const submitButton = form.querySelector('[data-loading-button]');
+
+            if (!submitButton) {
+                return;
+            }
+
+            form.addEventListener('submit', (event) => {
+                if (form.dataset.isSubmitting === 'true') {
+                    event.preventDefault();
+                    return;
+                }
+
+                form.dataset.isSubmitting = 'true';
+                submitButton.disabled = true;
+                submitButton.textContent =
+                    submitButton.dataset.loadingText || 'Processing...';
+            });
+        });
+    });
     </script>
+    @endpush
 
 @endsection

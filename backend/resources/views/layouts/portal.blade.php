@@ -400,5 +400,6 @@
             @yield('page')
         </div>
     </div>
+    @stack('scripts')
 </body>
 </html>
