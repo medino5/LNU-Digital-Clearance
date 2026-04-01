@@ -70,23 +70,23 @@ class OfficeAccount extends Model
         return [
             self::TYPE_ACAD_ORG_TREASURER => [
                 'scope' => self::SCOPE_PROGRAM,
-                'note' => 'Requires a program scope. Year level is not used for this designation.',
+                'note' => 'Pick a program. Year level is not used for this office type.',
             ],
             self::TYPE_ACAD_ORG_ADVISER => [
                 'scope' => self::SCOPE_PROGRAM,
-                'note' => 'Requires a program scope. Year level is not used for this designation.',
+                'note' => 'Pick a program. Year level is not used for this office type.',
             ],
             self::TYPE_YEAR_LEVEL_TREASURER => [
                 'scope' => self::SCOPE_YEAR_LEVEL,
-                'note' => 'Requires a year level scope. Program scope is not used for this designation.',
+                'note' => 'Pick a year level. Program is not used for this office type.',
             ],
             self::TYPE_LIBRARIAN => [
                 'scope' => self::SCOPE_GLOBAL,
-                'note' => 'This is a global designation. Leave both program and year level unscoped.',
+                'note' => 'This applies to the whole school. Leave program and year level blank.',
             ],
             self::TYPE_VPSD => [
                 'scope' => self::SCOPE_GLOBAL,
-                'note' => 'This is a global designation. Leave both program and year level unscoped.',
+                'note' => 'This applies to the whole school. Leave program and year level blank.',
             ],
         ];
     }

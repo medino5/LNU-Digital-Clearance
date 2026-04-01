@@ -9,8 +9,8 @@
     <div class="card">
         <div class="section-subheader">
             <div>
-                <h3>Manage Designation Assignments</h3>
-                <p class="section-copy">Review each routing designation and choose which eligible holder currently owns it.</p>
+                <h3>Assign Holders</h3>
+                <p class="section-copy">Choose who currently handles each designation.</p>
             </div>
         </div>
 
@@ -38,8 +38,8 @@
                     <summary>
                         {{ $designation->display_name }}
                         <span class="mini" style="display:block; margin-top:6px;">
-                            Current Assigned:
-                            {{ $currentHolderLabel ?: 'No active assignment' }}
+                            Current Holder:
+                            {{ $currentHolderLabel ?: 'No current holder' }}
                             @if($designation->scopeLabel())
                                 | Scope: {{ $designation->scopeLabel() }}
                             @endif
@@ -67,13 +67,13 @@
 
                         <div>
                             <div class="eyebrow">Scope</div>
-                            <p style="margin-top: 6px;">{{ $designation->scopeLabel() ?? 'Global designation' }}</p>
+                            <p style="margin-top: 6px;">{{ $designation->scopeLabel() ?? 'Whole school' }}</p>
                         </div>
 
                         <div>
-                            <div class="eyebrow">Current Assigned Holder</div>
+                            <div class="eyebrow">Current Holder</div>
                             <p style="margin-top: 6px;">
-                                {{ $currentHolderLabel ?: 'No active assignment' }}
+                                {{ $currentHolderLabel ?: 'No current holder' }}
                             </p>
                         </div>
                     </div>
@@ -132,7 +132,7 @@
                 </details>
             @empty
                 <div class="record">
-                    <p class="muted" style="margin: 0;">No active designations are available.</p>
+                    <p class="muted" style="margin: 0;">No active designations yet.</p>
                 </div>
             @endforelse
         </div>

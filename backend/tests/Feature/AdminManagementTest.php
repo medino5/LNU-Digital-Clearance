@@ -256,7 +256,7 @@ class AdminManagementTest extends TestCase
             ->get(route('admin.dashboard'))
             ->assertOk()
             ->assertSee('DESIGNATION ASSIGNMENT')
-            ->assertSee('Manage Designation Assignments')
+            ->assertSee('Assign Holders')
             ->assertDontSee('Search designation');
     }
 

@@ -9,11 +9,11 @@
     <div class="topbar">
         <div>
             <h1>SUPER ADMIN DASHBOARD</h1>
-            <p>Manage programs, semesters, accounts, designation assignments, and completed clearance history.</p>
+            <p>Manage programs, semesters, users, designation holders, and clearance history.</p>
         </div>
         <div class="toolbar">
             <span>{{ auth()->user()->name }}</span>
-            <a class="button topbar-action" href="{{ route('portal.login') }}">Open Shared Login</a>
+            <a class="button topbar-action" href="{{ route('portal.login') }}">Shared Login</a>
             <form method="POST" action="{{ route('portal.logout') }}" class="topbar-form">
                 @csrf
                 <button type="submit" class="topbar-action">Log Out / Switch Account</button>
@@ -43,70 +43,61 @@
         <section id="overview" class="dashboard-section">
             <div class="section-heading">
                 <div>
-                    <h2>DASHBOARD SUMMARY AND QUICK ACCESS</h2>
-                    <p class="section-copy">Start here to review the current setup and jump directly to the area you need to manage.</p>
+                    <h2>OVERVIEW</h2>
+                    <p class="section-copy">Quick links to the main admin sections.</p>
                 </div>
             </div>
 
-            {{-- Updated: clickable overview cards to reduce redundancy and improve navigation --}}
             <div class="grid-3">
                 <a href="#academic-configuration" class="card stat-card clickable-card">
                     <div class="eyebrow">Programs</div>
                     <p class="metric">{{ $programs->count() }}</p>
-                    <p class="metric-note">Available in student and office routing forms.</p>
-                    <span class="manage-pill">Manage</span>
+                    <p class="metric-note">Used in student and office setup.</p>
+                    <span class="manage-pill">Open</span>
                 </a>
 
                 <a href="#academic-configuration" class="card stat-card clickable-card">
                     <div class="eyebrow">Semesters</div>
                     <p class="metric">{{ $semesters->count() }}</p>
-                    <p class="metric-note">Active and archived clearance periods managed by admin.</p>
-                    <span class="manage-pill">Manage</span>
+                    <p class="metric-note">Current and past clearance periods.</p>
+                    <span class="manage-pill">Open</span>
                 </a>
 
                 <a href="#accounts-records" class="card stat-card clickable-card">
                     <div class="eyebrow">Students</div>
                     <p class="metric">{{ $students->count() }}</p>
-                    <p class="metric-note">Admin-provisioned student accounts in the active roster.</p>
-                    <span class="manage-pill">Manage</span>
+                    <p class="metric-note">Student accounts in the roster.</p>
+                    <span class="manage-pill">Open</span>
                 </a>
 
                 <a href="#accounts-records" class="card stat-card clickable-card">
                     <div class="eyebrow">Office Accounts</div>
                     <p class="metric">{{ $officeAccounts->count() }}</p>
-                    <p class="metric-note">Named holder accounts linked to generated designation titles.</p>
-                    <span class="manage-pill">Manage</span>
+                    <p class="metric-note">Office holders and their titles.</p>
+                    <span class="manage-pill">Open</span>
                 </a>
 
                 <a href="#history-records" class="card stat-card clickable-card">
                     <div class="eyebrow">Clearance History</div>
                     <p class="metric">{{ $history->flatten(1)->count() }}</p>
-                    <p class="metric-note">Completed clearance records currently visible in history.</p>
-                    <span class="manage-pill">Manage</span>
-                </a>
-
-                <a href="#academic-configuration" class="card stat-card clickable-card">
-                    <div class="eyebrow">Academic Configuration</div>
-                    <p class="metric">{{ $programs->count() + $semesters->count() }}</p>
-                    <p class="metric-note">Combined setup entries for program and semester management.</p>
-                    <span class="manage-pill">Manage</span>
+                    <p class="metric-note">Completed records in history.</p>
+                    <span class="manage-pill">Open</span>
                 </a>
 
                 <a href="#routing-configuration" class="card stat-card clickable-card"> 
                     <div class="eyebrow">Routing Configuration</div>
                     <p class="metric">{{ $designations->count() }}</p>
-                    <p class="metric-note">Designation routing and current office-user assignment controls.</p>
-                    <span class="manage-pill">Manage</span>
+                    <p class="metric-note">Choose who handles each designation.</p>
+                    <span class="manage-pill">Open</span>
                 </a>
 
             </div>
         </section>
 
-        {{-- New: Academic configuration section --}}
         <section id="academic-configuration" class="dashboard-section">
             <div class="section-heading">
                 <div>
-                    <div class="eyebrow">Academic Configuration</div>
+                    <div class="eyebrow">Setup</div>
                     <h2>PROGRAMS AND SEMESTERS</h2>
                 </div>
             </div>
@@ -115,7 +106,7 @@
                 <div class="section-stack">
                     <div class="card">
                         <div class="eyebrow">Create Program</div>
-                        <h3>Add future-proof program metadata</h3>
+                        <h3>Add a program</h3>
                         @php($programCreateFormKey = 'program-create')
                         <form method="POST" action="{{ route('admin.programs.store') }}">
                             @csrf
@@ -148,8 +139,8 @@
                     </div>
 
                     <div class="card">
-                        <div class="eyebrow">Program Catalog</div>
-                        <h3>Current program catalog</h3>
+                        <div class="eyebrow">Programs</div>
+                        <h3>Current programs</h3>
                         <div class="list">
                             @foreach($programs as $program)
                                 @php($programUpdateFormKey = 'program-update-' . $program->id)
@@ -194,7 +185,7 @@
                 <div class="section-stack">
                     <div class="card">
                         <div class="eyebrow">Create Semester</div>
-                        <h3>Manage the active clearance period</h3>
+                        <h3>Add or change the current semester</h3>
                         @php($semesterCreateFormKey = 'semester-create')
                         <form method="POST" action="{{ route('admin.semesters.store') }}">
                             @csrf
@@ -216,7 +207,7 @@
 
                     <div class="card">
                         <div class="eyebrow">Semester List</div>
-                        <h3>Active and archived clearance windows</h3>
+                        <h3>Current and past semesters</h3>
                         <div class="list">
                             @foreach($semesters as $semester)
                                 @php($semesterUpdateFormKey = 'semester-update-' . $semester->id)
@@ -264,12 +255,11 @@
             'activeFormKey' => $activeFormKey,
         ])
 
-        {{-- New: Accounts and records section --}}
         <section id="accounts-records" class="dashboard-section">
             <div class="section-heading">
                 <div>
                     <div class="eyebrow">Accounts and Records</div>
-                    <h2>STUDENTS, OFFICE ACCOUNTS, AND CLEARANCE RECCORDS</h2>
+                    <h2>STUDENTS, OFFICE ACCOUNTS, AND HISTORY</h2>
                 </div>
             </div>
 
@@ -277,7 +267,7 @@
                 <div class="section-stack">
                     <div class="card">
                         <div class="eyebrow">Create Student</div>
-                        <h3>Provision mobile login credentials</h3>
+                        <h3>Create a student account</h3>
                         @php($studentCreateFormKey = 'student-create')
                         <form method="POST" action="{{ route('admin.students.store') }}">
                             @csrf
@@ -506,13 +496,13 @@
                 <div class="section-stack">
                     <div class="card">
                         <div class="eyebrow">Create Office Account</div>
-                        <h3>Create a holder account for a specific designation scope</h3>
+                        <h3>Add an office account</h3>
                         @php($officeCreateFormKey = 'office-account-create')
                         <form method="POST" action="{{ route('admin.office-accounts.store') }}" data-office-account-form>
                             @csrf
                             <input type="hidden" name="_form_key" value="{{ $officeCreateFormKey }}">
                             <p class="section-copy" style="margin-top: 0;">
-                                Enter the holder's actual name here. The designation title is generated automatically from the office type and scope.
+                                Enter the person's name. The title is built from the office type and scope.
                             </p>
                             <div class="field-grid">
                                 <label>
@@ -552,7 +542,7 @@
                                 </label>
                             </div>
                             <p class="mini" data-scope-note style="margin: -2px 0 8px; color: #5b6578;">
-                                Choose an office type to see which scope fields are actually used.
+                                Choose an office type to see which fields are needed.
                             </p>
                             <div class="field-grid">
                                 <label>
@@ -586,7 +576,7 @@
 
                     <div class="card">
                         <div class="eyebrow">Office List</div>
-                        <h3>Holder accounts and generated designation titles</h3>
+                        <h3>Office holders and titles</h3>
                         <div class="list scrollable-list">
                             @foreach($officeAccounts as $officeAccount)
                                 @php($officeUpdateFormKey = 'office-account-update-' . $officeAccount->id)
@@ -604,12 +594,12 @@
                                         <input type="hidden" name="_form_key" value="{{ $officeUpdateFormKey }}">
                                         <div class="field-grid">
                                             <div>
-                                                <div class="eyebrow">Generated Designation Title</div>
+                                                <div class="eyebrow">Generated Title</div>
                                                 <p style="margin-top: 6px;">{{ $officeAccount->designationDisplayName() }}</p>
                                             </div>
 
                                             <div>
-                                                <div class="eyebrow">Scope Summary</div>
+                                                <div class="eyebrow">Scope</div>
                                                 <p style="margin-top: 6px;">{{ $officeAccount->scopeSummaryLabel() }}</p>
                                             </div>
                                         </div>
@@ -656,7 +646,7 @@
                                             </label>
                                         </div>
                                         <p class="mini" data-scope-note style="margin: -2px 0 8px; color: #5b6578;">
-                                            {{ $officeTypeScopeMetadata[$officeAccount->office_type]['note'] ?? 'Choose an office type to see which scope fields are actually used.' }}
+                                            {{ $officeTypeScopeMetadata[$officeAccount->office_type]['note'] ?? 'Choose an office type to see which fields are needed.' }}
                                         </p>
                                         <div class="field-grid">
                                             <label>
@@ -839,7 +829,7 @@
 
                     scopeNote.textContent = scopeMeta
                         ? scopeMeta.note
-                        : 'Choose an office type to see which scope fields are actually used.';
+                        : 'Choose an office type to see which fields are needed.';
                 };
 
                 officeTypeSelect.addEventListener('change', applyOfficeScopeState);

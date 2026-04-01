@@ -255,7 +255,7 @@ class PortalRoutingTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('Open Shared Login')
+            ->assertSee('Shared Login')
             ->assertSee('Log Out / Switch Account');
     }
 
