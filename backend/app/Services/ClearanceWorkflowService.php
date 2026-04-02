@@ -87,6 +87,39 @@ class ClearanceWorkflowService
         return $this->transitionStep($step, $actor, ClearanceStep::STATUS_FLAGGED, 'flagged', $remarks);
     }
 
+    public function undoApproval(ClearanceStep $step, User $actor): ClearanceStep
+    {
+        $step->loadMissing('clearance', 'officeDesignation');
+
+        if (! $actor->activeOfficeDesignations()
+            ->where('office_designations.id', $step->office_designation_id)
+            ->exists()
+        ) {
+            throw new RuntimeException('You are not allowed to undo this clearance step.');
+        }
+
+        if ($step->status !== ClearanceStep::STATUS_APPROVED) {
+            throw new RuntimeException('Only approved steps can be undone.');
+        }
+
+        DB::transaction(function () use ($step, $actor) {
+            $step->update([
+                'status' => ClearanceStep::STATUS_AWAITING_ACTION,
+                'signed_at' => null,
+            ]);
+
+            $step->events()->create([
+                'actor_user_id' => $actor->id,
+                'actor_role' => $actor->role,
+                'action' => 'undo_approval',
+            ]);
+
+            $this->syncClearanceStatus($step->clearance);
+        });
+
+        return $step->fresh(['clearance.steps', 'officeDesignation.activeUsers', 'events']);
+    }
+
     public function resubmit(ClearanceStep $step, Student $student): ClearanceStep
     {
         if ($step->clearance->student_id !== $student->id) {
