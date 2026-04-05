@@ -262,6 +262,7 @@ class AdminManagementTest extends TestCase
 
         $this->actingAs($admin)->post(route('admin.semesters.store'), [
             'label' => '1st Semester 2025-2026',
+            'academic_year' => '2025-2026',
             'is_active' => '1',
         ])->assertRedirect();
 
@@ -270,6 +271,7 @@ class AdminManagementTest extends TestCase
 
         $this->assertFalse($current->is_active);
         $this->assertTrue($next->is_active);
+        $this->assertSame('2025-2026', $next->academic_year);
     }
 
     public function test_program_scoped_office_type_requires_program_scope(): void

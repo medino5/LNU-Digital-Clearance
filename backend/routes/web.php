@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminClearanceDetailController;
+use App\Http\Controllers\AdminClearanceReportController;
 use App\Http\Controllers\AdminOfficeDesignationController;
 use App\Http\Controllers\OfficeAccountAdminController;
 use App\Http\Controllers\OfficeDashboardController;
@@ -32,6 +33,8 @@ Route::prefix('admin')
         Route::get('/', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
         Route::get('/clearances/{clearance}', [AdminClearanceDetailController::class, 'show'])
             ->name('admin.clearances.show');
+        Route::post('/clearance-reports/completed', [AdminClearanceReportController::class, 'export'])
+            ->name('admin.clearance-reports.completed.export');
 
         Route::post('/programs', [ProgramAdminController::class, 'store'])->name('admin.programs.store');
         Route::put('/programs/{program}', [ProgramAdminController::class, 'update'])->name('admin.programs.update');
