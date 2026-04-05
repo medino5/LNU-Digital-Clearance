@@ -16,9 +16,13 @@ class SemesterAdminController extends Controller
             'semesterCreate',
             [
             'label' => ['required', 'string', 'max:255', 'unique:semesters,label'],
+            'academic_year' => ['required', 'regex:/^\d{4}-\d{4}$/'],
             'is_active' => ['nullable', 'boolean'],
             ],
             $this->adminSectionUrl('academic-configuration'),
+            [
+                'academic_year.regex' => 'Academic year must use the YYYY-YYYY format.',
+            ],
         );
 
         DB::transaction(function () use ($data) {
@@ -28,6 +32,7 @@ class SemesterAdminController extends Controller
 
             Semester::create([
                 'label' => $data['label'],
+                'academic_year' => $data['academic_year'],
                 'is_active' => !empty($data['is_active']),
             ]);
         });
@@ -46,9 +51,13 @@ class SemesterAdminController extends Controller
             'semesterUpdate',
             [
             'label' => ['required', 'string', 'max:255', Rule::unique('semesters', 'label')->ignore($semester->id)],
+            'academic_year' => ['required', 'regex:/^\d{4}-\d{4}$/'],
             'is_active' => ['nullable', 'boolean'],
             ],
             $this->adminSectionUrl('academic-configuration'),
+            [
+                'academic_year.regex' => 'Academic year must use the YYYY-YYYY format.',
+            ],
         );
 
         DB::transaction(function () use ($data, $semester) {
@@ -58,6 +67,7 @@ class SemesterAdminController extends Controller
 
             $semester->update([
                 'label' => $data['label'],
+                'academic_year' => $data['academic_year'],
                 'is_active' => !empty($data['is_active']),
             ]);
         });

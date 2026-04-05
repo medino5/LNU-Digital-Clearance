@@ -211,6 +211,13 @@
                                     <x-field-error field="label" bag="semesterCreate" />
                                 @endif
                             </label>
+                            <label>
+                                Academic Year
+                                <input type="text" name="academic_year" placeholder="2024-2025" value="{{ $activeFormKey === $semesterCreateFormKey ? old('academic_year') : '' }}" required>
+                                @if($activeFormKey === $semesterCreateFormKey)
+                                    <x-field-error field="academic_year" bag="semesterCreate" />
+                                @endif
+                            </label>
                             <label class="inline-check">
                                 <input type="checkbox" name="is_active" value="1" {{ $activeFormKey === $semesterCreateFormKey && old('is_active') ? 'checked' : '' }}>
                                 Set as the active semester
@@ -248,6 +255,13 @@
                                             <input type="text" name="label" value="{{ $activeFormKey === $semesterUpdateFormKey ? old('label', $semester->label) : $semester->label }}" required>
                                             @if($activeFormKey === $semesterUpdateFormKey)
                                                 <x-field-error field="label" bag="semesterUpdate" />
+                                            @endif
+                                        </label>
+                                        <label>
+                                            Academic Year
+                                            <input type="text" name="academic_year" value="{{ $activeFormKey === $semesterUpdateFormKey ? old('academic_year', $semester->displayAcademicYear()) : $semester->displayAcademicYear() }}" required>
+                                            @if($activeFormKey === $semesterUpdateFormKey)
+                                                <x-field-error field="academic_year" bag="semesterUpdate" />
                                             @endif
                                         </label>
                                         <label class="inline-check">
@@ -667,6 +681,9 @@
                             @if($selectedSemesterId)
                                 <input type="hidden" name="history_semester" value="{{ $selectedSemesterId }}">
                             @endif
+                            @if($selectedAcademicYear !== '')
+                                <input type="hidden" name="history_academic_year" value="{{ $selectedAcademicYear }}">
+                            @endif
 
                             <button type="submit" class="button">Apply</button>
                             <a href="{{ route('admin.dashboard', array_filter([
@@ -674,6 +691,7 @@
                                 'office_program' => $officeProgramId !== null && $officeProgramId !== '' ? $officeProgramId : null,
                                 'office_type' => $selectedOfficeType !== null && $selectedOfficeType !== '' ? $selectedOfficeType : null,
                                 'history_semester' => $selectedSemesterId ?: null,
+                                'history_academic_year' => $selectedAcademicYear !== '' ? $selectedAcademicYear : null,
                             ])) }}#student-records" class="button secondary-button">Reset</a>
                         </form>
 
@@ -843,6 +861,9 @@
                             @if($selectedSemesterId)
                                 <input type="hidden" name="history_semester" value="{{ $selectedSemesterId }}">
                             @endif
+                            @if($selectedAcademicYear !== '')
+                                <input type="hidden" name="history_academic_year" value="{{ $selectedAcademicYear }}">
+                            @endif
 
                             <button type="submit" class="button">Apply</button>
                             <a href="{{ route('admin.dashboard', array_filter([
@@ -850,6 +871,7 @@
                                 'student_program' => $studentProgramId !== null && $studentProgramId !== '' ? $studentProgramId : null,
                                 'student_year_level' => $studentYearLevel !== null && $studentYearLevel !== '' ? $studentYearLevel : null,
                                 'history_semester' => $selectedSemesterId ?: null,
+                                'history_academic_year' => $selectedAcademicYear !== '' ? $selectedAcademicYear : null,
                             ])) }}#office-records" class="button secondary-button">Reset</a>
                         </form>
 
@@ -986,11 +1008,24 @@
                 <div class="section-subheader">
                     <div>
                         <div class="eyebrow">Clearance History</div>
-                        <h3>Completed clearance records by semester</h3>
+                        <h3>Completed clearance records by semester and academic year</h3>
                     </div>
-                    <form method="GET" action="{{ route('admin.dashboard') }}" class="toolbar">
-                        <label class="history-filter">
-                            <select name="history_semester" onchange="this.form.submit()">
+                    <div class="toolbar" style="gap: 12px; align-items: flex-end;">
+                        <form method="GET" action="{{ route('admin.dashboard') }}" class="toolbar" style="gap: 12px; align-items: flex-end;">
+                            <label class="history-filter">
+                                <span class="mini">Academic Year</span>
+                                <select name="history_academic_year" onchange="this.form.submit()">
+                                    <option value="">All academic years</option>
+                                    @foreach($academicYears as $academicYear)
+                                        <option value="{{ $academicYear }}" {{ $selectedAcademicYear === $academicYear ? 'selected' : '' }}>
+                                            {{ $academicYear }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </label>
+                            <label class="history-filter">
+                                <span class="mini">Semester</span>
+                                <select name="history_semester" onchange="this.form.submit()">
                                 <option value="">All semesters</option>
                                 @foreach($semesters as $semester)
                                     <option value="{{ $semester->id }}" {{ $selectedSemesterId === $semester->id ? 'selected' : '' }}>
@@ -998,9 +1033,29 @@
                                     </option>
                                 @endforeach
                             </select>
-                        </label>
-                    </form>
+                            </label>
+                        </form>
+
+                        <form method="POST" action="{{ route('admin.clearance-reports.completed.export') }}">
+                            @csrf
+                            <input type="hidden" name="_form_key" value="history-export">
+                            <label class="history-filter">
+                                <span class="mini">Download Report</span>
+                                <button type="submit" class="button">Download Excel Report</button>
+                            </label>
+                            <input type="hidden" name="semester_id" value="{{ old('semester_id', $selectedSemesterId) }}">
+                            <input type="hidden" name="academic_year" value="{{ old('academic_year', $selectedAcademicYear) }}">
+                        </form>
+                    </div>
                 </div>
+
+                @if($activeFormKey === 'history-export')
+                    <div class="record" style="margin-bottom: 12px;">
+                        <p class="mini" style="margin: 0 0 8px;">Export validation</p>
+                        <x-field-error field="semester_id" bag="historyExport" />
+                        <x-field-error field="academic_year" bag="historyExport" />
+                    </div>
+                @endif
 
                 <?php if ($history->isNotEmpty()): ?>
                     <?php foreach ($history as $semesterLabel => $records): ?>
@@ -1045,7 +1100,7 @@
                     <?php endforeach; ?>
                 <?php else: ?>
                     <div class="record">
-                        <p class="muted" style="margin: 0;">No completed clearances found for the selected semester filter.</p>
+                        <p class="muted" style="margin: 0;">No completed clearances found for the selected semester and academic year filter.</p>
                     </div>
                 <?php endif; ?>
             </div>

@@ -16,6 +16,7 @@ class AdminDashboardController extends Controller
     public function index(Request $request)
     {
         $selectedSemesterId = $request->integer('history_semester');
+        $selectedAcademicYear = trim((string) $request->query('history_academic_year', ''));
 
         $studentSearch = trim((string) $request->query('student_search', ''));
         $studentProgramId = $request->query('student_program');
@@ -33,7 +34,20 @@ class AdminDashboardController extends Controller
             $historyQuery->where('semester_id', $selectedSemesterId);
         }
 
+        if ($selectedAcademicYear !== '') {
+            $historyQuery->whereHas('semester', function ($query) use ($selectedAcademicYear) {
+                $query->where('academic_year', $selectedAcademicYear);
+            });
+        }
+
         $history = $historyQuery->get()->groupBy('semester_label');
+        $semesters = Semester::orderByDesc('is_active')->orderByDesc('created_at')->get();
+        $academicYears = $semesters
+            ->map(fn (Semester $semester) => $semester->displayAcademicYear())
+            ->filter()
+            ->unique()
+            ->sortDesc()
+            ->values();
 
         $designationQuery = OfficeDesignation::with([
             'program',
@@ -173,13 +187,15 @@ class AdminDashboardController extends Controller
 
         return view('admin.dashboard', [
             'programs' => Program::orderBy('code')->get(),
-            'semesters' => Semester::orderByDesc('is_active')->orderByDesc('created_at')->get(),
+            'semesters' => $semesters,
             'students' => $students,
             'officeAccounts' => $officeAccounts,
             'officeTypeOptions' => OfficeAccount::typeOptions(),
             'yearLevels' => [1, 2, 3, 4],
             'history' => $history,
             'selectedSemesterId' => $selectedSemesterId,
+            'selectedAcademicYear' => $selectedAcademicYear,
+            'academicYears' => $academicYears,
             'designations' => $designations,
             'studentNameExtensions' => User::studentNameExtensionOptions(),
             'officeTypeScopeMetadata' => OfficeAccount::scopeMetadata(),
