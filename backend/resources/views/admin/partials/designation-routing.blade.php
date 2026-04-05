@@ -80,7 +80,11 @@
 
                     <div class="divider"></div>
 
-                    <form method="POST" action="{{ route('admin.office-designations.assignment.update', $designation) }}">
+                    <form
+                        method="POST"
+                        action="{{ route('admin.office-designations.assignment.update', $designation) }}"
+                        data-loading-form
+                    >
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="_form_key" value="{{ $designationFormKey }}">
@@ -124,7 +128,13 @@
                         @endif
 
                         <div class="toolbar" style="margin-top: 14px;">
-                            <button type="submit" {{ $eligibleUsers->isEmpty() ? 'disabled' : '' }}>
+                            {{-- Added for MAE-XX: loading indicator + duplicate-submit protection --}}
+                            <button
+                                type="submit"
+                                data-loading-button
+                                data-loading-text="Saving Assignment..."
+                                {{ $eligibleUsers->isEmpty() ? 'disabled' : '' }}
+                            >
                                 Save Assignment
                             </button>
                         </div>

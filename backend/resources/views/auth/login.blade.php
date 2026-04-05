@@ -56,7 +56,7 @@
                 If another account is active, this sign-in will replace it.
             </p>
 
-            <form method="POST" action="{{ $submitRoute }}">
+            <form method="POST" action="{{ $submitRoute }}" data-loading-form>
                 @csrf
                 <label>
                     {{ $usernameLabel }}
@@ -70,8 +70,45 @@
                     <x-field-error field="password" bag="portalLogin" />
                 </label>
 
-                <button type="submit">Sign In</button>
+                <button
+                    type="submit"
+                    data-loading-button
+                    data-default-text="Sign In"
+                    data-loading-text="Signing In..."
+                >
+                    Sign In
+                </button>
             </form>
         </div>
     </div>
 @endsection
+
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('form[data-loading-form]').forEach(function (form) {
+        let isSubmitting = false;
+
+        form.addEventListener('submit', function (event) {
+            if (isSubmitting) {
+                event.preventDefault();
+                return;
+            }
+
+            const submitButton = form.querySelector('[data-loading-button]');
+            if (!submitButton) {
+                isSubmitting = true;
+                return;
+            }
+
+            isSubmitting = true;
+
+            submitButton.disabled = true;
+            submitButton.textContent =
+                submitButton.dataset.loadingText || 'Processing...';
+        });
+    });
+});
+</script>
+@endpush
