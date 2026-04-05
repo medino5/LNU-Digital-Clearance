@@ -3,6 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\OfficeAccount;
+use App\Models\OfficeDesignation;
+use App\Models\OfficeDesignationAssignment;
+use App\Models\Program;
+use App\Models\Student;
 use App\Models\User;
 use App\Support\OfficeDesignationBackfill;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -145,8 +149,8 @@ class PortalRoutingTest extends TestCase
 
     public function test_shared_login_rejects_student_accounts(): void
     {
-        // Students are intentionally kept on the mobile app and should not be
-        // able to enter the shared web portal.
+        // Students without portal access are intentionally kept on the mobile
+        // app and should not be able to enter the shared web portal.
         $student = User::factory()->create([
             'username' => 'student.user',
             'password' => Hash::make('password'),
@@ -163,6 +167,57 @@ class PortalRoutingTest extends TestCase
         $response->assertRedirect(route('portal.login'));
         $response->assertSessionHasErrorsIn('portalLogin', ['username']);
         $this->assertGuest();
+    }
+
+    public function test_shared_login_routes_student_designation_holder_to_office_dashboard(): void
+    {
+        $program = Program::create([
+            'code' => 'BSIT',
+            'name' => 'Bachelor of Science in Information Technology',
+            'org_name' => 'DIGITS',
+        ]);
+
+        $studentUser = User::factory()->create([
+            'name' => 'Working Student',
+            'username' => 'working.student',
+            'password' => Hash::make('password'),
+            'role' => User::ROLE_STUDENT,
+            'is_student' => true,
+            'is_staff' => false,
+        ]);
+
+        Student::create([
+            'user_id' => $studentUser->id,
+            'student_id_number' => '2401234',
+            'program_id' => $program->id,
+            'year_level' => 3,
+        ]);
+
+        $designation = OfficeDesignation::create([
+            'key' => 'year-3-treasurer',
+            'display_name' => '3rd Year Level Organization Treasurer',
+            'office_type' => OfficeDesignation::TYPE_YEAR_LEVEL_TREASURER,
+            'program_id' => null,
+            'year_level' => 3,
+            'is_active' => true,
+        ]);
+
+        OfficeDesignationAssignment::create([
+            'office_designation_id' => $designation->id,
+            'user_id' => $studentUser->id,
+            'assigned_by_user_id' => null,
+            'assigned_at' => now(),
+            'released_at' => null,
+            'is_active' => true,
+        ]);
+
+        $response = $this->post(route('portal.login.submit'), [
+            'username' => $studentUser->username,
+            'password' => 'password',
+        ]);
+
+        $response->assertRedirect(route('office.dashboard'));
+        $this->assertAuthenticatedAs($studentUser);
     }
 
     public function test_shared_login_renders_inline_validation_feedback_for_missing_fields(): void
@@ -200,7 +255,7 @@ class PortalRoutingTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('Open Shared Login')
+            ->assertSee('Shared Login')
             ->assertSee('Log Out / Switch Account');
     }
 

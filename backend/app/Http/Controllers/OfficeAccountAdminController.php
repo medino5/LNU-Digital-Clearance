@@ -144,19 +144,17 @@ class OfficeAccountAdminController extends Controller
             $redirectTo,
         );
 
-        $data['program_id'] = in_array($data['office_type'], [
-            OfficeAccount::TYPE_ACAD_ORG_TREASURER,
-            OfficeAccount::TYPE_ACAD_ORG_ADVISER,
-        ], true) ? $data['program_id'] : null;
+        $data['display_name'] = trim($data['display_name']);
 
-        $data['year_level'] = $data['office_type'] === OfficeAccount::TYPE_YEAR_LEVEL_TREASURER
+        $data['program_id'] = OfficeAccount::requiresProgramScopeForType($data['office_type'])
+            ? $data['program_id']
+            : null;
+
+        $data['year_level'] = OfficeAccount::requiresYearLevelScopeForType($data['office_type'])
             ? $data['year_level']
             : null;
 
-        if (in_array($data['office_type'], [
-            OfficeAccount::TYPE_ACAD_ORG_TREASURER,
-            OfficeAccount::TYPE_ACAD_ORG_ADVISER,
-        ], true) && !$data['program_id']) {
+        if (OfficeAccount::requiresProgramScopeForType($data['office_type']) && !$data['program_id']) {
             throw $this->formValidationException(
                 ['program_id' => 'Program scope is required for this office type.'],
                 $errorBag,
@@ -164,7 +162,7 @@ class OfficeAccountAdminController extends Controller
             );
         }
 
-        if ($data['office_type'] === OfficeAccount::TYPE_YEAR_LEVEL_TREASURER && !$data['year_level']) {
+        if (OfficeAccount::requiresYearLevelScopeForType($data['office_type']) && !$data['year_level']) {
             throw $this->formValidationException(
                 ['year_level' => 'Year level scope is required for this office type.'],
                 $errorBag,

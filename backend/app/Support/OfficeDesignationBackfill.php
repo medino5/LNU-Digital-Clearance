@@ -20,10 +20,12 @@ class OfficeDesignationBackfill
 
     public function syncOfficeAccount(OfficeAccount $officeAccount): OfficeDesignation
     {
+        $officeAccount->loadMissing('program');
+
         $designation = OfficeDesignation::query()->updateOrCreate(
             ['key' => $this->keyForOfficeAccount($officeAccount)],
             [
-                'display_name' => $officeAccount->display_name,
+                'display_name' => $officeAccount->designationDisplayName(),
                 'office_type' => $officeAccount->office_type,
                 'program_id' => $officeAccount->program_id,
                 'year_level' => $officeAccount->year_level,

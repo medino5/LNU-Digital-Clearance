@@ -51,7 +51,7 @@ class AdminManagementTest extends TestCase
         ])->assertRedirect();
 
         $this->actingAs($admin)->post(route('admin.office-accounts.store'), [
-            'display_name' => 'BITS Academic Organization Treasurer',
+            'display_name' => 'Bianca Systems',
             'office_type' => OfficeAccount::TYPE_ACAD_ORG_TREASURER,
             'program_id' => $program->id,
             'year_level' => '',
@@ -60,7 +60,7 @@ class AdminManagementTest extends TestCase
         ])->assertRedirect();
 
         $student = Student::where('student_id_number', '2400001')->firstOrFail();
-        $officeAccount = OfficeAccount::where('display_name', 'BITS Academic Organization Treasurer')->firstOrFail();
+        $officeAccount = OfficeAccount::whereHas('user', fn ($query) => $query->where('username', 'bsis.treasurer'))->firstOrFail();
         $designation = OfficeDesignation::where('key', 'bsis-acad-org-treasurer')->firstOrFail();
 
         $this->assertSame('Jane Systems', $student->user->name);
@@ -68,9 +68,11 @@ class AdminManagementTest extends TestCase
         $this->assertNull($student->user->middle_initial);
         $this->assertSame('Systems', $student->user->last_name);
         $this->assertNull($student->user->name_extension);
+        $this->assertSame('Bianca Systems', $officeAccount->display_name);
         $this->assertSame($program->id, $student->program_id);
         $this->assertSame($program->id, $officeAccount->program_id);
         $this->assertSame($program->id, $designation->program_id);
+        $this->assertSame('BITS Academic Organization Treasurer', $designation->display_name);
         $this->assertTrue(
             OfficeDesignationAssignment::query()
                 ->where('office_designation_id', $designation->id)
@@ -78,6 +80,78 @@ class AdminManagementTest extends TestCase
                 ->where('is_active', true)
                 ->exists()
         );
+    }
+
+    public function test_program_create_normalizes_code_and_collapses_extra_spaces(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+
+        $this->actingAs($admin)->post(route('admin.programs.store'), [
+            'code' => ' bs-is ',
+            'name' => '  Bachelor   of   Science in   Information Systems  ',
+            'org_name' => '  BITS   Circle  ',
+        ])->assertRedirect();
+
+        $program = Program::where('code', 'BS-IS')->firstOrFail();
+
+        $this->assertSame('BS-IS', $program->code);
+        $this->assertSame('Bachelor of Science in Information Systems', $program->name);
+        $this->assertSame('BITS Circle', $program->org_name);
+    }
+
+    public function test_program_create_rejects_case_insensitive_duplicate_codes(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+
+        $response = $this->actingAs($admin)->from(route('admin.dashboard'))->post(
+            route('admin.programs.store'),
+            [
+                'code' => 'bsit',
+                'name' => 'Bachelor of Science in Information Technology Copy',
+                'org_name' => 'DIGITS Copy',
+            ]
+        );
+
+        $response->assertRedirect(route('admin.dashboard') . '#academic-configuration');
+        $response->assertSessionHasErrorsIn('programCreate', ['code']);
+        $response->assertSessionHasInput('code', 'bsit');
+    }
+
+    public function test_program_create_rejects_unsupported_symbols_in_name_and_organization(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+
+        $response = $this->actingAs($admin)->from(route('admin.dashboard'))->post(
+            route('admin.programs.store'),
+            [
+                'code' => 'BSTM-2',
+                'name' => 'Bachelor of Science in Tourism Management ✨',
+                'org_name' => 'Tourism 😊 Circle',
+            ]
+        );
+
+        $response->assertRedirect(route('admin.dashboard') . '#academic-configuration');
+        $response->assertSessionHasErrorsIn('programCreate', ['name', 'org_name']);
+        $response->assertSessionHasInput('name', 'Bachelor of Science in Tourism Management ✨');
+        $response->assertSessionHasInput('org_name', 'Tourism 😊 Circle');
+    }
+
+    public function test_program_update_normalizes_fields_and_keeps_same_code_record_valid(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+        $program = Program::where('code', 'BAEL')->firstOrFail();
+
+        $this->actingAs($admin)->put(route('admin.programs.update', $program), [
+            'code' => ' bael ',
+            'name' => '  Bachelor of Arts in English Language (Advanced)  ',
+            'org_name' => '  English & Debate   Circle  ',
+        ])->assertRedirect();
+
+        $program->refresh();
+
+        $this->assertSame('BAEL', $program->code);
+        $this->assertSame('Bachelor of Arts in English Language (Advanced)', $program->name);
+        $this->assertSame('English & Debate Circle', $program->org_name);
     }
 
     public function test_admin_dashboard_student_forms_show_the_7_digit_student_id_constraints(): void
@@ -207,7 +281,7 @@ class AdminManagementTest extends TestCase
         $response = $this->actingAs($admin)->from(route('admin.dashboard'))->post(
             route('admin.office-accounts.store'),
             [
-                'display_name' => 'Broken Treasurer',
+                'display_name' => 'Broken Holder',
                 'office_type' => OfficeAccount::TYPE_ACAD_ORG_TREASURER,
                 'program_id' => '',
                 'year_level' => '',
@@ -218,7 +292,29 @@ class AdminManagementTest extends TestCase
 
         $response->assertRedirect(route('admin.dashboard') . '#accounts-records');
         $response->assertSessionHasErrorsIn('officeAccountCreate', ['program_id']);
-        $response->assertSessionHasInput('display_name', 'Broken Treasurer');
+        $response->assertSessionHasInput('display_name', 'Broken Holder');
+    }
+
+    public function test_global_office_type_can_be_saved_without_program_or_year_scope(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+
+        $this->actingAs($admin)->post(route('admin.office-accounts.store'), [
+            'display_name' => 'Lara Perez',
+            'office_type' => OfficeAccount::TYPE_LIBRARIAN,
+            'program_id' => '',
+            'year_level' => '',
+            'username' => 'lara.librarian',
+            'password' => 'password',
+        ])->assertRedirect();
+
+        $officeAccount = OfficeAccount::whereHas('user', fn ($query) => $query->where('username', 'lara.librarian'))->firstOrFail();
+        $designation = OfficeDesignation::where('key', 'college-librarian')->firstOrFail();
+
+        $this->assertSame('Lara Perez', $officeAccount->display_name);
+        $this->assertNull($officeAccount->program_id);
+        $this->assertNull($officeAccount->year_level);
+        $this->assertSame('College Chief Librarian', $designation->display_name);
     }
 
     public function test_admin_dashboard_shows_designation_assignment_section_without_search_filter(): void
@@ -232,14 +328,14 @@ class AdminManagementTest extends TestCase
             ->get(route('admin.dashboard'))
             ->assertOk()
             ->assertSee('DESIGNATION ASSIGNMENT')
-            ->assertSee('Manage Designation Assignments')
+            ->assertSee('Assign Holders')
             ->assertDontSee('Search designation');
     }
 
     public function test_admin_can_reassign_designation_to_an_eligible_office_user(): void
     {
         // This covers the super-admin routing control introduced in ticket 40:
-        // an eligible office account can be assigned as the current holder of
+        // an eligible office holder can be assigned as the current holder of
         // an existing designation and the previous holder is released.
         $admin = User::where('username', 'mis.admin')->firstOrFail();
         $program = Program::where('code', 'BSIT')->firstOrFail();
@@ -250,7 +346,7 @@ class AdminManagementTest extends TestCase
             ->firstOrFail();
 
         $replacementUser = User::create([
-            'name' => 'DIGITS Treasurer Alternate',
+            'name' => 'Alyssa Mendoza',
             'username' => 'digits.alt.treasurer',
             'password' => bcrypt('password'),
             'role' => User::ROLE_OFFICE,
@@ -260,7 +356,7 @@ class AdminManagementTest extends TestCase
 
         OfficeAccount::create([
             'user_id' => $replacementUser->id,
-            'display_name' => 'DIGITS Treasurer Alternate',
+            'display_name' => 'Alyssa Mendoza',
             'office_type' => OfficeAccount::TYPE_ACAD_ORG_TREASURER,
             'program_id' => $program->id,
             'year_level' => null,
@@ -288,6 +384,38 @@ class AdminManagementTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_assign_matching_student_to_a_student_led_designation(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        $designation = OfficeDesignation::where('key', 'year-3-treasurer')->firstOrFail();
+        $currentAssignment = OfficeDesignationAssignment::query()
+            ->where('office_designation_id', $designation->id)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $response = $this->actingAs($admin)
+            ->from(route('admin.dashboard'))
+            ->put(route('admin.office-designations.assignment.update', $designation), [
+                'user_id' => $student->user_id,
+            ]);
+
+        $response->assertRedirect(route('admin.dashboard') . '#routing-configuration');
+        $response->assertSessionHas('success', 'Designation assignment updated successfully.');
+
+        $this->assertDatabaseHas('office_designation_assignments', [
+            'office_designation_id' => $designation->id,
+            'user_id' => $student->user_id,
+            'assigned_by_user_id' => $admin->id,
+            'is_active' => true,
+        ]);
+
+        $this->assertDatabaseHas('office_designation_assignments', [
+            'id' => $currentAssignment->id,
+            'is_active' => false,
+        ]);
+    }
+
     public function test_admin_cannot_assign_an_ineligible_office_user_to_a_designation(): void
     {
         // This protects the assignment rules behind the UI: only office
@@ -300,7 +428,7 @@ class AdminManagementTest extends TestCase
             ->firstOrFail();
 
         $ineligibleUser = User::create([
-            'name' => 'College Librarian Alternate',
+            'name' => 'Liza Perez',
             'username' => 'librarian.alt',
             'password' => bcrypt('password'),
             'role' => User::ROLE_OFFICE,
@@ -310,7 +438,7 @@ class AdminManagementTest extends TestCase
 
         OfficeAccount::create([
             'user_id' => $ineligibleUser->id,
-            'display_name' => 'College Librarian Alternate',
+            'display_name' => 'Liza Perez',
             'office_type' => OfficeAccount::TYPE_LIBRARIAN,
             'program_id' => null,
             'year_level' => null,
@@ -323,11 +451,42 @@ class AdminManagementTest extends TestCase
             ]);
 
         $response->assertRedirect(route('admin.dashboard') . '#routing-configuration');
-        $response->assertSessionHas('error', 'The selected office user is not eligible for this designation.');
+        $response->assertSessionHas('error', 'The selected user is not eligible for this designation.');
 
         $this->assertDatabaseMissing('office_designation_assignments', [
             'office_designation_id' => $designation->id,
             'user_id' => $ineligibleUser->id,
+            'is_active' => true,
+        ]);
+
+        $this->assertDatabaseHas('office_designation_assignments', [
+            'id' => $currentAssignment->id,
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_admin_cannot_assign_student_to_a_different_program_designation(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        $designation = OfficeDesignation::where('key', 'bsentrep-acad-org-treasurer')->firstOrFail();
+        $currentAssignment = OfficeDesignationAssignment::query()
+            ->where('office_designation_id', $designation->id)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $response = $this->actingAs($admin)
+            ->from(route('admin.dashboard'))
+            ->put(route('admin.office-designations.assignment.update', $designation), [
+                'user_id' => $student->user_id,
+            ]);
+
+        $response->assertRedirect(route('admin.dashboard') . '#routing-configuration');
+        $response->assertSessionHas('error', 'The selected user is not eligible for this designation.');
+
+        $this->assertDatabaseMissing('office_designation_assignments', [
+            'office_designation_id' => $designation->id,
+            'user_id' => $student->user_id,
             'is_active' => true,
         ]);
 

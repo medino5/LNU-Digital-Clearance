@@ -70,7 +70,7 @@ class CoreSystemSeeder extends Seeder
 
         $createOfficeAccount = function (
             string $username,
-            string $displayName,
+            string $holderName,
             string $officeType,
             ?Program $program = null,
             ?int $yearLevel = null
@@ -78,7 +78,7 @@ class CoreSystemSeeder extends Seeder
             $user = User::updateOrCreate(
                 ['username' => $username],
                 [
-                    'name' => $displayName,
+                    'name' => $holderName,
                     'email' => null,
                     'password' => $defaultPassword,
                     'role' => User::ROLE_OFFICE,
@@ -90,7 +90,7 @@ class CoreSystemSeeder extends Seeder
             OfficeAccount::updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'display_name' => $displayName,
+                    'display_name' => $holderName,
                     'office_type' => $officeType,
                     'program_id' => $program?->id,
                     'year_level' => $yearLevel,
@@ -101,14 +101,26 @@ class CoreSystemSeeder extends Seeder
         foreach ($programModels as $program) {
             $createOfficeAccount(
                 strtolower($program->code) . '.treasurer',
-                $program->org_name . ' Academic Organization Treasurer',
+                match ($program->code) {
+                    'BSIT' => 'Aira Valdez',
+                    'BAEL' => 'Elena Garcia',
+                    'BSTM' => 'Marco Rivera',
+                    'BSEntrep' => 'Nina Torres',
+                    default => $program->org_name . ' Treasurer',
+                },
                 OfficeAccount::TYPE_ACAD_ORG_TREASURER,
                 $program
             );
 
             $createOfficeAccount(
                 strtolower($program->code) . '.adviser',
-                $program->org_name . ' Academic Organization Adviser',
+                match ($program->code) {
+                    'BSIT' => 'Prof. Ramon Cruz',
+                    'BAEL' => 'Prof. Lucia Mendoza',
+                    'BSTM' => 'Prof. Celeste Ramos',
+                    'BSEntrep' => 'Prof. Joel Mercado',
+                    default => $program->org_name . ' Adviser',
+                },
                 OfficeAccount::TYPE_ACAD_ORG_ADVISER,
                 $program
             );
@@ -118,10 +130,10 @@ class CoreSystemSeeder extends Seeder
             $createOfficeAccount(
                 'year' . $yearLevel . '.treasurer',
                 match ($yearLevel) {
-                    1 => '1st Year Level Organization Treasurer',
-                    2 => '2nd Year Level Organization Treasurer',
-                    3 => '3rd Year Level Organization Treasurer',
-                    4 => '4th Year Level Organization Treasurer',
+                    1 => 'Paolo Reyes',
+                    2 => 'Trisha Navarro',
+                    3 => 'Carlo Santos',
+                    4 => 'Mika Lim',
                 },
                 OfficeAccount::TYPE_YEAR_LEVEL_TREASURER,
                 null,
@@ -131,13 +143,13 @@ class CoreSystemSeeder extends Seeder
 
         $createOfficeAccount(
             'librarian.office',
-            'College Chief Librarian',
+            'Lorna Perez',
             OfficeAccount::TYPE_LIBRARIAN
         );
 
         $createOfficeAccount(
             'vpsd.office',
-            'Vice President for Student Development',
+            'Dean Roberto Cruz',
             OfficeAccount::TYPE_VPSD
         );
 

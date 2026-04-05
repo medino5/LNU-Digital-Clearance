@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/debug/connection_test_screen.dart';
+import '../core/network_config.dart';
 import '../core/session_expired_exception.dart';
 import '../features/shell/app_shell.dart';
 import '../services/auth_service.dart';
@@ -279,22 +280,24 @@ class _LoginScreenState extends State<LoginScreen> {
                             : const Text('Sign In'),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder:
-                                  widget.connectionTestBuilder ??
-                                  (_) => const ConnectionTestScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text('Connection Test'),
+                    if (NetworkConfig.showConnectionTest) ...[
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder:
+                                    widget.connectionTestBuilder ??
+                                    (_) => const ConnectionTestScreen(),
+                              ),
+                            );
+                          },
+                          child: const Text('Connection Test'),
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
