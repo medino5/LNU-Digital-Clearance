@@ -48,6 +48,7 @@ abstract class TestCase extends BaseTestCase
             $this->actingAs($officeUser)
                 ->post(route('office.steps.process', $step), [
                     'action' => 'approve',
+                    'confirm_action' => 'approve',
                     'remarks' => $remarks,
                 ])
                 ->assertRedirect();
