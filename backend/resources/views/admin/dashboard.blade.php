@@ -289,8 +289,8 @@
                 </div>
             </div>
 
-            <div class="grid-2">
-                <div class="section-stack">
+            <div class="section-stack">
+                <div class="grid-2">
                     <div class="card">
                         <div class="eyebrow">Create Student</div>
                         <h3>Create a student account</h3>
@@ -361,7 +361,9 @@
                                     <select name="program_id" required>
                                         <option value="">Select program</option>
                                         @foreach($programs as $program)
-                                            <option value="{{ $program->id }}" {{ $activeFormKey === $studentCreateFormKey && (string) old('program_id') === (string) $program->id ? 'selected' : '' }}>{{ $program->code }} - {{ $program->name }}</option>
+                                            <option value="{{ $program->id }}" {{ $activeFormKey === $studentCreateFormKey && (string) old('program_id') === (string) $program->id ? 'selected' : '' }}>
+                                                {{ $program->code }} - {{ $program->name }}
+                                            </option>
                                         @endforeach
                                     </select>
                                     @if($activeFormKey === $studentCreateFormKey)
@@ -374,7 +376,9 @@
                                     Year Level
                                     <select name="year_level" required>
                                         @foreach($yearLevels as $yearLevel)
-                                            <option value="{{ $yearLevel }}" {{ $activeFormKey === $studentCreateFormKey && (string) old('year_level') === (string) $yearLevel ? 'selected' : '' }}>{{ $yearLevel }}{{ ['st', 'nd', 'rd', 'th'][$yearLevel - 1] ?? 'th' }} Year</option>
+                                            <option value="{{ $yearLevel }}" {{ $activeFormKey === $studentCreateFormKey && (string) old('year_level') === (string) $yearLevel ? 'selected' : '' }}>
+                                                {{ $yearLevel }}{{ ['st', 'nd', 'rd', 'th'][$yearLevel - 1] ?? 'th' }} Year
+                                            </option>
                                         @endforeach
                                     </select>
                                     @if($activeFormKey === $studentCreateFormKey)
@@ -564,7 +568,9 @@
                                     <select name="office_type" required data-office-type-select>
                                         <option value="">Select type</option>
                                         @foreach($officeTypeOptions as $value => $label)
-                                            <option value="{{ $value }}" {{ $activeFormKey === $officeCreateFormKey && old('office_type') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                            <option value="{{ $value }}" {{ $activeFormKey === $officeCreateFormKey && old('office_type') === $value ? 'selected' : '' }}>
+                                                {{ $label }}
+                                            </option>
                                         @endforeach
                                     </select>
                                     @if($activeFormKey === $officeCreateFormKey)
@@ -588,7 +594,9 @@
                                     <select name="program_id" data-program-scope-select>
                                         <option value="">Select program scope</option>
                                         @foreach($programs as $program)
-                                            <option value="{{ $program->id }}" {{ $activeFormKey === $officeCreateFormKey && (string) old('program_id') === (string) $program->id ? 'selected' : '' }}>{{ $program->code }}</option>
+                                            <option value="{{ $program->id }}" {{ $activeFormKey === $officeCreateFormKey && (string) old('program_id') === (string) $program->id ? 'selected' : '' }}>
+                                                {{ $program->code }}
+                                            </option>
                                         @endforeach
                                     </select>
                                     @if($activeFormKey === $officeCreateFormKey)
@@ -600,7 +608,9 @@
                                     <select name="year_level" data-year-level-scope-select>
                                         <option value="">Select year level scope</option>
                                         @foreach($yearLevels as $yearLevel)
-                                            <option value="{{ $yearLevel }}" {{ $activeFormKey === $officeCreateFormKey && (string) old('year_level') === (string) $yearLevel ? 'selected' : '' }}>{{ $yearLevel }}{{ ['st', 'nd', 'rd', 'th'][$yearLevel - 1] ?? 'th' }} Year</option>
+                                            <option value="{{ $yearLevel }}" {{ $activeFormKey === $officeCreateFormKey && (string) old('year_level') === (string) $yearLevel ? 'selected' : '' }}>
+                                                {{ $yearLevel }}{{ ['st', 'nd', 'rd', 'th'][$yearLevel - 1] ?? 'th' }} Year
+                                            </option>
                                         @endforeach
                                     </select>
                                     @if($activeFormKey === $officeCreateFormKey)
@@ -617,128 +627,356 @@
                             </button>
                         </form>
                     </div>
+                </div>
 
-                    <div class="card">
+                <div class="grid-2">
+                    <div class="card" id="student-records">
+                        <div class="eyebrow">Existing Students</div>
+                        <h3>Student account records</h3>
+
+                        <form method="GET" action="{{ route('admin.dashboard') }}#student-records" class="roster-filter-bar">
+                            <input type="text" name="student_search" value="{{ $studentSearch }}" placeholder="Search...">
+
+                            <select name="student_program">
+                                <option value="">Program</option>
+                                @foreach($programs as $program)
+                                    <option value="{{ $program->id }}" {{ (string) $studentProgramId === (string) $program->id ? 'selected' : '' }}>
+                                        {{ $program->code }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            <select name="student_year_level">
+                                <option value="">Year Level</option>
+                                @foreach($yearLevels as $yearLevel)
+                                    <option value="{{ $yearLevel }}" {{ (string) $studentYearLevel === (string) $yearLevel ? 'selected' : '' }}>
+                                        {{ $yearLevel }}{{ ['st', 'nd', 'rd', 'th'][$yearLevel - 1] ?? 'th' }} Year
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            @if($officeSearch !== '')
+                                <input type="hidden" name="office_search" value="{{ $officeSearch }}">
+                            @endif
+                            @if($officeProgramId !== null && $officeProgramId !== '')
+                                <input type="hidden" name="office_program" value="{{ $officeProgramId }}">
+                            @endif
+                            @if($selectedOfficeType !== null && $selectedOfficeType !== '')
+                                <input type="hidden" name="office_type" value="{{ $selectedOfficeType }}">
+                            @endif
+                            @if($selectedSemesterId)
+                                <input type="hidden" name="history_semester" value="{{ $selectedSemesterId }}">
+                            @endif
+
+                            <button type="submit" class="button">Apply</button>
+                            <a href="{{ route('admin.dashboard', array_filter([
+                                'office_search' => $officeSearch !== '' ? $officeSearch : null,
+                                'office_program' => $officeProgramId !== null && $officeProgramId !== '' ? $officeProgramId : null,
+                                'office_type' => $selectedOfficeType !== null && $selectedOfficeType !== '' ? $selectedOfficeType : null,
+                                'history_semester' => $selectedSemesterId ?: null,
+                            ])) }}#student-records" class="button secondary-button">Reset</a>
+                        </form>
+
+                        @if($students->isEmpty())
+                            <div class="record">
+                                <p class="muted" style="margin: 0;">No matching records found.</p>
+                            </div>
+                        @else
+                            <div class="list scrollable-list">
+                                @foreach($students as $student)
+                                    @php($studentUpdateFormKey = 'student-update-' . $student->id)
+                                    @php($studentNameParts = $student->user->studentNameParts())
+                                    <details class="record" {{ $activeFormKey === $studentUpdateFormKey ? 'open' : '' }}>
+                                        <summary>{{ $student->student_id_number }} - {{ $student->displayName() }}</summary>
+                                        <p class="mini">{{ $student->program->code }} | {{ $student->yearLevelLabel() }}</p>
+                                        <div class="divider"></div>
+                                        <form method="POST" action="{{ route('admin.students.update', $student) }}">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="hidden" name="_form_key" value="{{ $studentUpdateFormKey }}">
+                                            <div class="field-grid">
+                                                <label>
+                                                    First Name
+                                                    <input type="text" name="first_name" value="{{ $activeFormKey === $studentUpdateFormKey ? old('first_name', $studentNameParts['first_name']) : $studentNameParts['first_name'] }}" required>
+                                                    @if($activeFormKey === $studentUpdateFormKey)
+                                                        <x-field-error field="first_name" bag="studentUpdate" />
+                                                    @endif
+                                                </label>
+                                                <label>
+                                                    Last Name
+                                                    <input type="text" name="last_name" value="{{ $activeFormKey === $studentUpdateFormKey ? old('last_name', $studentNameParts['last_name']) : $studentNameParts['last_name'] }}" required>
+                                                    @if($activeFormKey === $studentUpdateFormKey)
+                                                        <x-field-error field="last_name" bag="studentUpdate" />
+                                                    @endif
+                                                </label>
+                                            </div>
+                                            <div class="field-grid">
+                                                <label>
+                                                    Middle Initial
+                                                    <input type="text" name="middle_initial" value="{{ $activeFormKey === $studentUpdateFormKey ? old('middle_initial', $studentNameParts['middle_initial']) : $studentNameParts['middle_initial'] }}" maxlength="1" placeholder="A">
+                                                    @if($activeFormKey === $studentUpdateFormKey)
+                                                        <x-field-error field="middle_initial" bag="studentUpdate" />
+                                                    @endif
+                                                </label>
+                                                <label>
+                                                    Extension
+                                                    <select name="name_extension">
+                                                        <option value="">No extension</option>
+                                                        @foreach($studentNameExtensions as $extension)
+                                                            <option
+                                                                value="{{ $extension }}"
+                                                                {{ ($activeFormKey === $studentUpdateFormKey ? old('name_extension', $studentNameParts['name_extension']) === $extension : $studentNameParts['name_extension'] === $extension) ? 'selected' : '' }}
+                                                            >
+                                                                {{ $extension }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    @if($activeFormKey === $studentUpdateFormKey)
+                                                        <x-field-error field="name_extension" bag="studentUpdate" />
+                                                    @endif
+                                                </label>
+                                            </div>
+                                            <div class="field-grid">
+                                                <label>
+                                                    Student ID
+                                                    <input
+                                                        type="text"
+                                                        name="student_id_number"
+                                                        value="{{ $activeFormKey === $studentUpdateFormKey ? old('student_id_number', $student->student_id_number) : $student->student_id_number }}"
+                                                        inputmode="numeric"
+                                                        pattern="[0-9]{7}"
+                                                        maxlength="7"
+                                                        placeholder="2302314"
+                                                        data-student-id-input
+                                                        required
+                                                    >
+                                                    <span class="mini">Use the 7-digit format, for example 2302314.</span>
+                                                    @if($activeFormKey === $studentUpdateFormKey)
+                                                        <x-field-error field="student_id_number" bag="studentUpdate" />
+                                                    @endif
+                                                </label>
+                                                <label>
+                                                    Program
+                                                    <select name="program_id" required>
+                                                        @foreach($programs as $program)
+                                                            <option
+                                                                value="{{ $program->id }}"
+                                                                {{ ($activeFormKey === $studentUpdateFormKey ? (string) old('program_id', $student->program_id) === (string) $program->id : $student->program_id === $program->id) ? 'selected' : '' }}
+                                                            >
+                                                                {{ $program->code }} - {{ $program->name }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    @if($activeFormKey === $studentUpdateFormKey)
+                                                        <x-field-error field="program_id" bag="studentUpdate" />
+                                                    @endif
+                                                </label>
+                                            </div>
+                                            <div class="field-grid">
+                                                <label>
+                                                    Year Level
+                                                    <select name="year_level" required>
+                                                        @foreach($yearLevels as $yearLevel)
+                                                            <option
+                                                                value="{{ $yearLevel }}"
+                                                                {{ ($activeFormKey === $studentUpdateFormKey ? (string) old('year_level', $student->year_level) === (string) $yearLevel : $student->year_level === $yearLevel) ? 'selected' : '' }}
+                                                            >
+                                                                {{ $yearLevel }}{{ ['st', 'nd', 'rd', 'th'][$yearLevel - 1] ?? 'th' }} Year
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    @if($activeFormKey === $studentUpdateFormKey)
+                                                        <x-field-error field="year_level" bag="studentUpdate" />
+                                                    @endif
+                                                </label>
+                                                <label>
+                                                    Reset Password
+                                                    <input type="password" name="password" placeholder="Leave blank to keep the current password">
+                                                    @if($activeFormKey === $studentUpdateFormKey)
+                                                        <x-field-error field="password" bag="studentUpdate" />
+                                                    @endif
+                                                </label>
+                                            </div>
+                                            <button type="submit">Update Student</button>
+                                        </form>
+                                    </details>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="card" id="office-records">
                         <div class="eyebrow">Office List</div>
                         <h3>Office holders and titles</h3>
-                        <div class="list scrollable-list">
-                            @foreach($officeAccounts as $officeAccount)
-                                @php($officeUpdateFormKey = 'office-account-update-' . $officeAccount->id)
-                                <details class="record" {{ $activeFormKey === $officeUpdateFormKey ? 'open' : '' }}>
-                                    <summary>{{ $officeAccount->display_name }}</summary>
-                                    <p class="mini">
-                                        {{ $officeAccount->designationDisplayName() }}
-                                        | {{ $officeAccount->scopeSummaryLabel() }}
-                                        | Username: {{ $officeAccount->user->username }}
-                                    </p>
-                                    <div class="divider"></div>
-                                    <form method="POST" action="{{ route('admin.office-accounts.update', $officeAccount) }}" data-office-account-form>
-                                        @csrf
-                                        @method('PUT')
-                                        <input type="hidden" name="_form_key" value="{{ $officeUpdateFormKey }}">
-                                        <div class="field-grid">
-                                            <div>
-                                                <div class="eyebrow">Generated Title</div>
-                                                <p style="margin-top: 6px;">{{ $officeAccount->designationDisplayName() }}</p>
-                                            </div>
 
-                                            <div>
-                                                <div class="eyebrow">Scope</div>
-                                                <p style="margin-top: 6px;">{{ $officeAccount->scopeSummaryLabel() }}</p>
-                                            </div>
-                                        </div>
-                                        <div class="divider"></div>
-                                        <div class="field-grid">
-                                            <label>
-                                                Officer Name
-                                                <input type="text" name="display_name" value="{{ $activeFormKey === $officeUpdateFormKey ? old('display_name', $officeAccount->display_name) : $officeAccount->display_name }}" required>
-                                                @if($activeFormKey === $officeUpdateFormKey)
-                                                    <x-field-error field="display_name" bag="officeAccountUpdate" />
-                                                @endif
-                                            </label>
-                                            <label>
-                                                Username
-                                                <input type="text" name="username" value="{{ $activeFormKey === $officeUpdateFormKey ? old('username', $officeAccount->user->username) : $officeAccount->user->username }}" required>
-                                                @if($activeFormKey === $officeUpdateFormKey)
-                                                    <x-field-error field="username" bag="officeAccountUpdate" />
-                                                @endif
-                                            </label>
-                                        </div>
-                                        <div class="field-grid">
-                                            <label>
-                                                Office Type
-                                                <select name="office_type" required data-office-type-select>
-                                                    @foreach($officeTypeOptions as $value => $label)
-                                                        <option
-                                                            value="{{ $value }}"
-                                                            {{ ($activeFormKey === $officeUpdateFormKey ? old('office_type', $officeAccount->office_type) === $value : $officeAccount->office_type === $value) ? 'selected' : '' }}
-                                                        >
-                                                            {{ $label }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                                @if($activeFormKey === $officeUpdateFormKey)
-                                                    <x-field-error field="office_type" bag="officeAccountUpdate" />
-                                                @endif
-                                            </label>
-                                            <label>
-                                                Reset Password
-                                                <input type="password" name="password" placeholder="Leave blank to keep the current password">
-                                                @if($activeFormKey === $officeUpdateFormKey)
-                                                    <x-field-error field="password" bag="officeAccountUpdate" />
-                                                @endif
-                                            </label>
-                                        </div>
-                                        <p class="mini" data-scope-note style="margin: -2px 0 8px; color: #5b6578;">
-                                            {{ $officeTypeScopeMetadata[$officeAccount->office_type]['note'] ?? 'Choose an office type to see which fields are needed.' }}
+                        <form method="GET" action="{{ route('admin.dashboard') }}#office-records" class="roster-filter-bar">
+                            <input type="text" name="office_search" value="{{ $officeSearch }}" placeholder="Search...">
+
+                            <select name="office_program">
+                                <option value="">Program Scope</option>
+                                <option value="university" {{ $officeProgramId === 'university' ? 'selected' : '' }}>University-wide</option>
+                                @foreach($programs as $program)
+                                    <option value="{{ $program->id }}" {{ (string) $officeProgramId === (string) $program->id ? 'selected' : '' }}>
+                                        {{ $program->code }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            <select name="office_type">
+                                <option value="">Office Type</option>
+                                @foreach($officeTypeOptions as $value => $label)
+                                    <option value="{{ $value }}" {{ $selectedOfficeType === $value ? 'selected' : '' }}>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            @if($studentSearch !== '')
+                                <input type="hidden" name="student_search" value="{{ $studentSearch }}">
+                            @endif
+                            @if($studentProgramId !== null && $studentProgramId !== '')
+                                <input type="hidden" name="student_program" value="{{ $studentProgramId }}">
+                            @endif
+                            @if($studentYearLevel !== null && $studentYearLevel !== '')
+                                <input type="hidden" name="student_year_level" value="{{ $studentYearLevel }}">
+                            @endif
+                            @if($selectedSemesterId)
+                                <input type="hidden" name="history_semester" value="{{ $selectedSemesterId }}">
+                            @endif
+
+                            <button type="submit" class="button">Apply</button>
+                            <a href="{{ route('admin.dashboard', array_filter([
+                                'student_search' => $studentSearch !== '' ? $studentSearch : null,
+                                'student_program' => $studentProgramId !== null && $studentProgramId !== '' ? $studentProgramId : null,
+                                'student_year_level' => $studentYearLevel !== null && $studentYearLevel !== '' ? $studentYearLevel : null,
+                                'history_semester' => $selectedSemesterId ?: null,
+                            ])) }}#office-records" class="button secondary-button">Reset</a>
+                        </form>
+
+                        @if($officeAccounts->isEmpty())
+                            <div class="record">
+                                <p class="muted" style="margin: 0;">No matching records found.</p>
+                            </div>
+                        @else
+                            <div class="list scrollable-list">
+                                @foreach($officeAccounts as $officeAccount)
+                                    @php($officeUpdateFormKey = 'office-account-update-' . $officeAccount->id)
+                                    <details class="record" {{ $activeFormKey === $officeUpdateFormKey ? 'open' : '' }}>
+                                        <summary>{{ $officeAccount->display_name }}</summary>
+                                        <p class="mini">
+                                            {{ $officeAccount->designationDisplayName() }}
+                                            | {{ $officeAccount->scopeSummaryLabel() }}
+                                            | Username: {{ $officeAccount->user->username }}
                                         </p>
-                                        <div class="field-grid">
-                                            <label>
-                                                Program Scope
-                                                <select name="program_id" data-program-scope-select>
-                                                    <option value="">Select program scope</option>
-                                                    @foreach($programs as $program)
-                                                        <option
-                                                            value="{{ $program->id }}"
-                                                            {{ ($activeFormKey === $officeUpdateFormKey ? (string) old('program_id', $officeAccount->program_id) === (string) $program->id : $officeAccount->program_id === $program->id) ? 'selected' : '' }}
-                                                        >
-                                                            {{ $program->code }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                                @if($activeFormKey === $officeUpdateFormKey)
-                                                    <x-field-error field="program_id" bag="officeAccountUpdate" />
-                                                @endif
-                                            </label>
-                                            <label>
-                                                Year Level Scope
-                                                <select name="year_level" data-year-level-scope-select>
-                                                    <option value="">Select year level scope</option>
-                                                    @foreach($yearLevels as $yearLevel)
-                                                        <option
-                                                            value="{{ $yearLevel }}"
-                                                            {{ ($activeFormKey === $officeUpdateFormKey ? (string) old('year_level', $officeAccount->year_level) === (string) $yearLevel : $officeAccount->year_level === $yearLevel) ? 'selected' : '' }}
-                                                        >
-                                                            {{ $yearLevel }}{{ ['st', 'nd', 'rd', 'th'][$yearLevel - 1] ?? 'th' }} Year
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                                @if($activeFormKey === $officeUpdateFormKey)
-                                                    <x-field-error field="year_level" bag="officeAccountUpdate" />
-                                                @endif
-                                            </label>
-                                        </div>
-                                        <button 
-                                            type="submit"
-                                            data-loading-button
-                                            data-loading-text="Updating Office Account..."
-                                        >
-                                            Update Office Account
-                                        </button>
-                                    </form>
-                                </details>
-                            @endforeach
-                        </div>
+                                        <div class="divider"></div>
+                                        <form method="POST" action="{{ route('admin.office-accounts.update', $officeAccount) }}" data-office-account-form>
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="hidden" name="_form_key" value="{{ $officeUpdateFormKey }}">
+                                            <div class="field-grid">
+                                                <div>
+                                                    <div class="eyebrow">Generated Title</div>
+                                                    <p style="margin-top: 6px;">{{ $officeAccount->designationDisplayName() }}</p>
+                                                </div>
+
+                                                <div>
+                                                    <div class="eyebrow">Scope</div>
+                                                    <p style="margin-top: 6px;">{{ $officeAccount->scopeSummaryLabel() }}</p>
+                                                </div>
+                                            </div>
+                                            <div class="divider"></div>
+                                            <div class="field-grid">
+                                                <label>
+                                                    Officer Name
+                                                    <input type="text" name="display_name" value="{{ $activeFormKey === $officeUpdateFormKey ? old('display_name', $officeAccount->display_name) : $officeAccount->display_name }}" required>
+                                                    @if($activeFormKey === $officeUpdateFormKey)
+                                                        <x-field-error field="display_name" bag="officeAccountUpdate" />
+                                                    @endif
+                                                </label>
+                                                <label>
+                                                    Username
+                                                    <input type="text" name="username" value="{{ $activeFormKey === $officeUpdateFormKey ? old('username', $officeAccount->user->username) : $officeAccount->user->username }}" required>
+                                                    @if($activeFormKey === $officeUpdateFormKey)
+                                                        <x-field-error field="username" bag="officeAccountUpdate" />
+                                                    @endif
+                                                </label>
+                                            </div>
+                                            <div class="field-grid">
+                                                <label>
+                                                    Office Type
+                                                    <select name="office_type" required data-office-type-select>
+                                                        @foreach($officeTypeOptions as $value => $label)
+                                                            <option
+                                                                value="{{ $value }}"
+                                                                {{ ($activeFormKey === $officeUpdateFormKey ? old('office_type', $officeAccount->office_type) === $value : $officeAccount->office_type === $value) ? 'selected' : '' }}
+                                                            >
+                                                                {{ $label }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    @if($activeFormKey === $officeUpdateFormKey)
+                                                        <x-field-error field="office_type" bag="officeAccountUpdate" />
+                                                    @endif
+                                                </label>
+                                                <label>
+                                                    Reset Password
+                                                    <input type="password" name="password" placeholder="Leave blank to keep the current password">
+                                                    @if($activeFormKey === $officeUpdateFormKey)
+                                                        <x-field-error field="password" bag="officeAccountUpdate" />
+                                                    @endif
+                                                </label>
+                                            </div>
+                                            <p class="mini" data-scope-note style="margin: -2px 0 8px; color: #5b6578;">
+                                                {{ $officeTypeScopeMetadata[$officeAccount->office_type]['note'] ?? 'Choose an office type to see which fields are needed.' }}
+                                            </p>
+                                            <div class="field-grid">
+                                                <label>
+                                                    Program Scope
+                                                    <select name="program_id" data-program-scope-select>
+                                                        <option value="">Select program scope</option>
+                                                        @foreach($programs as $program)
+                                                            <option
+                                                                value="{{ $program->id }}"
+                                                                {{ ($activeFormKey === $officeUpdateFormKey ? (string) old('program_id', $officeAccount->program_id) === (string) $program->id : $officeAccount->program_id === $program->id) ? 'selected' : '' }}
+                                                            >
+                                                                {{ $program->code }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    @if($activeFormKey === $officeUpdateFormKey)
+                                                        <x-field-error field="program_id" bag="officeAccountUpdate" />
+                                                    @endif
+                                                </label>
+                                                <label>
+                                                    Year Level Scope
+                                                    <select name="year_level" data-year-level-scope-select>
+                                                        <option value="">Select year level scope</option>
+                                                        @foreach($yearLevels as $yearLevel)
+                                                            <option
+                                                                value="{{ $yearLevel }}"
+                                                                {{ ($activeFormKey === $officeUpdateFormKey ? (string) old('year_level', $officeAccount->year_level) === (string) $yearLevel : $officeAccount->year_level === $yearLevel) ? 'selected' : '' }}
+                                                            >
+                                                                {{ $yearLevel }}{{ ['st', 'nd', 'rd', 'th'][$yearLevel - 1] ?? 'th' }} Year
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    @if($activeFormKey === $officeUpdateFormKey)
+                                                        <x-field-error field="year_level" bag="officeAccountUpdate" />
+                                                    @endif
+                                                </label>
+                                            </div>
+                                            <button
+                                                type="submit"
+                                                data-loading-button
+                                                data-loading-text="Updating Office Account..."
+                                            >
+                                                Update Office Account
+                                            </button>
+                                        </form>
+                                    </details>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -814,6 +1052,50 @@
         </section>
     </div>
 
+    <style>
+        .roster-filter-bar {
+            display: grid;
+            grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) auto auto;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .roster-filter-bar input,
+        .roster-filter-bar select,
+        .roster-filter-bar .button {
+            width: 100%;
+            margin: 0;
+        }
+
+        .roster-filter-bar .button {
+            width: auto;
+            white-space: nowrap;
+        }
+
+        .secondary-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+
+        @media (max-width: 1100px) {
+            .roster-filter-bar {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .roster-filter-bar {
+                grid-template-columns: 1fr;
+            }
+
+            .roster-filter-bar .button {
+                width: 100%;
+            }
+        }
+    </style>
     @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', () => {
