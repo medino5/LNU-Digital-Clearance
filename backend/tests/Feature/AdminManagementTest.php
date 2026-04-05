@@ -334,6 +334,22 @@ class AdminManagementTest extends TestCase
             ->assertDontSee('Search designation');
     }
 
+    public function test_admin_dashboard_highlights_common_admin_actions_and_clearer_filters(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('Common admin actions')
+            ->assertSee('Create Student')
+            ->assertSee('Create Office Account')
+            ->assertSee('Assign Holders')
+            ->assertSee('Download Excel Report')
+            ->assertSee('Search by name or ID')
+            ->assertSee('Search by name, username, or scope');
+    }
+
     public function test_admin_can_reassign_designation_to_an_eligible_office_user(): void
     {
         // This covers the super-admin routing control introduced in ticket 40:

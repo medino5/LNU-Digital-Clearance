@@ -9,7 +9,7 @@
     <div class="topbar">
         <div>
             <h1>SUPER ADMIN DASHBOARD</h1>
-            <p>Manage programs, semesters, users, designation holders, and clearance history.</p>
+            <p>Manage academic setup, account records, routing assignments, and completed clearance reports.</p>
         </div>
         <div class="toolbar">
             <span>{{ auth()->user()->name }}</span>
@@ -39,12 +39,52 @@
             <div class="callout error">{{ $validationErrors->first() }}</div>
         @endif
 
-        {{-- New: Overview and quick management section --}}
+        <section class="dashboard-intro-shell">
+            <div class="card dashboard-quick-actions">
+                <div>
+                    <div class="eyebrow">Most Used</div>
+                    <h2>Common admin actions</h2>
+                    <p class="section-copy">Jump straight to the tasks super admins use most during setup and reporting.</p>
+                </div>
+
+                <div class="quick-action-grid">
+                    <a href="#student-create-card" class="quick-action-card">
+                        <span class="quick-action-label">Create Student</span>
+                        <span class="quick-action-copy">Add a new student account and clearance profile.</span>
+                    </a>
+
+                    <a href="#office-account-create-card" class="quick-action-card">
+                        <span class="quick-action-label">Create Office Account</span>
+                        <span class="quick-action-copy">Add an office holder account for admin assignment work.</span>
+                    </a>
+
+                    <a href="#routing-configuration" class="quick-action-card">
+                        <span class="quick-action-label">Assign Holders</span>
+                        <span class="quick-action-copy">Review eligible users and update designation holders.</span>
+                    </a>
+
+                    <a href="#history-records" class="quick-action-card quick-action-card--accent">
+                        <span class="quick-action-label">Download Report</span>
+                        <span class="quick-action-copy">Export completed clearances for the selected semester and academic year.</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="section-jump-links">
+                <span class="section-jump-title">Jump to</span>
+                <a href="#overview" class="section-jump-link">Overview</a>
+                <a href="#academic-configuration" class="section-jump-link">Programs & Semesters</a>
+                <a href="#routing-configuration" class="section-jump-link">Routing</a>
+                <a href="#accounts-records" class="section-jump-link">Accounts</a>
+                <a href="#history-records" class="section-jump-link">Reports</a>
+            </div>
+        </section>
+
         <section id="overview" class="dashboard-section">
             <div class="section-heading">
                 <div>
-                    <h2>OVERVIEW</h2>
-                    <p class="section-copy">Quick links to the main admin sections.</p>
+                    <h2>SYSTEM SNAPSHOT</h2>
+                    <p class="section-copy">Section counts and shortcuts for the main admin areas.</p>
                 </div>
             </div>
 
@@ -107,6 +147,7 @@
                     <div class="card">
                         <div class="eyebrow">Create Program</div>
                         <h3>Add a program</h3>
+                        <p class="section-copy compact-copy">Save the official code, name, and organization label used across routing and records.</p>
                         @php($programCreateFormKey = 'program-create')
                         <form method="POST" action="{{ route('admin.programs.store') }}">
                             @csrf
@@ -197,9 +238,10 @@
                 </div>
 
                 <div class="section-stack">
-                    <div class="card">
+                    <div class="card" id="semester-create-card">
                         <div class="eyebrow">Create Semester</div>
                         <h3>Add or change the current semester</h3>
+                        <p class="section-copy compact-copy">Keep the active semester and academic year ready before students initiate clearances.</p>
                         @php($semesterCreateFormKey = 'semester-create')
                         <form method="POST" action="{{ route('admin.semesters.store') }}">
                             @csrf
@@ -305,9 +347,10 @@
 
             <div class="section-stack">
                 <div class="grid-2">
-                    <div class="card">
+                    <div class="card" id="student-create-card">
                         <div class="eyebrow">Create Student</div>
                         <h3>Create a student account</h3>
+                        <p class="section-copy compact-copy">Add the student identity, program, year level, and login details in one step.</p>
                         @php($studentCreateFormKey = 'student-create')
                         <form method="POST" action="{{ route('admin.students.store') }}">
                             @csrf
@@ -550,7 +593,7 @@
                 </div>
 
                 <div class="section-stack">
-                    <div class="card">
+                    <div class="card" id="office-account-create-card">
                         <div class="eyebrow">Create Office Account</div>
                         <h3>Add an office account</h3>
                         @php($officeCreateFormKey = 'office-account-create')
@@ -649,7 +692,7 @@
                         <h3>Student account records</h3>
 
                         <form method="GET" action="{{ route('admin.dashboard') }}#student-records" class="roster-filter-bar">
-                            <input type="text" name="student_search" value="{{ $studentSearch }}" placeholder="Search...">
+                            <input type="text" name="student_search" value="{{ $studentSearch }}" placeholder="Search by name or ID">
 
                             <select name="student_program">
                                 <option value="">Program</option>
@@ -828,7 +871,7 @@
                         <h3>Office holders and titles</h3>
 
                         <form method="GET" action="{{ route('admin.dashboard') }}#office-records" class="roster-filter-bar">
-                            <input type="text" name="office_search" value="{{ $officeSearch }}" placeholder="Search...">
+                            <input type="text" name="office_search" value="{{ $officeSearch }}" placeholder="Search by name, username, or scope">
 
                             <select name="office_program">
                                 <option value="">Program Scope</option>
@@ -1004,11 +1047,12 @@
             </div>
 
             {{-- Updated: Clearance history kept inside accounts and records section --}}
-            <div id="history-records" class="card">
+            <div id="history-records" class="card history-panel">
                 <div class="section-subheader">
                     <div>
                         <div class="eyebrow">Clearance History</div>
                         <h3>Completed clearance records by semester and academic year</h3>
+                        <p class="section-copy compact-copy">Review finished clearances and export a workbook grouped by program.</p>
                     </div>
                     <div class="toolbar" style="gap: 12px; align-items: flex-end;">
                         <form method="GET" action="{{ route('admin.dashboard') }}" class="toolbar" style="gap: 12px; align-items: flex-end;">
@@ -1036,12 +1080,12 @@
                             </label>
                         </form>
 
-                        <form method="POST" action="{{ route('admin.clearance-reports.completed.export') }}">
+                        <form method="POST" action="{{ route('admin.clearance-reports.completed.export') }}" id="history-export-form">
                             @csrf
                             <input type="hidden" name="_form_key" value="history-export">
                             <label class="history-filter">
                                 <span class="mini">Download Report</span>
-                                <button type="submit" class="button">Download Excel Report</button>
+                                <button type="submit" class="button history-download-button">Download Excel Report</button>
                             </label>
                             <input type="hidden" name="semester_id" value="{{ old('semester_id', $selectedSemesterId) }}">
                             <input type="hidden" name="academic_year" value="{{ old('academic_year', $selectedAcademicYear) }}">
@@ -1108,6 +1152,113 @@
     </div>
 
     <style>
+        .dashboard-intro-shell {
+            display: grid;
+            gap: 18px;
+        }
+
+        .dashboard-quick-actions {
+            display: grid;
+            gap: 20px;
+            padding: 24px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, #fbf7ef 0%, #fffdf8 100%);
+            border: 1px solid #e8dfd1;
+        }
+
+        .dashboard-quick-actions h2 {
+            margin: 6px 0 8px;
+        }
+
+        .quick-action-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .quick-action-card {
+            display: grid;
+            gap: 8px;
+            padding: 16px 18px;
+            border-radius: 18px;
+            text-decoration: none;
+            color: #19324d;
+            background: #ffffff;
+            border: 1px solid #e3d9c9;
+            box-shadow: 0 6px 16px rgba(24, 58, 99, 0.05);
+            transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+        }
+
+        .quick-action-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 26px rgba(24, 58, 99, 0.1);
+            border-color: #d4c0a6;
+        }
+
+        .quick-action-card--accent {
+            background: linear-gradient(135deg, #173c66 0%, #27588f 100%);
+            color: #f8f4ea;
+            border-color: #173c66;
+        }
+
+        .quick-action-card--accent .quick-action-copy {
+            color: rgba(248, 244, 234, 0.88);
+        }
+
+        .quick-action-label {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .quick-action-copy {
+            font-size: 0.92rem;
+            line-height: 1.45;
+            color: #59657a;
+        }
+
+        .section-jump-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .section-jump-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #7a6345;
+        }
+
+        .section-jump-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 9px 14px;
+            border-radius: 999px;
+            text-decoration: none;
+            color: #294c7a;
+            background: #f5efe6;
+            border: 1px solid #e3d7c7;
+            font-weight: 600;
+        }
+
+        .compact-copy {
+            margin-top: 0;
+            margin-bottom: 14px;
+            max-width: 60ch;
+        }
+
+        .history-panel .section-subheader {
+            gap: 18px;
+            align-items: flex-end;
+        }
+
+        .history-download-button {
+            min-width: 220px;
+        }
+
         .roster-filter-bar {
             display: grid;
             grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) auto auto;
@@ -1136,12 +1287,28 @@
         }
 
         @media (max-width: 1100px) {
+            .quick-action-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
             .roster-filter-bar {
                 grid-template-columns: 1fr 1fr;
             }
         }
 
         @media (max-width: 720px) {
+            .quick-action-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section-jump-links {
+                align-items: stretch;
+            }
+
+            .section-jump-link {
+                width: 100%;
+            }
+
             .roster-filter-bar {
                 grid-template-columns: 1fr;
             }
