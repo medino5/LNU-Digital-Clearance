@@ -116,6 +116,7 @@ class ClearanceWorkflowTest extends TestCase
         $this->actingAs($approvedOfficeUser)
             ->post(route('office.steps.process', $approvedStep), [
                 'action' => 'approve',
+                'confirm_action' => 'approve',
                 'remarks' => 'Approved by test office.',
             ])
             ->assertRedirect();
@@ -160,6 +161,7 @@ class ClearanceWorkflowTest extends TestCase
             $this->actingAs($officeUser)
                 ->post(route('office.steps.process', $step), [
                     'action' => 'approve',
+                    'confirm_action' => 'approve',
                     'remarks' => 'Approved.',
                 ])
                 ->assertRedirect();
@@ -269,6 +271,7 @@ class ClearanceWorkflowTest extends TestCase
         $this->actingAs($wrongOfficeUser)
             ->post(route('office.steps.process', $step), [
                 'action' => 'approve',
+                'confirm_action' => 'approve',
                 'remarks' => 'Trying to approve another office step.',
             ])
             ->assertForbidden();
@@ -345,6 +348,7 @@ class ClearanceWorkflowTest extends TestCase
         $this->actingAs($secondaryHolder)
             ->post(route('office.steps.process', $step), [
                 'action' => 'approve',
+                'confirm_action' => 'approve',
                 'remarks' => 'Approved by secondary holder.',
             ])
             ->assertRedirect();
@@ -396,6 +400,7 @@ class ClearanceWorkflowTest extends TestCase
         $this->actingAs($workingStudentUser)
             ->post(route('office.steps.process', $step), [
                 'action' => 'approve',
+                'confirm_action' => 'approve',
                 'remarks' => 'Approved by working student holder.',
             ])
             ->assertRedirect();

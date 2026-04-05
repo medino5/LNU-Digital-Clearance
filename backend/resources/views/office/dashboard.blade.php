@@ -1,4 +1,4 @@
-@extends('layouts.portal', ['title' => 'Office Dashboard'])
+﻿@extends('layouts.portal', ['title' => 'Office Dashboard'])
 
 @section('page')
     @php($validationErrors = collect($errors->getBags())->flatMap(fn ($bag) => $bag->all()))
@@ -85,8 +85,8 @@
                                                 data-modal-student-meta="{{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}"
                                                 data-modal-step-status="Awaiting Action"
                                                 data-modal-clearance-status="{{ ucwords(str_replace('_', ' ', $step->clearance->status)) }}"
-                                                data-modal-last-processed="{{ optional($step->signed_at)->format('M d, Y h:i A') ?? '—' }}"
-                                                data-modal-previous-note="{{ $step->remarks ?: '—' }}"
+                                                data-modal-last-processed="{{ optional($step->signed_at)->format('M d, Y h:i A') ?? '-' }}"
+                                                data-modal-previous-note="{{ $step->remarks ?: '-' }}"
                                             >
                                                 View
                                             </button>
@@ -117,7 +117,7 @@
                                 <div class="record-meta">
                                     <p class="mini">
                                         <strong>Designation:</strong>
-                                        {{ $step->office_label ?: '—' }}
+                                        {{ $step->office_label ?: '-' }}
                                     </p>
 
                                     <p class="mini">
@@ -127,7 +127,7 @@
 
                                     <p class="mini">
                                         <strong>Last note:</strong>
-                                        {{ $step->remarks ?: '—' }}
+                                        {{ $step->remarks ?: '-' }}
                                     </p>
                                 </div>
                             </div>
@@ -178,7 +178,7 @@
                                 <div class="record-meta">
                                     <p class="mini">
                                         <strong>Designation:</strong>
-                                        {{ $step->office_label ?: '—' }}
+                                        {{ $step->office_label ?: '-' }}
                                     </p>
 
                                     <p class="mini">
@@ -188,7 +188,7 @@
 
                                     <p class="mini">
                                         <strong>Remarks:</strong>
-                                        {{ $step->remarks ?: '—' }}
+                                        {{ $step->remarks ?: '-' }}
                                     </p>
 
                                     <p class="mini">
@@ -217,7 +217,7 @@
                 </div>
 
                 <button type="button" class="office-modal-close" id="closeOfficeModal" aria-label="Close modal">
-                    ×
+                    &times;
                 </button>
             </div>
 
@@ -228,12 +228,12 @@
                 </div>
 
                 <div class="office-detail-block">
-                    <p><strong>Last Processed:</strong> <span id="modalLastProcessed">—</span></p>
+                    <p><strong>Last Processed:</strong> <span id="modalLastProcessed">-</span></p>
                 </div>
 
                 <div class="office-detail-block">
                     <label class="office-label">Previous Office Note</label>
-                    <div class="office-note-box" id="modalPreviousNote">—</div>
+                    <div class="office-note-box" id="modalPreviousNote">-</div>
                 </div>
 
                 <div class="office-modal-actions">
@@ -252,7 +252,7 @@
                 </div>
 
                 <button type="button" class="office-modal-close" id="closeApproveModal" aria-label="Close modal">
-                    ×
+                    &times;
                 </button>
             </div>
 
@@ -283,7 +283,7 @@
                 </div>
 
                 <button type="button" class="office-modal-close" id="closeFlagModal" aria-label="Close modal">
-                    ×
+                    &times;
                 </button>
             </div>
 
@@ -324,7 +324,7 @@
                 </div>
 
                 <button type="button" class="office-modal-close" id="closeUndoModal" aria-label="Close modal">
-                    ×
+                    &times;
                 </button>
             </div>
 
@@ -766,3 +766,4 @@
         });
     </script>
 @endsection
+
