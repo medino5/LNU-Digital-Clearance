@@ -135,7 +135,13 @@
                                     <x-field-error field="name" bag="programCreate" />
                                 @endif
                             </label>
-                            <button type="submit">Save Program</button>
+                            <button 
+                                type="submit"
+                                data-loading-button
+                                data-loading-text="Saving Program..."
+                            >
+                                Save Program
+                            </button>
                         </form>
                     </div>
 
@@ -176,7 +182,13 @@
                                                 <x-field-error field="name" bag="programUpdate" />
                                             @endif
                                         </label>
-                                        <button type="submit">Update Program</button>
+                                        <button 
+                                            type="submit"
+                                            data-loading-button
+                                            data-loading-text="Updating Program..."
+                                        >
+                                            Update Program
+                                        </button>
                                     </form>
                                 </details>
                             @endforeach
@@ -203,7 +215,13 @@
                                 <input type="checkbox" name="is_active" value="1" {{ $activeFormKey === $semesterCreateFormKey && old('is_active') ? 'checked' : '' }}>
                                 Set as the active semester
                             </label>
-                            <button type="submit">Save Semester</button>
+                            <button 
+                                type="submit"
+                                data-loading-button
+                                data-loading-text="Saving Semester..."
+                            >
+                                Save Semester
+                            </button>
                         </form>
                     </div>
 
@@ -242,7 +260,13 @@
                                             >
                                             Keep this semester active
                                         </label>
-                                        <button type="submit">Update Semester</button>
+                                        <button 
+                                            type="submit"
+                                            data-loading-button
+                                            data-loading-text="Updating Semester..."
+                                        >
+                                            Update Semester
+                                        </button>
                                     </form>
                                 </details>
                             @endforeach
@@ -369,10 +393,149 @@
                                     @endif
                                 </label>
                             </div>
-                            <button type="submit">Create Student</button>
+                            <button 
+                                type="submit"
+                                data-loading-button
+                                data-loading-text="Creating Student..."
+                            >
+                                Create Student
+                            </button>
                         </form>
                     </div>
 
+                    <div class="card">
+                        <div class="eyebrow">Existing Students</div>
+                        <h3>Student account records</h3>
+                        <div class="list scrollable-list">
+                            @foreach($students as $student)
+                                @php($studentUpdateFormKey = 'student-update-' . $student->id)
+                                @php($studentNameParts = $student->user->studentNameParts())
+                                <details class="record" {{ $activeFormKey === $studentUpdateFormKey ? 'open' : '' }}>
+                                    <summary>{{ $student->student_id_number }} - {{ $student->displayName() }}</summary>
+                                    <p class="mini">{{ $student->program->code }} | {{ $student->yearLevelLabel() }}</p>
+                                    <div class="divider"></div>
+                                    <form method="POST" action="{{ route('admin.students.update', $student) }}">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="hidden" name="_form_key" value="{{ $studentUpdateFormKey }}">
+                                        <div class="field-grid">
+                                            <label>
+                                                First Name
+                                                <input type="text" name="first_name" value="{{ $activeFormKey === $studentUpdateFormKey ? old('first_name', $studentNameParts['first_name']) : $studentNameParts['first_name'] }}" required>
+                                                @if($activeFormKey === $studentUpdateFormKey)
+                                                    <x-field-error field="first_name" bag="studentUpdate" />
+                                                @endif
+                                            </label>
+                                            <label>
+                                                Last Name
+                                                <input type="text" name="last_name" value="{{ $activeFormKey === $studentUpdateFormKey ? old('last_name', $studentNameParts['last_name']) : $studentNameParts['last_name'] }}" required>
+                                                @if($activeFormKey === $studentUpdateFormKey)
+                                                    <x-field-error field="last_name" bag="studentUpdate" />
+                                                @endif
+                                            </label>
+                                        </div>
+                                        <div class="field-grid">
+                                            <label>
+                                                Middle Initial
+                                                <input type="text" name="middle_initial" value="{{ $activeFormKey === $studentUpdateFormKey ? old('middle_initial', $studentNameParts['middle_initial']) : $studentNameParts['middle_initial'] }}" maxlength="1" placeholder="A">
+                                                @if($activeFormKey === $studentUpdateFormKey)
+                                                    <x-field-error field="middle_initial" bag="studentUpdate" />
+                                                @endif
+                                            </label>
+                                            <label>
+                                                Extension
+                                                <select name="name_extension">
+                                                    <option value="">No extension</option>
+                                                    @foreach($studentNameExtensions as $extension)
+                                                        <option
+                                                            value="{{ $extension }}"
+                                                            {{ ($activeFormKey === $studentUpdateFormKey ? old('name_extension', $studentNameParts['name_extension']) === $extension : $studentNameParts['name_extension'] === $extension) ? 'selected' : '' }}
+                                                        >
+                                                            {{ $extension }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                                @if($activeFormKey === $studentUpdateFormKey)
+                                                    <x-field-error field="name_extension" bag="studentUpdate" />
+                                                @endif
+                                            </label>
+                                        </div>
+                                        <div class="field-grid">
+                                            <label>
+                                                Student ID
+                                                <input
+                                                    type="text"
+                                                    name="student_id_number"
+                                                    value="{{ $activeFormKey === $studentUpdateFormKey ? old('student_id_number', $student->student_id_number) : $student->student_id_number }}"
+                                                    inputmode="numeric"
+                                                    pattern="[0-9]{7}"
+                                                    maxlength="7"
+                                                    placeholder="2302314"
+                                                    data-student-id-input
+                                                    required
+                                                >
+                                                <span class="mini">Use the 7-digit format, for example 2302314.</span>
+                                                @if($activeFormKey === $studentUpdateFormKey)
+                                                    <x-field-error field="student_id_number" bag="studentUpdate" />
+                                                @endif
+                                            </label>
+                                            <label>
+                                                Program
+                                                <select name="program_id" required>
+                                                    @foreach($programs as $program)
+                                                        <option
+                                                            value="{{ $program->id }}"
+                                                            {{ ($activeFormKey === $studentUpdateFormKey ? (string) old('program_id', $student->program_id) === (string) $program->id : $student->program_id === $program->id) ? 'selected' : '' }}
+                                                        >
+                                                            {{ $program->code }} - {{ $program->name }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                                @if($activeFormKey === $studentUpdateFormKey)
+                                                    <x-field-error field="program_id" bag="studentUpdate" />
+                                                @endif
+                                            </label>
+                                        </div>
+                                        <div class="field-grid">
+                                            <label>
+                                                Year Level
+                                                <select name="year_level" required>
+                                                    @foreach($yearLevels as $yearLevel)
+                                                        <option
+                                                            value="{{ $yearLevel }}"
+                                                            {{ ($activeFormKey === $studentUpdateFormKey ? (string) old('year_level', $student->year_level) === (string) $yearLevel : $student->year_level === $yearLevel) ? 'selected' : '' }}
+                                                        >
+                                                            {{ $yearLevel }}{{ ['st', 'nd', 'rd', 'th'][$yearLevel - 1] ?? 'th' }} Year
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                                @if($activeFormKey === $studentUpdateFormKey)
+                                                    <x-field-error field="year_level" bag="studentUpdate" />
+                                                @endif
+                                            </label>
+                                            <label>
+                                                Reset Password
+                                                <input type="password" name="password" placeholder="Leave blank to keep the current password">
+                                                @if($activeFormKey === $studentUpdateFormKey)
+                                                    <x-field-error field="password" bag="studentUpdate" />
+                                                @endif
+                                            </label>
+                                        </div>
+                                        <button 
+                                            type="submit"
+                                            data-loading-button
+                                            data-loading-text="Updating Student..."
+                                        >
+                                            Update Student
+                                        </button>
+                                    </form>
+                                </details>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-stack">
                     <div class="card">
                         <div class="eyebrow">Create Office Account</div>
                         <h3>Add an office account</h3>
@@ -455,7 +618,13 @@
                                     @endif
                                 </label>
                             </div>
-                            <button type="submit">Create Office Account</button>
+                            <button 
+                                type="submit"
+                                data-loading-button
+                                data-loading-text="Creating Office Account..."
+                            >
+                                Create Office Account
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -796,7 +965,13 @@
                                                     @endif
                                                 </label>
                                             </div>
-                                            <button type="submit">Update Office Account</button>
+                                            <button
+                                                type="submit"
+                                                data-loading-button
+                                                data-loading-text="Updating Office Account..."
+                                            >
+                                                Update Office Account
+                                            </button>
                                         </form>
                                     </details>
                                 @endforeach
@@ -921,7 +1096,7 @@
             }
         }
     </style>
-
+    @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const normalizeStudentId = (value) => value.replace(/\D+/g, '').slice(0, 7);
@@ -950,7 +1125,9 @@
                     const selectionStart = input.selectionStart ?? input.value.length;
                     const selectionEnd = input.selectionEnd ?? input.value.length;
                     const nextValue = normalizeStudentId(
-                        input.value.slice(0, selectionStart) + pastedText + input.value.slice(selectionEnd)
+                        input.value.slice(0, selectionStart) +
+                        pastedText +
+                        input.value.slice(selectionEnd)
                     );
 
                     input.value = nextValue;
@@ -993,7 +1170,28 @@
                 officeTypeSelect.addEventListener('change', applyOfficeScopeState);
                 applyOfficeScopeState();
             });
+
+            document.querySelectorAll('form').forEach((form) => {
+                const submitButton = form.querySelector('[data-loading-button]');
+
+                if (!submitButton) {
+                    return;
+                }
+
+                form.addEventListener('submit', (event) => {
+                    if (form.dataset.isSubmitting === 'true') {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    form.dataset.isSubmitting = 'true';
+                    submitButton.disabled = true;
+                    submitButton.textContent =
+                        submitButton.dataset.loadingText || 'Processing...';
+                });
+            });
         });
     </script>
+    @endpush
 
 @endsection
