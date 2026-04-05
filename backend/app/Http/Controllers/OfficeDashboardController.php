@@ -82,7 +82,8 @@ class OfficeDashboardController extends Controller
             $request,
             'officeProcess',
             [
-                'action' => ['required', 'in:approve,flag'],
+                'action' => ['required', 'in:approve,flag,undo_approval'],
+                'confirm_action' => ['nullable','string'],
                 'remarks' => ['nullable', 'string', 'required_if:action,flag'],
                 'step_id' => ['nullable', 'integer'],
             ],
@@ -94,9 +95,24 @@ class OfficeDashboardController extends Controller
 
         try {
             if ($data['action'] === 'approve') {
+
+                if (($data['confirm_action'] ?? null) !== 'approve') {
+                    throw new RuntimeException('Approval not confirmed.');
+                }
+
                 $this->workflow->approve($step, $request->user(), $data['remarks'] ?? null);
-            } else {
+
+            } elseif ($data['action'] === 'flag') {
+
                 $this->workflow->flag($step, $request->user(), $data['remarks'] ?? null);
+
+            } elseif ($data['action'] === 'undo_approval') {
+
+                if (($data['confirm_action'] ?? null) !== 'undo_approval') {
+                    throw new RuntimeException('Undo approval not confirmed.');
+                }
+
+                $this->workflow->undoApproval($step, $request->user());
             }
         } catch (RuntimeException $exception) {
             return $this->redirectWithInputAndMessage(
