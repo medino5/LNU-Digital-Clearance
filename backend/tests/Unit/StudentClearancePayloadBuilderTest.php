@@ -4,7 +4,11 @@ namespace Tests\Unit;
 
 use App\Models\Clearance;
 use App\Models\ClearanceStep;
+use App\Models\ClearanceStepEvent;
 use App\Models\OfficeDesignation;
+use App\Models\Program;
+use App\Models\Semester;
+use App\Models\Student;
 use App\Models\User;
 use App\Support\StudentClearancePayloadBuilder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -21,7 +25,7 @@ class StudentClearancePayloadBuilderTest extends TestCase
         // The goal is to prove that one builder call returns the full mobile
         // dashboard payload: student snapshot, semester info, clearance counts,
         // office steps, and the latest event details for flagged items.
-        $program = \App\Models\Program::factory()->create([
+        $program = Program::factory()->create([
             'code' => 'BSIT',
             'name' => 'Bachelor of Science in Information Technology',
             'org_name' => 'DIGITS',
@@ -33,19 +37,20 @@ class StudentClearancePayloadBuilderTest extends TestCase
             'username' => '2302314',
         ]);
 
-        $student = \App\Models\Student::factory()->for($user, 'user')->for($program, 'program')->create([
+        $student = Student::factory()->for($user, 'user')->for($program, 'program')->create([
             'student_id_number' => '2302314',
             'year_level' => 3,
         ]);
 
-        $semester = \App\Models\Semester::factory()->active()->create([
+        $semester = Semester::factory()->active()->create([
             'label' => '2nd Semester 2024-2025',
+            'academic_year' => '2024-2025',
         ]);
 
-        $clearance = Clearance::create($this->clearanceSnapshotAttributes($student, $semester, [
+        $clearance = Clearance::factory()->forStudentAndSemester($student, $semester)->create([
             'status' => Clearance::STATUS_FLAGGED,
             'reference_number' => 'CLR-1-00001-1234',
-        ]));
+        ]);
 
         // Build one approved program-scoped step so the payload has a
         // completed office entry and a signed event actor.
@@ -53,24 +58,19 @@ class StudentClearancePayloadBuilderTest extends TestCase
         $officeDesignation = OfficeDesignation::factory()
             ->academicOrgTreasurer($program)
             ->create();
-        \App\Models\OfficeDesignationAssignment::factory()->create([
-            'office_designation_id' => $officeDesignation->id,
-            'user_id' => $officeUser->id,
-        ]);
 
-        $approvedStep = $clearance->steps()->create([
-            'office_designation_id' => $officeDesignation->id,
-            'status' => ClearanceStep::STATUS_APPROVED,
-            'office_label' => $officeDesignation->display_name,
-            'office_type' => $officeDesignation->office_type,
-            'scope_label' => 'BSIT',
-            'signed_at' => now(),
-        ]);
-        $approvedStep->events()->create([
-            'actor_user_id' => $officeUser->id,
-            'actor_role' => User::ROLE_OFFICE,
-            'action' => 'approved',
-        ]);
+        $approvedStep = ClearanceStep::factory()
+            ->for($clearance, 'clearance')
+            ->forDesignation($officeDesignation)
+            ->approved()
+            ->create();
+        ClearanceStepEvent::factory()
+            ->for($approvedStep, 'clearanceStep')
+            ->for($officeUser, 'actor')
+            ->create([
+                'actor_role' => User::ROLE_OFFICE,
+                'action' => 'approved',
+            ]);
 
         // Build one flagged year-level step so we can verify the mobile app's
         // re-submit branch and the last-event remarks payload.
@@ -78,25 +78,19 @@ class StudentClearancePayloadBuilderTest extends TestCase
         $yearDesignation = OfficeDesignation::factory()
             ->yearLevelTreasurer(3)
             ->create();
-        \App\Models\OfficeDesignationAssignment::factory()->create([
-            'office_designation_id' => $yearDesignation->id,
-            'user_id' => $yearOfficeUser->id,
-        ]);
 
-        $flaggedStep = $clearance->steps()->create([
-            'office_designation_id' => $yearDesignation->id,
-            'status' => ClearanceStep::STATUS_FLAGGED,
-            'office_label' => '3rd Year Level Organization Treasurer',
-            'office_type' => OfficeDesignation::TYPE_YEAR_LEVEL_TREASURER,
-            'scope_label' => '3rd Year',
-            'remarks' => 'Please clear your issue first.',
-        ]);
-        $flaggedStep->events()->create([
-            'actor_user_id' => $yearOfficeUser->id,
-            'actor_role' => User::ROLE_OFFICE,
-            'action' => 'flagged',
-            'remarks' => 'Please clear your issue first.',
-        ]);
+        $flaggedStep = ClearanceStep::factory()
+            ->for($clearance, 'clearance')
+            ->forDesignation($yearDesignation)
+            ->flagged('Please clear your issue first.')
+            ->create();
+        ClearanceStepEvent::factory()
+            ->for($flaggedStep, 'clearanceStep')
+            ->for($yearOfficeUser, 'actor')
+            ->flagged('Please clear your issue first.')
+            ->create([
+                'actor_role' => User::ROLE_OFFICE,
+            ]);
 
         // Call the payload builder directly so the test stays narrowly focused
         // on the response shape consumed by Flutter.
