@@ -4,9 +4,8 @@ namespace Tests\Unit;
 
 use App\Models\Clearance;
 use App\Models\ClearanceStep;
-use App\Models\OfficeAccount;
+use App\Models\OfficeDesignation;
 use App\Models\User;
-use App\Support\OfficeDesignationBackfill;
 use App\Support\StudentClearancePayloadBuilder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -51,20 +50,19 @@ class StudentClearancePayloadBuilderTest extends TestCase
         // Build one approved program-scoped step so the payload has a
         // completed office entry and a signed event actor.
         $officeUser = User::factory()->office()->create();
-
-        $office = OfficeAccount::factory()
-            ->for($officeUser, 'user')
+        $officeDesignation = OfficeDesignation::factory()
             ->academicOrgTreasurer($program)
-            ->create([
-            'display_name' => 'Alyssa Mendoza',
+            ->create();
+        \App\Models\OfficeDesignationAssignment::factory()->create([
+            'office_designation_id' => $officeDesignation->id,
+            'user_id' => $officeUser->id,
         ]);
-        $officeDesignation = app(OfficeDesignationBackfill::class)->syncOfficeAccount($office->fresh('program'));
 
         $approvedStep = $clearance->steps()->create([
             'office_designation_id' => $officeDesignation->id,
             'status' => ClearanceStep::STATUS_APPROVED,
             'office_label' => $officeDesignation->display_name,
-            'office_type' => $office->office_type,
+            'office_type' => $officeDesignation->office_type,
             'scope_label' => 'BSIT',
             'signed_at' => now(),
         ]);
@@ -77,20 +75,19 @@ class StudentClearancePayloadBuilderTest extends TestCase
         // Build one flagged year-level step so we can verify the mobile app's
         // re-submit branch and the last-event remarks payload.
         $yearOfficeUser = User::factory()->office()->create();
-
-        $yearOffice = OfficeAccount::factory()
-            ->for($yearOfficeUser, 'user')
+        $yearDesignation = OfficeDesignation::factory()
             ->yearLevelTreasurer(3)
-            ->create([
-            'display_name' => 'Carlo Santos',
+            ->create();
+        \App\Models\OfficeDesignationAssignment::factory()->create([
+            'office_designation_id' => $yearDesignation->id,
+            'user_id' => $yearOfficeUser->id,
         ]);
-        $yearDesignation = app(OfficeDesignationBackfill::class)->syncOfficeAccount($yearOffice);
 
         $flaggedStep = $clearance->steps()->create([
             'office_designation_id' => $yearDesignation->id,
             'status' => ClearanceStep::STATUS_FLAGGED,
             'office_label' => '3rd Year Level Organization Treasurer',
-            'office_type' => OfficeAccount::TYPE_YEAR_LEVEL_TREASURER,
+            'office_type' => OfficeDesignation::TYPE_YEAR_LEVEL_TREASURER,
             'scope_label' => '3rd Year',
             'remarks' => 'Please clear your issue first.',
         ]);

@@ -18,6 +18,7 @@ class SemesterFactory extends Factory
 
         return [
             'label' => fake()->randomElement(['1st', '2nd']) . ' Semester ' . $startYear . '-' . ($startYear + 1),
+            'academic_year' => $startYear . '-' . ($startYear + 1),
             'is_active' => false,
         ];
     }
