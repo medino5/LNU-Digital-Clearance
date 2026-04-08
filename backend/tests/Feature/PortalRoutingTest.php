@@ -256,7 +256,7 @@ class PortalRoutingTest extends TestCase
             ->get(route('admin.dashboard'))
             ->assertOk()
             ->assertSee('Shared Login')
-            ->assertSee('Log Out / Switch Account');
+            ->assertSee('Log Out');
     }
 
     public function test_office_dashboard_shows_logout_and_switch_actions(): void

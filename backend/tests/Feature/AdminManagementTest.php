@@ -24,11 +24,11 @@ class AdminManagementTest extends TestCase
         $this->seed(DatabaseSeeder::class);
     }
 
-    public function test_admin_can_create_a_program_student_and_scoped_office_account(): void
+    public function test_admin_can_create_a_program_student_and_scoped_staff_office_account(): void
     {
         // This covers the core admin maintenance flow: the super admin should
         // be able to create routing metadata, provision a student, and create
-        // a scoped office account without touching the database manually.
+        // a scoped staff office account without touching the database manually.
         $admin = User::where('username', 'mis.admin')->firstOrFail();
 
         $this->actingAs($admin)->post(route('admin.programs.store'), [
@@ -52,7 +52,7 @@ class AdminManagementTest extends TestCase
 
         $this->actingAs($admin)->post(route('admin.office-accounts.store'), [
             'display_name' => 'Bianca Systems',
-            'office_type' => OfficeAccount::TYPE_ACAD_ORG_TREASURER,
+            'office_type' => OfficeAccount::TYPE_ACAD_ORG_ADVISER,
             'program_id' => $program->id,
             'year_level' => '',
             'username' => 'bsis.treasurer',
@@ -61,7 +61,6 @@ class AdminManagementTest extends TestCase
 
         $student = Student::where('student_id_number', '2400001')->firstOrFail();
         $officeAccount = OfficeAccount::whereHas('user', fn ($query) => $query->where('username', 'bsis.treasurer'))->firstOrFail();
-        $designation = OfficeDesignation::where('key', 'bsis-acad-org-treasurer')->firstOrFail();
 
         $this->assertSame('Jane Systems', $student->user->name);
         $this->assertSame('Jane', $student->user->first_name);
@@ -69,13 +68,11 @@ class AdminManagementTest extends TestCase
         $this->assertSame('Systems', $student->user->last_name);
         $this->assertNull($student->user->name_extension);
         $this->assertSame('Bianca Systems', $officeAccount->display_name);
+        $this->assertSame(OfficeAccount::TYPE_ACAD_ORG_ADVISER, $officeAccount->office_type);
         $this->assertSame($program->id, $student->program_id);
         $this->assertSame($program->id, $officeAccount->program_id);
-        $this->assertSame($program->id, $designation->program_id);
-        $this->assertSame('BITS Academic Organization Treasurer', $designation->display_name);
-        $this->assertTrue(
+        $this->assertFalse(
             OfficeDesignationAssignment::query()
-                ->where('office_designation_id', $designation->id)
                 ->where('user_id', $officeAccount->user_id)
                 ->where('is_active', true)
                 ->exists()
@@ -284,7 +281,7 @@ class AdminManagementTest extends TestCase
             route('admin.office-accounts.store'),
             [
                 'display_name' => 'Broken Holder',
-                'office_type' => OfficeAccount::TYPE_ACAD_ORG_TREASURER,
+                'office_type' => OfficeAccount::TYPE_ACAD_ORG_ADVISER,
                 'program_id' => '',
                 'year_level' => '',
                 'username' => 'broken.treasurer',
@@ -311,12 +308,16 @@ class AdminManagementTest extends TestCase
         ])->assertRedirect();
 
         $officeAccount = OfficeAccount::whereHas('user', fn ($query) => $query->where('username', 'lara.librarian'))->firstOrFail();
-        $designation = OfficeDesignation::where('key', 'college-librarian')->firstOrFail();
 
         $this->assertSame('Lara Perez', $officeAccount->display_name);
         $this->assertNull($officeAccount->program_id);
         $this->assertNull($officeAccount->year_level);
-        $this->assertSame('College Chief Librarian', $designation->display_name);
+        $this->assertFalse(
+            OfficeDesignationAssignment::query()
+                ->where('user_id', $officeAccount->user_id)
+                ->where('is_active', true)
+                ->exists()
+        );
     }
 
     public function test_admin_dashboard_shows_designation_assignment_section_without_search_filter(): void
@@ -352,12 +353,11 @@ class AdminManagementTest extends TestCase
 
     public function test_admin_can_reassign_designation_to_an_eligible_office_user(): void
     {
-        // This covers the super-admin routing control introduced in ticket 40:
-        // an eligible office holder can be assigned as the current holder of
-        // an existing designation and the previous holder is released.
+        // Staff office accounts are now a general pool for non-student
+        // designations, so a valid staff account can hold a non-student
+        // designation even if its own office type is different.
         $admin = User::where('username', 'mis.admin')->firstOrFail();
-        $program = Program::where('code', 'BSIT')->firstOrFail();
-        $designation = OfficeDesignation::where('key', 'bsit-acad-org-treasurer')->firstOrFail();
+        $designation = OfficeDesignation::where('key', 'bsit-acad-org-adviser')->firstOrFail();
         $currentAssignment = OfficeDesignationAssignment::query()
             ->where('office_designation_id', $designation->id)
             ->where('is_active', true)
@@ -375,8 +375,8 @@ class AdminManagementTest extends TestCase
         OfficeAccount::create([
             'user_id' => $replacementUser->id,
             'display_name' => 'Alyssa Mendoza',
-            'office_type' => OfficeAccount::TYPE_ACAD_ORG_TREASURER,
-            'program_id' => $program->id,
+            'office_type' => OfficeAccount::TYPE_LIBRARIAN,
+            'program_id' => null,
             'year_level' => null,
         ]);
 
@@ -436,8 +436,8 @@ class AdminManagementTest extends TestCase
 
     public function test_admin_cannot_assign_an_ineligible_office_user_to_a_designation(): void
     {
-        // This protects the assignment rules behind the UI: only office
-        // accounts whose type and scope match the designation are assignable.
+        // Student-led designations stay student-only even after staff office
+        // accounts became a reusable pool for non-student designations.
         $admin = User::where('username', 'mis.admin')->firstOrFail();
         $designation = OfficeDesignation::where('key', 'bsit-acad-org-treasurer')->firstOrFail();
         $currentAssignment = OfficeDesignationAssignment::query()
@@ -483,6 +483,37 @@ class AdminManagementTest extends TestCase
         ]);
     }
 
+    public function test_admin_cannot_assign_student_to_a_non_student_designation(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        $designation = OfficeDesignation::where('key', 'college-librarian')->firstOrFail();
+        $currentAssignment = OfficeDesignationAssignment::query()
+            ->where('office_designation_id', $designation->id)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $response = $this->actingAs($admin)
+            ->from(route('admin.dashboard'))
+            ->put(route('admin.office-designations.assignment.update', $designation), [
+                'user_id' => $student->user_id,
+            ]);
+
+        $response->assertRedirect(route('admin.dashboard') . '#routing-configuration');
+        $response->assertSessionHas('error', 'The selected user is not eligible for this designation.');
+
+        $this->assertDatabaseMissing('office_designation_assignments', [
+            'office_designation_id' => $designation->id,
+            'user_id' => $student->user_id,
+            'is_active' => true,
+        ]);
+
+        $this->assertDatabaseHas('office_designation_assignments', [
+            'id' => $currentAssignment->id,
+            'is_active' => true,
+        ]);
+    }
+
     public function test_admin_cannot_assign_student_to_a_different_program_designation(): void
     {
         $admin = User::where('username', 'mis.admin')->firstOrFail();
@@ -519,7 +550,7 @@ class AdminManagementTest extends TestCase
         // The current holder is preselected in the UI, so re-saving without a
         // change should stay a no-op instead of creating extra history rows.
         $admin = User::where('username', 'mis.admin')->firstOrFail();
-        $designation = OfficeDesignation::where('key', 'bsit-acad-org-treasurer')->firstOrFail();
+        $designation = OfficeDesignation::where('key', 'bsit-acad-org-adviser')->firstOrFail();
         $currentAssignment = OfficeDesignationAssignment::query()
             ->where('office_designation_id', $designation->id)
             ->where('is_active', true)

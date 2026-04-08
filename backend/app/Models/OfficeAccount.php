@@ -63,6 +63,37 @@ class OfficeAccount extends Model
     }
 
     /**
+     * @return array<string, string>
+     */
+    public static function staffTypeOptions(): array
+    {
+        return [
+            self::TYPE_ACAD_ORG_ADVISER => self::typeOptions()[self::TYPE_ACAD_ORG_ADVISER],
+            self::TYPE_LIBRARIAN => self::typeOptions()[self::TYPE_LIBRARIAN],
+            self::TYPE_VPSD => self::typeOptions()[self::TYPE_VPSD],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function formTypeOptions(?self $officeAccount = null): array
+    {
+        $options = self::staffTypeOptions();
+
+        if (
+            $officeAccount
+            && $officeAccount->office_type
+            && isset(self::typeOptions()[$officeAccount->office_type])
+            && ! isset($options[$officeAccount->office_type])
+        ) {
+            $options[$officeAccount->office_type] = self::typeOptions()[$officeAccount->office_type];
+        }
+
+        return $options;
+    }
+
+    /**
      * @return array<string, array{scope:string, note:string}>
      */
     public static function scopeMetadata(): array
@@ -70,23 +101,23 @@ class OfficeAccount extends Model
         return [
             self::TYPE_ACAD_ORG_TREASURER => [
                 'scope' => self::SCOPE_PROGRAM,
-                'note' => 'Pick a program. Year level is not used for this office type.',
+                'note' => 'Legacy student-led type. Keep this only for older records that still need review.',
             ],
             self::TYPE_ACAD_ORG_ADVISER => [
                 'scope' => self::SCOPE_PROGRAM,
-                'note' => 'Pick a program. Year level is not used for this office type.',
+                'note' => 'Pick the staff account\'s usual program scope. Staff accounts can still be assigned to any non-student designation.',
             ],
             self::TYPE_YEAR_LEVEL_TREASURER => [
                 'scope' => self::SCOPE_YEAR_LEVEL,
-                'note' => 'Pick a year level. Program is not used for this office type.',
+                'note' => 'Legacy student-led type. Keep this only for older records that still need review.',
             ],
             self::TYPE_LIBRARIAN => [
                 'scope' => self::SCOPE_GLOBAL,
-                'note' => 'This applies to the whole school. Leave program and year level blank.',
+                'note' => 'Whole-school staff account. Leave program and year level blank.',
             ],
             self::TYPE_VPSD => [
                 'scope' => self::SCOPE_GLOBAL,
-                'note' => 'This applies to the whole school. Leave program and year level blank.',
+                'note' => 'Whole-school staff account. Leave program and year level blank.',
             ],
         ];
     }

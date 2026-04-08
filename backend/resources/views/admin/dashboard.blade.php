@@ -16,7 +16,7 @@
             <a class="button topbar-action" href="{{ route('portal.login') }}">Shared Login</a>
             <form method="POST" action="{{ route('portal.logout') }}" class="topbar-form">
                 @csrf
-                <button type="submit" class="topbar-action">Log Out / Switch Account</button>
+                <button type="submit" class="topbar-action">Log Out</button>
             </form>
         </div>
     </div>
@@ -601,7 +601,7 @@
                             @csrf
                             <input type="hidden" name="_form_key" value="{{ $officeCreateFormKey }}">
                             <p class="section-copy" style="margin-top: 0;">
-                                Enter the person's name. The title is built from the office type and scope.
+                                Add a staff account for adviser, librarian, or VPSD assignment work.
                             </p>
                             <div class="field-grid">
                                 <label>
@@ -624,7 +624,7 @@
                                     Office Type
                                     <select name="office_type" required data-office-type-select>
                                         <option value="">Select type</option>
-                                        @foreach($officeTypeOptions as $value => $label)
+                                        @foreach($officeAccountTypeOptions as $value => $label)
                                             <option value="{{ $value }}" {{ $activeFormKey === $officeCreateFormKey && old('office_type') === $value ? 'selected' : '' }}>
                                                 {{ $label }}
                                             </option>
@@ -643,7 +643,7 @@
                                 </label>
                             </div>
                             <p class="mini" data-scope-note style="margin: -2px 0 8px; color: #5b6578;">
-                                Choose an office type to see which fields are needed.
+                                Choose an office type to set the staff account's usual scope. Non-student designation assignment is handled separately.
                             </p>
                             <div class="field-grid">
                                 <label>
@@ -868,7 +868,7 @@
 
                     <div class="card" id="office-records">
                         <div class="eyebrow">Office List</div>
-                        <h3>Office holders and titles</h3>
+                        <h3>Staff office accounts</h3>
 
                         <form method="GET" action="{{ route('admin.dashboard') }}#office-records" class="roster-filter-bar">
                             <input type="text" name="office_search" value="{{ $officeSearch }}" placeholder="Search by name, username, or scope">
@@ -929,7 +929,7 @@
                                     <details class="record" {{ $activeFormKey === $officeUpdateFormKey ? 'open' : '' }}>
                                         <summary>{{ $officeAccount->display_name }}</summary>
                                         <p class="mini">
-                                            {{ $officeAccount->designationDisplayName() }}
+                                            {{ $officeAccount->officeTypeLabel() }}
                                             | {{ $officeAccount->scopeSummaryLabel() }}
                                             | Username: {{ $officeAccount->user->username }}
                                         </p>
@@ -940,8 +940,8 @@
                                             <input type="hidden" name="_form_key" value="{{ $officeUpdateFormKey }}">
                                             <div class="field-grid">
                                                 <div>
-                                                    <div class="eyebrow">Generated Title</div>
-                                                    <p style="margin-top: 6px;">{{ $officeAccount->designationDisplayName() }}</p>
+                                                    <div class="eyebrow">Account Type</div>
+                                                    <p style="margin-top: 6px;">{{ $officeAccount->officeTypeLabel() }}</p>
                                                 </div>
 
                                                 <div>
@@ -970,7 +970,7 @@
                                                 <label>
                                                     Office Type
                                                     <select name="office_type" required data-office-type-select>
-                                                        @foreach($officeTypeOptions as $value => $label)
+                                                        @foreach($officeAccountEditTypeOptions[$officeAccount->id] ?? $officeAccountTypeOptions as $value => $label)
                                                             <option
                                                                 value="{{ $value }}"
                                                                 {{ ($activeFormKey === $officeUpdateFormKey ? old('office_type', $officeAccount->office_type) === $value : $officeAccount->office_type === $value) ? 'selected' : '' }}
@@ -992,7 +992,7 @@
                                                 </label>
                                             </div>
                                             <p class="mini" data-scope-note style="margin: -2px 0 8px; color: #5b6578;">
-                                                {{ $officeTypeScopeMetadata[$officeAccount->office_type]['note'] ?? 'Choose an office type to see which fields are needed.' }}
+                                                {{ $officeTypeScopeMetadata[$officeAccount->office_type]['note'] ?? 'Choose an office type to set the staff account\'s usual scope.' }}
                                             </p>
                                             <div class="field-grid">
                                                 <label>

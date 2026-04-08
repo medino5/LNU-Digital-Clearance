@@ -3,23 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\OfficeAccount;
-use App\Models\OfficeDesignation;
-use App\Models\OfficeDesignationAssignment;
 use App\Models\User;
-use App\Support\OfficeDesignationBackfill;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class OfficeAccountAdminController extends Controller
 {
-    public function __construct(
-        protected OfficeDesignationBackfill $designationBackfill,
-    ) {
-    }
-
     public function store(Request $request)
     {
         $data = $this->validateOfficeAccount(
@@ -46,8 +37,6 @@ class OfficeAccountAdminController extends Controller
                 'program_id' => $data['program_id'],
                 'year_level' => $data['year_level'],
             ]);
-
-            $this->designationBackfill->syncOfficeAccount($officeAccount->load('program'));
         });
 
         return $this->redirectWithMessage(
@@ -67,9 +56,6 @@ class OfficeAccountAdminController extends Controller
         );
 
         DB::transaction(function () use ($data, $officeAccount) {
-            $officeAccount->loadMissing('program');
-            $previousDesignationKey = $this->designationBackfill->keyForOfficeAccount($officeAccount);
-
             $officeAccount->user->update([
                 'name' => $data['display_name'],
                 'username' => $data['username'],
@@ -87,26 +73,6 @@ class OfficeAccountAdminController extends Controller
                 'program_id' => $data['program_id'],
                 'year_level' => $data['year_level'],
             ]);
-
-            $officeAccount->refresh()->load('program');
-            $designation = $this->designationBackfill->syncOfficeAccount($officeAccount);
-
-            if ($previousDesignationKey !== $designation->key) {
-                $previousDesignation = OfficeDesignation::query()
-                    ->where('key', $previousDesignationKey)
-                    ->first();
-
-                if ($previousDesignation) {
-                    OfficeDesignationAssignment::query()
-                        ->where('office_designation_id', $previousDesignation->id)
-                        ->where('user_id', $officeAccount->user_id)
-                        ->where('is_active', true)
-                        ->update([
-                            'is_active' => false,
-                            'released_at' => now(),
-                        ]);
-                }
-            }
         });
 
         return $this->redirectWithMessage(
@@ -123,7 +89,7 @@ class OfficeAccountAdminController extends Controller
         ?OfficeAccount $officeAccount = null,
     ): array
     {
-        $officeTypes = array_keys(OfficeAccount::typeOptions());
+        $officeTypes = array_keys(OfficeAccount::formTypeOptions($officeAccount));
 
         $data = $this->validateForm(
             $request,
