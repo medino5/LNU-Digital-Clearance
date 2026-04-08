@@ -26,13 +26,18 @@ class PortalAuthController extends Controller
         return redirect()->route($dashboardRoute);
     }
 
-    public function showLogin()
+    public function showLogin(Request $request)
     {
+        $user = $request->user();
+        $dashboardRoute = $user ? $this->dashboardRouteForUser($user) : null;
+
         return view('auth.login', [
             'portalTitle' => 'Shared Portal Login',
             'portalSubtitle' => 'Super admin and active office designation access',
             'submitRoute' => route('portal.login.submit'),
             'usernameLabel' => 'Username',
+            'currentUser' => $user,
+            'currentDashboardRoute' => $dashboardRoute ? route($dashboardRoute) : null,
         ]);
     }
 

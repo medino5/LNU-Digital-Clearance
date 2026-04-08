@@ -11,24 +11,19 @@
     </div>
 
     <div class="content" style="max-width: 520px; margin: 0 auto;">
-        @if(auth()->check())
-            @php($activeUser = auth()->user())
-            @php($currentDashboardRoute = $activeUser->portalDashboardRoute())
+        @if($currentUser)
             <div class="callout success" style="margin-bottom: 20px;">
                 <strong>Current session:</strong>
-                {{ $activeUser->formattedName() ?: ($activeUser->name ?? $activeUser->username) }}
-                ({{ $activeUser->portalRoleLabel() }}).
-                Signing in here will replace the current portal session.
+                {{ $currentUser->formattedName() ?: ($currentUser->name ?? $currentUser->username) }}
+                ({{ $currentUser->portalRoleLabel() }}).
+                Signing in again will replace the current portal session after login.
+
                 <div class="actions-inline" style="margin-top: 12px;">
                     @if($currentDashboardRoute)
-                        <a class="button secondary" href="{{ route($currentDashboardRoute) }}">
+                        <a class="button secondary" href="{{ $currentDashboardRoute }}">
                             Return to Current Dashboard
                         </a>
                     @endif
-                    <form method="POST" action="{{ route('portal.logout') }}" style="display: inline-grid;">
-                        @csrf
-                        <button type="submit" class="secondary">Log Out / Switch Account</button>
-                    </form>
                 </div>
             </div>
         @endif
@@ -53,20 +48,42 @@
             </p>
             <p class="muted" style="margin-top: 0;">
                 Sign in once and the system will send you to the correct dashboard based on your current portal access.
-                If another account is active, this sign-in will replace it.
             </p>
 
             <form method="POST" action="{{ $submitRoute }}" data-loading-form>
                 @csrf
+
                 <label>
                     {{ $usernameLabel }}
                     <input type="text" name="username" value="{{ old('username') }}" required autofocus>
                     <x-field-error field="username" bag="portalLogin" />
                 </label>
 
-                <label>
+                <label class="password-wrapper">
                     Password
-                    <input type="password" name="password" required>
+                    <div class="password-field">
+                        <input
+                            type="password"
+                            name="password"
+                            id="password"
+                            required
+                        >
+
+                        <button
+                            type="button"
+                            class="password-toggle"
+                            data-password-toggle
+                            data-target="password"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 10s4-6 9-6 9 6 9 6-4 6-9 6-9-6-9-6z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                        </button>
+                    </div>
+
                     <x-field-error field="password" bag="portalLogin" />
                 </label>
 
@@ -83,10 +100,82 @@
     </div>
 @endsection
 
+@push('styles')
+<style>
+.password-wrapper {
+    display: grid;
+    gap: 6px;
+}
+
+.password-field {
+    position: relative;
+}
+
+.password-field input {
+    width: 100%;
+    padding-right: 52px;
+}
+
+.password-field .password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--muted);
+    box-shadow: none;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.password-field .password-toggle:hover,
+.password-field .password-toggle:focus-visible {
+    background: transparent;
+    color: var(--navy);
+    outline: none;
+    transform: translateY(-50%);
+}
+
+.password-field .password-toggle svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+    pointer-events: none;
+}
+</style>
+@endpush
 
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-password-toggle]').forEach(function (toggleButton) {
+        const targetId = toggleButton.dataset.target;
+        const passwordInput = document.getElementById(targetId);
+        const icon = toggleButton.querySelector('[data-password-toggle-icon]');
+
+        if (!passwordInput) {
+            return;
+        }
+
+        toggleButton.addEventListener('click', function () {
+            const isHidden = passwordInput.type === 'password';
+
+            passwordInput.type = isHidden ? 'text' : 'password';
+            toggleButton.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
+            toggleButton.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+            toggleButton.setAttribute('title', isHidden ? 'Hide password' : 'Show password');
+        });
+    });
+
     document.querySelectorAll('form[data-loading-form]').forEach(function (form) {
         let isSubmitting = false;
 
@@ -103,7 +192,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             isSubmitting = true;
-
             submitButton.disabled = true;
             submitButton.textContent =
                 submitButton.dataset.loadingText || 'Processing...';

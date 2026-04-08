@@ -393,6 +393,7 @@
             background: transparent;
         }
     </style>
+    @stack('styles')
 </head>
 <body>
     <div class="page-shell">
