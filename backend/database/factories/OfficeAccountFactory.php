@@ -34,6 +34,15 @@ class OfficeAccountFactory extends Factory
         ]);
     }
 
+    public function academicOrgAdviser(?Program $program = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'office_type' => OfficeAccount::TYPE_ACAD_ORG_ADVISER,
+            'program_id' => $program?->id ?? Program::factory(),
+            'year_level' => null,
+        ]);
+    }
+
     public function yearLevelTreasurer(int $yearLevel = 3): static
     {
         return $this->state(fn (array $attributes) => [

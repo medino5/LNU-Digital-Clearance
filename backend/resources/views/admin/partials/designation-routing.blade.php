@@ -26,10 +26,11 @@
                     $currentHolderLabel = collect([
                         $currentOfficeAccount?->display_name ?? $currentUser?->formattedName(),
                         $currentOfficeAccount ? 'Office Account' : ($currentStudentProfile ? 'Student Holder' : null),
-                        $currentOfficeAccount?->designationDisplayName(),
-                        $currentOfficeAccount?->program?->code ?? $currentStudentProfile?->program?->code,
-                        ($currentOfficeAccount?->year_level ?? $currentStudentProfile?->year_level)
-                            ? 'Year ' . ($currentOfficeAccount?->year_level ?? $currentStudentProfile?->year_level)
+                        $currentOfficeAccount?->officeTypeLabel(),
+                        $currentOfficeAccount?->scopeSummaryLabel(),
+                        $currentStudentProfile?->program?->code,
+                        $currentStudentProfile?->year_level
+                            ? 'Year ' . $currentStudentProfile?->year_level
                             : null,
                     ])->filter()->implode(' | ');
                 @endphp
@@ -101,10 +102,11 @@
                                         $labelParts = collect([
                                             $eligibleOfficeAccount?->display_name ?? $eligibleUser->formattedName(),
                                             $eligibleOfficeAccount ? 'Office Account' : ($eligibleStudentProfile ? 'Student Holder' : null),
-                                            $eligibleOfficeAccount?->designationDisplayName(),
-                                            $eligibleOfficeAccount?->program?->code ?? $eligibleStudentProfile?->program?->code,
-                                            ($eligibleOfficeAccount?->year_level ?? $eligibleStudentProfile?->year_level)
-                                                ? 'Year ' . ($eligibleOfficeAccount?->year_level ?? $eligibleStudentProfile?->year_level)
+                                            $eligibleOfficeAccount?->officeTypeLabel(),
+                                            $eligibleOfficeAccount?->scopeSummaryLabel(),
+                                            $eligibleStudentProfile?->program?->code,
+                                            $eligibleStudentProfile?->year_level
+                                                ? 'Year ' . $eligibleStudentProfile?->year_level
                                                 : null,
                                         ])->filter()->implode(' | ');
                                     @endphp

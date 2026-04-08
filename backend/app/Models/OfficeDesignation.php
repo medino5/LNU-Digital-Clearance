@@ -87,6 +87,14 @@ class OfficeDesignation extends Model
         return self::typeOptions()[$this->office_type] ?? $this->office_type;
     }
 
+    public function isStudentLed(): bool
+    {
+        return in_array($this->office_type, [
+            self::TYPE_ACAD_ORG_TREASURER,
+            self::TYPE_YEAR_LEVEL_TREASURER,
+        ], true);
+    }
+
     public function matchesUser(User $user): bool
     {
         $user->loadMissing([
@@ -104,20 +112,8 @@ class OfficeDesignation extends Model
             return false;
         }
 
-        if ($officeAccount->office_type !== $this->office_type) {
+        if ($this->isStudentLed()) {
             return false;
-        }
-
-        if ((int) $this->program_id !== (int) $officeAccount->program_id) {
-            if ($this->program_id || $officeAccount->program_id) {
-                return false;
-            }
-        }
-
-        if ((int) $this->year_level !== (int) $officeAccount->year_level) {
-            if ($this->year_level || $officeAccount->year_level) {
-                return false;
-            }
         }
 
         return true;
@@ -126,6 +122,10 @@ class OfficeDesignation extends Model
     public function matchesStudent(?Student $student): bool
     {
         if (! $student) {
+            return false;
+        }
+
+        if (! $this->isStudentLed()) {
             return false;
         }
 

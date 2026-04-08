@@ -185,12 +185,19 @@ class AdminDashboardController extends Controller
             ->orderBy('display_name')
             ->get();
 
+        $officeAccountEditTypeOptions = $officeAccounts
+            ->mapWithKeys(fn (OfficeAccount $officeAccount) => [
+                $officeAccount->id => OfficeAccount::formTypeOptions($officeAccount),
+            ]);
+
         return view('admin.dashboard', [
             'programs' => Program::orderBy('code')->get(),
             'semesters' => $semesters,
             'students' => $students,
             'officeAccounts' => $officeAccounts,
             'officeTypeOptions' => OfficeAccount::typeOptions(),
+            'officeAccountTypeOptions' => OfficeAccount::formTypeOptions(),
+            'officeAccountEditTypeOptions' => $officeAccountEditTypeOptions,
             'yearLevels' => [1, 2, 3, 4],
             'history' => $history,
             'selectedSemesterId' => $selectedSemesterId,
