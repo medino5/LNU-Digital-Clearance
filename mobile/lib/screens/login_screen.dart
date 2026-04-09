@@ -31,6 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isLoading = false;
   String? _notice;
+  bool _obscurePassword = true;
 
   static const Color _navy = Color(0xFF183A63);
   static const Color _gold = Color(0xFFD1A33B);
@@ -241,9 +242,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 16),
                     TextField(
                       controller: _passwordController,
-                      obscureText: true,
+                      obscureText: _obscurePassword,
                       decoration: InputDecoration(
                         labelText: 'Password',
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
                         filled: true,
                         fillColor: const Color(0xFFF7F7F2),
                         border: OutlineInputBorder(
