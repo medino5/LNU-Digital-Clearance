@@ -52,7 +52,9 @@ class PortalAuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('portal.login');
+        return redirect()
+            ->route('portal.login')
+            ->with('info', 'You have been signed out.');
     }
 
     protected function attemptLogin(Request $request)
@@ -92,7 +94,7 @@ class PortalAuthController extends Controller
 
             return redirect()->to(route('portal.login'))
                 ->withErrors([
-                    'username' => 'This account is not allowed to sign in to the web portal.',
+                    'username' => 'This account does not have web portal access.',
                 ], 'portalLogin')
                 ->withInput($request->only('username'));
         }

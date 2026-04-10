@@ -13,10 +13,11 @@
     <div class="content" style="max-width: 520px; margin: 0 auto;">
         @if($currentUser)
             <div class="callout success" style="margin-bottom: 20px;">
-                <strong>Current session:</strong>
+                <strong>You're already signed in as:</strong>
                 {{ $currentUser->formattedName() ?: ($currentUser->name ?? $currentUser->username) }}
                 ({{ $currentUser->portalRoleLabel() }}).
-                Signing in again will replace the current portal session after login.
+
+                Signing in will switch your session.
 
                 <div class="actions-inline" style="margin-top: 12px;">
                     @if($currentDashboardRoute)
@@ -74,6 +75,7 @@
                             class="password-toggle"
                             data-password-toggle
                             data-target="password"
+                            aria-label="Show password"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                                 fill="none" stroke="currentColor" stroke-width="2"

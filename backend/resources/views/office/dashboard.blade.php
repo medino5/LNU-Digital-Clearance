@@ -21,7 +21,7 @@
         <div class="toolbar">
             <form method="POST" action="{{ route('portal.logout') }}" class="topbar-form">
                 @csrf
-                <button type="submit" class="topbar-action">Log Out</button>
+                <button type="submit" class="topbar-action">Sign Out</button>
             </form>
         </div>
     </div>
@@ -49,7 +49,7 @@
                 <div class="office-empty-dashboard-body">
                     <h2>No Active Designation Assigned</h2>
                     <p>Your account currently has no active designation assignment.</p>
-                    <p>No clearance items can be routed to you yet.</p>
+                    <p>No clearance items are currently assigned to your designation.</p>
                     <p>Please contact the super admin to assign your designation.</p>
                 </div>
             </section>
@@ -57,7 +57,7 @@
             <div class="office-columns">
                 <section class="card office-column">
                     <div class="eyebrow">Pending</div>
-                    <h2>Awaiting your action</h2>
+                    <h2>Clearance steps awaiting your action</h2>
 
                     <div class="list">
                         @forelse($pendingSteps as $step)
