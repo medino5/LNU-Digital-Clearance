@@ -15,7 +15,7 @@
             <span>{{ auth()->user()->name }}</span>
             <form method="POST" action="{{ route('portal.logout') }}" class="topbar-form">
                 @csrf
-                <button type="submit" class="topbar-action">Log Out</button>
+                <button type="submit" class="topbar-action">Sign Out</button>
             </form>
         </div>
     </div>
@@ -737,7 +737,7 @@
                             ])) }}#student-records" class="button secondary-button">Reset</a>
                         </form>
 
-                        @if($students->isEmpty())
+                        @if(!$hasStudents)
                             <div class="record">
                                 <p class="muted" style="margin: 0;">No matching records found.</p>
                             </div>

@@ -40,7 +40,11 @@ class AdminDashboardController extends Controller
             });
         }
 
-        $history = $historyQuery->get()->groupBy('semester_label');
+        $historyCollection = $historyQuery->get();
+
+        $history = $historyCollection->groupBy('semester_label');
+        $historyHasRecords = $historyCollection->isNotEmpty();
+
         $semesters = Semester::orderByDesc('is_active')->orderByDesc('created_at')->get();
         $academicYears = $semesters
             ->map(fn (Semester $semester) => $semester->displayAcademicYear())
@@ -127,6 +131,8 @@ class AdminDashboardController extends Controller
             ->orderBy('users.middle_initial')
             ->get();
 
+        $hasStudents = $students->isNotEmpty();
+
         $officeAccountsQuery = OfficeAccount::query()
             ->with(['user', 'program']);
 
@@ -185,6 +191,8 @@ class AdminDashboardController extends Controller
             ->orderBy('display_name')
             ->get();
 
+        $hasOfficeAccounts = $officeAccounts->isNotEmpty();
+
         $officeAccountEditTypeOptions = $officeAccounts
             ->mapWithKeys(fn (OfficeAccount $officeAccount) => [
                 $officeAccount->id => OfficeAccount::formTypeOptions($officeAccount),
@@ -212,6 +220,9 @@ class AdminDashboardController extends Controller
             'officeSearch' => $officeSearch,
             'officeProgramId' => $officeProgramId,
             'selectedOfficeType' => $officeType,
+            'historyHasRecords' => $historyHasRecords,
+            'hasStudents' => $hasStudents,
+            'hasOfficeAccounts' => $hasOfficeAccounts,
         ]);
     }
 }
