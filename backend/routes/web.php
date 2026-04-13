@@ -30,6 +30,7 @@ Route::post('/logout', [PortalAuthController::class, 'logout'])
 Route::prefix('admin')
     ->middleware(['auth', 'role:admin'])
     ->group(function () {
+        Route::get('/programs', [ProgramAdminController::class, 'index'])->name('admin.programs.index');
         Route::get('/', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
         Route::get('/clearances/{clearance}', [AdminClearanceDetailController::class, 'show'])
             ->name('admin.clearances.show');

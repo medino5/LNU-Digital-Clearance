@@ -28,6 +28,16 @@ class PortalAuthController extends Controller
 
     public function showLogin(Request $request)
     {
+        if (auth()->check()) {
+            $user = auth()->user();
+
+            if ($user->role === 'admin') {
+                return redirect()->route('admin.dashboard');
+            }
+
+            return redirect()->route('office.dashboard');
+        }
+        
         $user = $request->user();
         $dashboardRoute = $user ? $this->dashboardRouteForUser($user) : null;
 
