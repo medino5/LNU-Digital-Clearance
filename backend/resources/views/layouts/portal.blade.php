@@ -329,6 +329,19 @@
             }
         }
 
+        @media (max-width: 1024px) {
+            .admin-sidebar {
+                width: 220px;
+            }
+
+            .admin-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            }
+
         /* Fix: keep checkbox inline with label in forms */
         .inline-check {
             display: flex;
@@ -392,15 +405,165 @@
         .routing-list::-webkit-scrollbar-track {
             background: transparent;
         }
+
+        /* ================= ADMIN SHELL ================= */
+
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .admin-sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, var(--navy-deep), var(--navy));
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 18px;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 26px;
+            padding: 16px 0 12px 0;
+            position: relative;
+        }
+
+        .sidebar-header::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            width: 70%;
+            height: 1px;
+            background: rgba(255,255,255,0.12);
+        }
+
+        .sidebar-logo {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+        }
+
+        .sidebar-title {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item {
+            padding: 12px 14px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: white;
+            transition: 0.2s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .nav-item.active {
+            background: var(--gold);
+            color: #000;
+            font-weight: 600;
+        }
+
+        .sidebar-logout {
+            margin-top: auto;
+        }
+
+        .sidebar-logout button {
+            width: 100%;
+            background: rgba(255,255,255,0.15);
+        }
+
+        /* ================= MAIN ================= */
+
+        .admin-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, var(--navy-deep), var(--navy));
+            color: white;
+            padding: 22px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-user {
+            font-weight: 600;
+        }
+
+        .admin-content {
+            padding: 28px;
+            background: #f8f5ed;
+            min-height: 100vh;
+        }
     </style>
     @stack('styles')
 </head>
 <body>
+@if(auth()->check())
+    <div class="admin-layout">
+
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <img src="{{ asset('images/lnu-logo.png') }}" class="sidebar-logo">
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">Dashboard</a>
+                <a href="#" class="nav-item">Programs</a>
+                <a href="#" class="nav-item">Semesters</a>
+                <a href="#" class="nav-item">Routing</a>
+                <a href="#" class="nav-item">Students</a>
+                <a href="#" class="nav-item">Office Accounts</a>
+                <a href="#" class="nav-item">Clearance History</a>
+            </nav>
+
+            <form method="POST" action="{{ route('portal.logout') }}" class="sidebar-logout">
+                @csrf
+                <button type="submit">Log Out</button>
+            </form>
+        </aside>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <div>
+                    <h1>{{ $title ?? 'Super Admin Dashboard' }}</h1>
+                    <p>Manage programs, semesters, accounts, and clearance history.</p>
+                </div>
+
+                <div class="admin-user">
+                    {{ auth()->user()->name }}
+                </div>
+            </header>
+
+            <div class="admin-content">
+                @yield('page')
+            </div>
+        </main>
+
+    </div>
+@else
     <div class="page-shell">
         <div class="panel">
             @yield('page')
         </div>
     </div>
-    @stack('scripts')
+@endif
+
+@stack('scripts')
 </body>
 </html>
