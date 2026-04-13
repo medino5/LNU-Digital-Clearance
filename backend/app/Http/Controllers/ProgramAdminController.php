@@ -11,18 +11,25 @@ use Illuminate\Validation\ValidationException;
 
 class ProgramAdminController extends Controller
 {
+    public function index()
+    {
+        return view('admin.programs', [
+            'programs' => Program::orderBy('code')->get(),
+        ]);
+    }
+
     public function store(Request $request)
     {
         $data = $this->validateProgram(
             $request,
             'programCreate',
-            $this->adminSectionUrl('academic-configuration'),
+            route('admin.programs.index'),
         );
 
         Program::create($data);
 
         return $this->redirectWithMessage(
-            $this->adminSectionUrl('academic-configuration'),
+            route('admin.programs.index'),
             'success',
             'Program created successfully.',
         );
@@ -33,14 +40,14 @@ class ProgramAdminController extends Controller
         $data = $this->validateProgram(
             $request,
             'programUpdate',
-            $this->adminSectionUrl('academic-configuration'),
+            route('admin.programs.index'),
             $program,
         );
 
         $program->update($data);
 
         return $this->redirectWithMessage(
-            $this->adminSectionUrl('academic-configuration'),
+            route('admin.programs.index'),
             'success',
             'Program updated successfully.',
         );

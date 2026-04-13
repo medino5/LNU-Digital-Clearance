@@ -58,7 +58,8 @@
             <div class="section-jump-links">
                 <span class="section-jump-title">Jump to</span>
                 <a href="#overview" class="section-jump-link">Overview</a>
-                <a href="#academic-configuration" class="section-jump-link">Programs & Semesters</a>
+                <a href="{{ route('admin.programs.index') }}" class="section-jump-link">Programs</a>
+                <a href="#academic-configuration" class="section-jump-link">Semesters</a>
                 <a href="#routing-configuration" class="section-jump-link">Routing</a>
                 <a href="#accounts-records" class="section-jump-link">Accounts</a>
                 <a href="#history-records" class="section-jump-link">Reports</a>
@@ -74,7 +75,7 @@
             </div>
 
             <div class="grid-3">
-                <a href="#academic-configuration" class="card stat-card clickable-card">
+                <a href="{{ route('admin.programs.index') }}" class="card stat-card clickable-card">
                     <div class="eyebrow">Programs</div>
                     <p class="metric">{{ $programs->count() }}</p>
                     <p class="metric-note">Used in student and office setup.</p>
@@ -128,99 +129,6 @@
             </div>
 
             <div class="grid-2">
-                <div class="section-stack">
-                    <div class="card">
-                        <div class="eyebrow">Create Program</div>
-                        <h3>Add a program</h3>
-                        <p class="section-copy compact-copy">Save the official code, name, and organization label used across routing and records.</p>
-                        @php($programCreateFormKey = 'program-create')
-                        <form method="POST" action="{{ route('admin.programs.store') }}">
-                            @csrf
-                            <input type="hidden" name="_form_key" value="{{ $programCreateFormKey }}">
-                            <div class="field-grid">
-                                <label>
-                                    Program Code
-                                    <input type="text" name="code" placeholder="BSIT" value="{{ $activeFormKey === $programCreateFormKey ? old('code') : '' }}" required>
-                                    <span class="mini">Letters, numbers, and hyphens only. Saved in uppercase.</span>
-                                    @if($activeFormKey === $programCreateFormKey)
-                                        <x-field-error field="code" bag="programCreate" />
-                                    @endif
-                                </label>
-                                <label>
-                                    Organization Name
-                                    <input type="text" name="org_name" placeholder="DIGITS" value="{{ $activeFormKey === $programCreateFormKey ? old('org_name') : '' }}" required>
-                                    @if($activeFormKey === $programCreateFormKey)
-                                        <x-field-error field="org_name" bag="programCreate" />
-                                    @endif
-                                </label>
-                            </div>
-                            <label>
-                                Program Name
-                                <input type="text" name="name" placeholder="Bachelor of Science in Information Technology" value="{{ $activeFormKey === $programCreateFormKey ? old('name') : '' }}" required>
-                                @if($activeFormKey === $programCreateFormKey)
-                                    <x-field-error field="name" bag="programCreate" />
-                                @endif
-                            </label>
-                            <button 
-                                type="submit"
-                                data-loading-button
-                                data-loading-text="Saving Program..."
-                            >
-                                Save Program
-                            </button>
-                        </form>
-                    </div>
-
-                    <div class="card">
-                        <div class="eyebrow">Programs</div>
-                        <h3>Current programs</h3>
-                        <div class="list">
-                            @foreach($programs as $program)
-                                @php($programUpdateFormKey = 'program-update-' . $program->id)
-                                <details class="record" {{ $activeFormKey === $programUpdateFormKey ? 'open' : '' }}>
-                                    <summary>{{ $program->code }} - {{ $program->name }}</summary>
-                                    <div class="divider"></div>
-                                    <form method="POST" action="{{ route('admin.programs.update', $program) }}">
-                                        @csrf
-                                        @method('PUT')
-                                        <input type="hidden" name="_form_key" value="{{ $programUpdateFormKey }}">
-                                        <div class="field-grid">
-                                            <label>
-                                                Program Code
-                                                <input type="text" name="code" value="{{ $activeFormKey === $programUpdateFormKey ? old('code', $program->code) : $program->code }}" required>
-                                                <span class="mini">Letters, numbers, and hyphens only. Saved in uppercase.</span>
-                                                @if($activeFormKey === $programUpdateFormKey)
-                                                    <x-field-error field="code" bag="programUpdate" />
-                                                @endif
-                                            </label>
-                                            <label>
-                                                Organization Name
-                                                <input type="text" name="org_name" value="{{ $activeFormKey === $programUpdateFormKey ? old('org_name', $program->org_name) : $program->org_name }}" required>
-                                                @if($activeFormKey === $programUpdateFormKey)
-                                                    <x-field-error field="org_name" bag="programUpdate" />
-                                                @endif
-                                            </label>
-                                        </div>
-                                        <label>
-                                            Program Name
-                                            <input type="text" name="name" value="{{ $activeFormKey === $programUpdateFormKey ? old('name', $program->name) : $program->name }}" required>
-                                            @if($activeFormKey === $programUpdateFormKey)
-                                                <x-field-error field="name" bag="programUpdate" />
-                                            @endif
-                                        </label>
-                                        <button 
-                                            type="submit"
-                                            data-loading-button
-                                            data-loading-text="Updating Program..."
-                                        >
-                                            Update Program
-                                        </button>
-                                    </form>
-                                </details>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
 
                 <div class="section-stack">
                     <div class="card" id="semester-create-card">

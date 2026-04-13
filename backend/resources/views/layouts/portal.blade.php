@@ -514,7 +514,15 @@
     @stack('styles')
 </head>
 <body>
-@if(auth()->check())
+@if(
+    auth()->check() &&
+    !request()->routeIs('portal.login') &&
+    !request()->routeIs('portal.login.submit') &&
+    !request()->routeIs('admin.login') &&
+    !request()->routeIs('admin.login.submit') &&
+    !request()->routeIs('office.login') &&
+    !request()->routeIs('office.login.submit')
+)
     <div class="admin-layout">
 
         <aside class="admin-sidebar">
@@ -524,7 +532,7 @@
 
             <nav class="sidebar-nav">
                 <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">Dashboard</a>
-                <a href="#" class="nav-item">Programs</a>
+                <a href="{{ route('admin.programs.index') }}" class="nav-item {{ request()->routeIs('admin.programs.*') ? 'active' : '' }}">Programs</a>
                 <a href="#" class="nav-item">Semesters</a>
                 <a href="#" class="nav-item">Routing</a>
                 <a href="#" class="nav-item">Students</a>
@@ -557,11 +565,15 @@
 
     </div>
 @else
-    <div class="page-shell">
-        <div class="panel">
-            @yield('page')
+    @if(request()->routeIs('portal.login') || request()->routeIs('admin.login') || request()->routeIs('office.login'))
+        @yield('page')
+    @else
+        <div class="page-shell">
+            <div class="panel">
+                @yield('page')
+            </div>
         </div>
-    </div>
+    @endif
 @endif
 
 @stack('scripts')
