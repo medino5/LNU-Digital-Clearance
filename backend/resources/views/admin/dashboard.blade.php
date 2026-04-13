@@ -6,20 +6,6 @@
         $activeFormKey = old('_form_key');
     @endphp
 
-    <div class="topbar">
-        <div>
-            <h1>SUPER ADMIN DASHBOARD</h1>
-            <p>Manage academic setup, account records, routing assignments, and completed clearance reports.</p>
-        </div>
-        <div class="toolbar">
-            <span>{{ auth()->user()->name }}</span>
-            <form method="POST" action="{{ route('portal.logout') }}" class="topbar-form">
-                @csrf
-                <button type="submit" class="topbar-action">Sign Out</button>
-            </form>
-        </div>
-    </div>
-
     <div class="content stack">
         {{-- Existing: feedback callouts --}}
         @if(session('success'))
