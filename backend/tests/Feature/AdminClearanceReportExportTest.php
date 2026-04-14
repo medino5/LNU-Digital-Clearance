@@ -79,13 +79,13 @@ class AdminClearanceReportExportTest extends TestCase
         ]);
 
         $response = $this->actingAs($admin)
-            ->from(route('admin.dashboard'))
+            ->from(route('admin.clearance-history.index'))
             ->post(route('admin.clearance-reports.completed.export'), [
                 'semester_id' => $semester->id,
                 'academic_year' => '2025-2026',
             ]);
 
-        $response->assertRedirect(route('admin.dashboard') . '#history-records');
+        $response->assertRedirect(route('admin.clearance-history.index'));
         $response->assertSessionHas('error', 'No completed clearances found for the selected semester and academic year.');
     }
 }

@@ -11,12 +11,96 @@ use Illuminate\Validation\Rule;
 
 class OfficeAccountAdminController extends Controller
 {
+    public function index(Request $request)
+    {
+        $officeSearch = trim((string) $request->query('office_search', ''));
+        $officeProgramId = $request->query('office_program');
+        $officeType = $request->query('office_type');
+
+        $officeAccountsQuery = OfficeAccount::query()
+            ->with(['user', 'program']);
+
+        if ($officeSearch !== '') {
+            $officeSearchLike = '%' . $officeSearch . '%';
+
+            $officeAccountsQuery->where(function ($query) use ($officeSearchLike, $officeSearch) {
+                $query->where('display_name', 'like', $officeSearchLike)
+                    ->orWhereHas('user', function ($userQuery) use ($officeSearchLike) {
+                        $userQuery->where('username', 'like', $officeSearchLike);
+                    })
+                    ->orWhereHas('program', function ($programQuery) use ($officeSearchLike) {
+                        $programQuery->where('code', 'like', $officeSearchLike)
+                            ->orWhere('name', 'like', $officeSearchLike)
+                            ->orWhere('org_name', 'like', $officeSearchLike);
+                    });
+
+                $normalizedSearch = strtolower($officeSearch);
+
+                foreach (OfficeAccount::typeOptions() as $value => $label) {
+                    if (str_contains(strtolower($label), $normalizedSearch) || str_contains(strtolower($value), $normalizedSearch)) {
+                        $query->orWhere('office_type', $value);
+                    }
+                }
+
+                if (str_contains($normalizedSearch, 'year')) {
+                    preg_match('/([1-4])/', $normalizedSearch, $matches);
+
+                    if (! empty($matches[1])) {
+                        $query->orWhere('year_level', (int) $matches[1]);
+                    }
+                }
+
+                if (in_array($normalizedSearch, ['university', 'university-wide', 'all'], true)) {
+                    $query->orWhere(function ($scopeQuery) {
+                        $scopeQuery->whereNull('program_id')
+                            ->whereNull('year_level');
+                    });
+                }
+            });
+        }
+
+        if ($officeProgramId !== null && $officeProgramId !== '') {
+            if ($officeProgramId === 'university') {
+                $officeAccountsQuery->whereNull('program_id');
+            } else {
+                $officeAccountsQuery->where('program_id', $officeProgramId);
+            }
+        }
+
+        if ($officeType !== null && $officeType !== '') {
+            $officeAccountsQuery->where('office_type', $officeType);
+        }
+
+        $officeAccounts = $officeAccountsQuery
+            ->orderBy('display_name')
+            ->get();
+
+        return view('admin.office-accounts', [
+            'programs' => \App\Models\Program::orderBy('code')->get(),
+            'officeAccounts' => $officeAccounts,
+            'officeTypeOptions' => OfficeAccount::typeOptions(),
+            'officeAccountTypeOptions' => OfficeAccount::formTypeOptions(),
+            'officeAccountEditTypeOptions' => $officeAccounts
+                ->mapWithKeys(fn (OfficeAccount $officeAccount) => [
+                    $officeAccount->id => OfficeAccount::formTypeOptions($officeAccount),
+                ]),
+            'yearLevels' => [1, 2, 3, 4],
+            'officeTypeScopeMetadata' => OfficeAccount::scopeMetadata(),
+            'officeSearch' => $officeSearch,
+            'officeProgramId' => $officeProgramId,
+            'selectedOfficeType' => $officeType,
+            'hasOfficeAccounts' => $officeAccounts->isNotEmpty(),
+        ]);
+    }
+
     public function store(Request $request)
     {
+        $redirectTo = route('admin.office-accounts.index');
+
         $data = $this->validateOfficeAccount(
             $request,
             'officeAccountCreate',
-            $this->adminSectionUrl('accounts-records'),
+            $redirectTo,
         );
 
         DB::transaction(function () use ($data) {
@@ -30,7 +114,7 @@ class OfficeAccountAdminController extends Controller
                 'is_staff' => true,
             ]);
 
-            $officeAccount = OfficeAccount::create([
+            OfficeAccount::create([
                 'user_id' => $user->id,
                 'display_name' => $data['display_name'],
                 'office_type' => $data['office_type'],
@@ -40,7 +124,7 @@ class OfficeAccountAdminController extends Controller
         });
 
         return $this->redirectWithMessage(
-            $this->adminSectionUrl('accounts-records'),
+            $redirectTo,
             'success',
             'Office account created successfully.',
         );
@@ -48,10 +132,12 @@ class OfficeAccountAdminController extends Controller
 
     public function update(Request $request, OfficeAccount $officeAccount)
     {
+        $redirectTo = route('admin.office-accounts.index');
+
         $data = $this->validateOfficeAccount(
             $request,
             'officeAccountUpdate',
-            $this->adminSectionUrl('accounts-records'),
+            $redirectTo,
             $officeAccount,
         );
 
@@ -76,7 +162,7 @@ class OfficeAccountAdminController extends Controller
         });
 
         return $this->redirectWithMessage(
-            $this->adminSectionUrl('accounts-records'),
+            $redirectTo,
             'success',
             'Office account updated successfully.',
         );

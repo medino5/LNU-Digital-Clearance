@@ -100,7 +100,7 @@ class AdminManagementTest extends TestCase
     {
         $admin = User::where('username', 'mis.admin')->firstOrFail();
 
-        $response = $this->actingAs($admin)->from(route('admin.dashboard'))->post(
+        $response = $this->actingAs($admin)->from(route('admin.programs.index'))->post(
             route('admin.programs.store'),
             [
                 'code' => 'bsit',
@@ -109,7 +109,7 @@ class AdminManagementTest extends TestCase
             ]
         );
 
-        $response->assertRedirect(route('admin.dashboard') . '#academic-configuration');
+        $response->assertRedirect(route('admin.programs.index'));
         $response->assertSessionHasErrorsIn('programCreate', ['code']);
         $response->assertSessionHasInput('code', 'bsit');
     }
@@ -118,7 +118,7 @@ class AdminManagementTest extends TestCase
     {
         $admin = User::where('username', 'mis.admin')->firstOrFail();
 
-        $response = $this->actingAs($admin)->from(route('admin.dashboard'))->post(
+        $response = $this->actingAs($admin)->from(route('admin.programs.index'))->post(
             route('admin.programs.store'),
             [
                 'code' => 'BSTM-2',
@@ -127,7 +127,7 @@ class AdminManagementTest extends TestCase
             ]
         );
 
-        $response->assertRedirect(route('admin.dashboard') . '#academic-configuration');
+        $response->assertRedirect(route('admin.programs.index'));
         $response->assertSessionHasErrorsIn('programCreate', ['name', 'org_name']);
         $response->assertSessionHasInput('name', 'Bachelor of Science in Tourism Management ✨');
         $response->assertSessionHasInput('org_name', 'Tourism 😊 Circle');
@@ -159,7 +159,7 @@ class AdminManagementTest extends TestCase
         $admin = User::where('username', 'mis.admin')->firstOrFail();
 
         $this->actingAs($admin)
-            ->get(route('admin.dashboard'))
+            ->get(route('admin.students.index'))
             ->assertOk()
             ->assertSee('Use the 7-digit format, for example 2302314.')
             ->assertSee('data-student-id-input', false)
@@ -176,7 +176,7 @@ class AdminManagementTest extends TestCase
         $admin = User::where('username', 'mis.admin')->firstOrFail();
         $program = Program::where('code', 'BSIT')->firstOrFail();
 
-        $response = $this->actingAs($admin)->from(route('admin.dashboard'))->post(
+        $response = $this->actingAs($admin)->from(route('admin.students.index'))->post(
             route('admin.students.store'),
             [
                 'student_id_number' => '24A0-0😊1',
@@ -190,7 +190,7 @@ class AdminManagementTest extends TestCase
             ]
         );
 
-        $response->assertRedirect(route('admin.dashboard') . '#accounts-records');
+        $response->assertRedirect(route('admin.students.index'));
         $response->assertSessionHasErrorsIn('studentCreate', ['student_id_number']);
         $response->assertSessionHasInput('student_id_number', '24A0-0😊1');
 
@@ -207,7 +207,7 @@ class AdminManagementTest extends TestCase
         $program = Program::where('code', 'BSIT')->firstOrFail();
         $futureStudentId = now()->addYear()->format('y') . '02314';
 
-        $response = $this->actingAs($admin)->from(route('admin.dashboard'))->post(
+        $response = $this->actingAs($admin)->from(route('admin.students.index'))->post(
             route('admin.students.store'),
             [
                 'student_id_number' => $futureStudentId,
@@ -221,7 +221,7 @@ class AdminManagementTest extends TestCase
             ]
         );
 
-        $response->assertRedirect(route('admin.dashboard') . '#accounts-records');
+        $response->assertRedirect(route('admin.students.index'));
         $response->assertSessionHasErrorsIn('studentCreate', ['student_id_number']);
         $response->assertSessionHasInput('student_id_number', $futureStudentId);
     }
@@ -277,7 +277,7 @@ class AdminManagementTest extends TestCase
         // program-scoped office accounts must not be saved without a program.
         $admin = User::where('username', 'mis.admin')->firstOrFail();
 
-        $response = $this->actingAs($admin)->from(route('admin.dashboard'))->post(
+        $response = $this->actingAs($admin)->from(route('admin.office-accounts.index'))->post(
             route('admin.office-accounts.store'),
             [
                 'display_name' => 'Broken Holder',
@@ -289,7 +289,7 @@ class AdminManagementTest extends TestCase
             ]
         );
 
-        $response->assertRedirect(route('admin.dashboard') . '#accounts-records');
+        $response->assertRedirect(route('admin.office-accounts.index'));
         $response->assertSessionHasErrorsIn('officeAccountCreate', ['program_id']);
         $response->assertSessionHasInput('display_name', 'Broken Holder');
     }
@@ -328,7 +328,7 @@ class AdminManagementTest extends TestCase
         $admin = User::where('username', 'mis.admin')->firstOrFail();
 
         $this->actingAs($admin)
-            ->get(route('admin.dashboard'))
+            ->get(route('admin.routing.index'))
             ->assertOk()
             ->assertSee('DESIGNATION ASSIGNMENT')
             ->assertSee('Assign Holders')
@@ -346,9 +346,39 @@ class AdminManagementTest extends TestCase
             ->assertSee('Create Student')
             ->assertSee('Create Office Account')
             ->assertSee('Assign Holders')
-            ->assertSee('Download Excel Report')
-            ->assertSee('Search by name or ID')
+            ->assertSee('Download Report');
+
+        $this->actingAs($admin)
+            ->get(route('admin.students.index'))
+            ->assertOk()
+            ->assertSee('Search by name or ID');
+
+        $this->actingAs($admin)
+            ->get(route('admin.office-accounts.index'))
+            ->assertOk()
             ->assertSee('Search by name, username, or scope');
+    }
+
+    public function test_admin_can_open_the_new_route_based_admin_pages(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('admin.semesters.index'))
+            ->assertOk()
+            ->assertSee('Semesters')
+            ->assertSee('Add or change the current semester');
+
+        $this->actingAs($admin)
+            ->get(route('admin.routing.index'))
+            ->assertOk()
+            ->assertSee('Assign Holders');
+
+        $this->actingAs($admin)
+            ->get(route('admin.clearance-history.index'))
+            ->assertOk()
+            ->assertSee('Completed clearance records by semester and academic year')
+            ->assertSee('Download Excel Report');
     }
 
     public function test_admin_can_reassign_designation_to_an_eligible_office_user(): void
@@ -381,12 +411,12 @@ class AdminManagementTest extends TestCase
         ]);
 
         $response = $this->actingAs($admin)
-            ->from(route('admin.dashboard'))
+            ->from(route('admin.routing.index'))
             ->put(route('admin.office-designations.assignment.update', $designation), [
                 'user_id' => $replacementUser->id,
             ]);
 
-        $response->assertRedirect(route('admin.dashboard') . '#routing-configuration');
+        $response->assertRedirect(route('admin.routing.index'));
         $response->assertSessionHas('success', 'Designation assignment updated successfully.');
 
         $this->assertDatabaseHas('office_designation_assignments', [
@@ -413,12 +443,12 @@ class AdminManagementTest extends TestCase
             ->firstOrFail();
 
         $response = $this->actingAs($admin)
-            ->from(route('admin.dashboard'))
+            ->from(route('admin.routing.index'))
             ->put(route('admin.office-designations.assignment.update', $designation), [
                 'user_id' => $student->user_id,
             ]);
 
-        $response->assertRedirect(route('admin.dashboard') . '#routing-configuration');
+        $response->assertRedirect(route('admin.routing.index'));
         $response->assertSessionHas('success', 'Designation assignment updated successfully.');
 
         $this->assertDatabaseHas('office_designation_assignments', [
@@ -463,12 +493,12 @@ class AdminManagementTest extends TestCase
         ]);
 
         $response = $this->actingAs($admin)
-            ->from(route('admin.dashboard'))
+            ->from(route('admin.routing.index'))
             ->put(route('admin.office-designations.assignment.update', $designation), [
                 'user_id' => $ineligibleUser->id,
             ]);
 
-        $response->assertRedirect(route('admin.dashboard') . '#routing-configuration');
+        $response->assertRedirect(route('admin.routing.index'));
         $response->assertSessionHas('error', 'The selected user is not eligible for this designation.');
 
         $this->assertDatabaseMissing('office_designation_assignments', [
@@ -494,12 +524,12 @@ class AdminManagementTest extends TestCase
             ->firstOrFail();
 
         $response = $this->actingAs($admin)
-            ->from(route('admin.dashboard'))
+            ->from(route('admin.routing.index'))
             ->put(route('admin.office-designations.assignment.update', $designation), [
                 'user_id' => $student->user_id,
             ]);
 
-        $response->assertRedirect(route('admin.dashboard') . '#routing-configuration');
+        $response->assertRedirect(route('admin.routing.index'));
         $response->assertSessionHas('error', 'The selected user is not eligible for this designation.');
 
         $this->assertDatabaseMissing('office_designation_assignments', [
@@ -525,12 +555,12 @@ class AdminManagementTest extends TestCase
             ->firstOrFail();
 
         $response = $this->actingAs($admin)
-            ->from(route('admin.dashboard'))
+            ->from(route('admin.routing.index'))
             ->put(route('admin.office-designations.assignment.update', $designation), [
                 'user_id' => $student->user_id,
             ]);
 
-        $response->assertRedirect(route('admin.dashboard') . '#routing-configuration');
+        $response->assertRedirect(route('admin.routing.index'));
         $response->assertSessionHas('error', 'The selected user is not eligible for this designation.');
 
         $this->assertDatabaseMissing('office_designation_assignments', [
@@ -557,12 +587,12 @@ class AdminManagementTest extends TestCase
             ->firstOrFail();
 
         $response = $this->actingAs($admin)
-            ->from(route('admin.dashboard'))
+            ->from(route('admin.routing.index'))
             ->put(route('admin.office-designations.assignment.update', $designation), [
                 'user_id' => $currentAssignment->user_id,
             ]);
 
-        $response->assertRedirect(route('admin.dashboard') . '#routing-configuration');
+        $response->assertRedirect(route('admin.routing.index'));
         $response->assertSessionHas('info', 'Designation assignment is already up to date.');
 
         $this->assertSame(

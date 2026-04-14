@@ -339,8 +339,7 @@
                 align-items: flex-start;
                 gap: 10px;
             }
-
-            }
+        }
 
         /* Fix: keep checkbox inline with label in forms */
         .inline-check {
@@ -514,15 +513,7 @@
     @stack('styles')
 </head>
 <body>
-@if(
-    auth()->check() &&
-    !request()->routeIs('portal.login') &&
-    !request()->routeIs('portal.login.submit') &&
-    !request()->routeIs('admin.login') &&
-    !request()->routeIs('admin.login.submit') &&
-    !request()->routeIs('office.login') &&
-    !request()->routeIs('office.login.submit')
-)
+@if(auth()->check() && request()->routeIs('admin.*'))
     <div class="admin-layout">
 
         <aside class="admin-sidebar">
@@ -533,11 +524,11 @@
             <nav class="sidebar-nav">
                 <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">Dashboard</a>
                 <a href="{{ route('admin.programs.index') }}" class="nav-item {{ request()->routeIs('admin.programs.*') ? 'active' : '' }}">Programs</a>
-                <a href="#" class="nav-item">Semesters</a>
-                <a href="#" class="nav-item">Routing</a>
-                <a href="#" class="nav-item">Students</a>
-                <a href="#" class="nav-item">Office Accounts</a>
-                <a href="#" class="nav-item">Clearance History</a>
+                <a href="{{ route('admin.semesters.index') }}" class="nav-item {{ request()->routeIs('admin.semesters.*') ? 'active' : '' }}">Semesters</a>
+                <a href="{{ route('admin.routing.index') }}" class="nav-item {{ request()->routeIs('admin.routing.*') ? 'active' : '' }}">Routing</a>
+                <a href="{{ route('admin.students.index') }}" class="nav-item {{ request()->routeIs('admin.students.*') ? 'active' : '' }}">Students</a>
+                <a href="{{ route('admin.office-accounts.index') }}" class="nav-item {{ request()->routeIs('admin.office-accounts.*') ? 'active' : '' }}">Office Accounts</a>
+                <a href="{{ route('admin.clearance-history.index') }}" class="nav-item {{ request()->routeIs('admin.clearance-history.*') || request()->routeIs('admin.clearances.show') ? 'active' : '' }}">Clearance History</a>
             </nav>
 
             <form method="POST" action="{{ route('portal.logout') }}" class="sidebar-logout">
@@ -550,7 +541,7 @@
             <header class="admin-header">
                 <div>
                     <h1>{{ $title ?? 'Super Admin Dashboard' }}</h1>
-                    <p>Manage programs, semesters, accounts, and clearance history.</p>
+                    <p>{{ $subtitle ?? 'Manage programs, semesters, accounts, and clearance history.' }}</p>
                 </div>
 
                 <div class="admin-user">
@@ -576,6 +567,29 @@
     @endif
 @endif
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('form').forEach(function (form) {
+        const submitButton = form.querySelector('[data-loading-button]');
+
+        if (!submitButton) {
+            return;
+        }
+
+        form.addEventListener('submit', function (event) {
+            if (form.dataset.isSubmitting === 'true') {
+                event.preventDefault();
+                return;
+            }
+
+            form.dataset.isSubmitting = 'true';
+            submitButton.disabled = true;
+            submitButton.textContent =
+                submitButton.dataset.loadingText || 'Processing...';
+        });
+    });
+});
+</script>
 @stack('scripts')
 </body>
 </html>

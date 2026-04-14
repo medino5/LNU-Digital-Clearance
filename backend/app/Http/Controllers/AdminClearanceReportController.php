@@ -14,8 +14,47 @@ class AdminClearanceReportController extends Controller
     ) {
     }
 
+    public function index(Request $request)
+    {
+        $selectedSemesterId = $request->integer('history_semester');
+        $selectedAcademicYear = trim((string) $request->query('history_academic_year', ''));
+
+        $historyQuery = Clearance::with(['steps.officeDesignation', 'student.user'])
+            ->where('status', Clearance::STATUS_COMPLETED)
+            ->orderByDesc('completed_at');
+
+        if ($selectedSemesterId) {
+            $historyQuery->where('semester_id', $selectedSemesterId);
+        }
+
+        if ($selectedAcademicYear !== '') {
+            $historyQuery->whereHas('semester', function ($query) use ($selectedAcademicYear) {
+                $query->where('academic_year', $selectedAcademicYear);
+            });
+        }
+
+        $historyCollection = $historyQuery->get();
+        $semesters = Semester::orderByDesc('is_active')->orderByDesc('created_at')->get();
+
+        return view('admin.clearance-history', [
+            'history' => $historyCollection->groupBy('semester_label'),
+            'historyHasRecords' => $historyCollection->isNotEmpty(),
+            'semesters' => $semesters,
+            'selectedSemesterId' => $selectedSemesterId,
+            'selectedAcademicYear' => $selectedAcademicYear,
+            'academicYears' => $semesters
+                ->map(fn (Semester $semester) => $semester->displayAcademicYear())
+                ->filter()
+                ->unique()
+                ->sortDesc()
+                ->values(),
+        ]);
+    }
+
     public function export(Request $request)
     {
+        $redirectTo = route('admin.clearance-history.index');
+
         $data = $this->validateForm(
             $request,
             'historyExport',
@@ -23,7 +62,7 @@ class AdminClearanceReportController extends Controller
                 'semester_id' => ['required', 'integer', 'exists:semesters,id'],
                 'academic_year' => ['required', 'regex:/^\d{4}-\d{4}$/'],
             ],
-            $this->adminSectionUrl('history-records'),
+            $redirectTo,
             [
                 'academic_year.regex' => 'Academic year must use the YYYY-YYYY format.',
             ],
@@ -34,7 +73,7 @@ class AdminClearanceReportController extends Controller
         if ($semester->displayAcademicYear() !== $data['academic_year']) {
             return $this->redirectWithInputAndMessage(
                 $request,
-                $this->adminSectionUrl('history-records'),
+                $redirectTo,
                 'error',
                 'The selected semester does not belong to the selected academic year.',
             );
@@ -50,7 +89,7 @@ class AdminClearanceReportController extends Controller
         if ($clearances->isEmpty()) {
             return $this->redirectWithInputAndMessage(
                 $request,
-                $this->adminSectionUrl('history-records'),
+                $redirectTo,
                 'error',
                 'No completed clearances found for the selected semester and academic year.',
             );

@@ -11,9 +11,52 @@ use Illuminate\Support\Facades\DB;
 
 class AdminOfficeDesignationController extends Controller
 {
+    public function index()
+    {
+        $designationQuery = OfficeDesignation::with([
+            'program',
+            'activeAssignments.user.officeAccount.program',
+            'activeAssignments.user.studentProfile.program',
+        ])
+            ->where('is_active', true)
+            ->orderBy('office_type')
+            ->orderBy('display_name');
+
+        $designationCandidates = User::with([
+            'officeAccount.program',
+            'studentProfile.program',
+        ])
+            ->where('role', '!=', User::ROLE_ADMIN)
+            ->where(function ($query) {
+                $query->whereHas('officeAccount')
+                    ->orWhereHas('studentProfile');
+            })
+            ->get();
+
+        $designations = $designationQuery->get()->map(function (OfficeDesignation $designation) use ($designationCandidates) {
+            $eligibleUsers = $designationCandidates
+                ->filter(fn (User $user) => $designation->matchesUser($user))
+                ->sortBy(function (User $user) {
+                    return strtolower($user->officeAccount->display_name ?? $user->formattedName());
+                })
+                ->values();
+
+            $currentAssignment = $designation->activeAssignments->first();
+
+            $designation->setRelation('eligible_users', $eligibleUsers);
+            $designation->setRelation('current_assignment', $currentAssignment);
+
+            return $designation;
+        });
+
+        return view('admin.routing', [
+            'designations' => $designations,
+        ]);
+    }
+
     public function updateAssignment(Request $request, OfficeDesignation $officeDesignation): RedirectResponse
     {
-        $redirectTo = $this->adminSectionUrl('routing-configuration');
+        $redirectTo = route('admin.routing.index');
 
         $validated = $this->validateForm(
             $request,

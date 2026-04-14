@@ -61,11 +61,6 @@ abstract class Controller
             ));
     }
 
-    protected function adminSectionUrl(string $section): string
-    {
-        return route('admin.dashboard') . '#' . $section;
-    }
-
     protected function officeDashboardUrl(): string
     {
         return route('office.dashboard');
