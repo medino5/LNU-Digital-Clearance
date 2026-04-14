@@ -1,4 +1,7 @@
-@extends('layouts.portal', ['title' => 'Programs'])
+@extends('layouts.portal', [
+    'title' => 'Programs',
+    'subtitle' => 'Manage the official program code, name, and organization label.',
+])
 
 @section('page')
     @php
@@ -7,21 +10,7 @@
     @endphp
 
     <div class="stack">
-        @if(session('success'))
-            <div class="callout success">{{ session('success') }}</div>
-        @endif
-
-        @if(session('info'))
-            <div class="callout success">{{ session('info') }}</div>
-        @endif
-
-        @if(session('error'))
-            <div class="callout error">{{ session('error') }}</div>
-        @endif
-
-        @if($validationErrors->isNotEmpty())
-            <div class="callout error">{{ $validationErrors->first() }}</div>
-        @endif
+        @include('admin.partials.page-feedback')
 
         <section class="dashboard-section" style="margin-top: 0; padding-top: 0; border-top: 0;">
             <div class="section-heading">

@@ -28,6 +28,8 @@ services:
   mysql:
     image: mysql:8.0
     container_name: clearance_mysql
+    ports:
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
     volumes:

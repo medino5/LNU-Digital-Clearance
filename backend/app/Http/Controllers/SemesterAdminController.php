@@ -9,8 +9,17 @@ use Illuminate\Validation\Rule;
 
 class SemesterAdminController extends Controller
 {
+    public function index()
+    {
+        return view('admin.semesters', [
+            'semesters' => Semester::orderByDesc('is_active')->orderByDesc('created_at')->get(),
+        ]);
+    }
+
     public function store(Request $request)
     {
+        $redirectTo = route('admin.semesters.index');
+
         $data = $this->validateForm(
             $request,
             'semesterCreate',
@@ -19,7 +28,7 @@ class SemesterAdminController extends Controller
             'academic_year' => ['required', 'regex:/^\d{4}-\d{4}$/'],
             'is_active' => ['nullable', 'boolean'],
             ],
-            $this->adminSectionUrl('academic-configuration'),
+            $redirectTo,
             [
                 'academic_year.regex' => 'Academic year must use the YYYY-YYYY format.',
             ],
@@ -38,7 +47,7 @@ class SemesterAdminController extends Controller
         });
 
         return $this->redirectWithMessage(
-            $this->adminSectionUrl('academic-configuration'),
+            $redirectTo,
             'success',
             'Semester saved successfully.',
         );
@@ -46,6 +55,8 @@ class SemesterAdminController extends Controller
 
     public function update(Request $request, Semester $semester)
     {
+        $redirectTo = route('admin.semesters.index');
+
         $data = $this->validateForm(
             $request,
             'semesterUpdate',
@@ -54,7 +65,7 @@ class SemesterAdminController extends Controller
             'academic_year' => ['required', 'regex:/^\d{4}-\d{4}$/'],
             'is_active' => ['nullable', 'boolean'],
             ],
-            $this->adminSectionUrl('academic-configuration'),
+            $redirectTo,
             [
                 'academic_year.regex' => 'Academic year must use the YYYY-YYYY format.',
             ],
@@ -73,7 +84,7 @@ class SemesterAdminController extends Controller
         });
 
         return $this->redirectWithMessage(
-            $this->adminSectionUrl('academic-configuration'),
+            $redirectTo,
             'success',
             'Semester updated successfully.',
         );

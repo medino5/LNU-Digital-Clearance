@@ -12,8 +12,70 @@ use Illuminate\Validation\Rule;
 
 class StudentAdminController extends Controller
 {
+    public function index(Request $request)
+    {
+        $studentSearch = trim((string) $request->query('student_search', ''));
+        $studentProgramId = $request->query('student_program');
+        $studentYearLevel = $request->query('student_year_level');
+
+        $studentsQuery = Student::query()
+            ->with(['user', 'program'])
+            ->join('users', 'users.id', '=', 'students.user_id')
+            ->select('students.*');
+
+        if ($studentSearch !== '') {
+            $studentSearchLike = '%' . $studentSearch . '%';
+
+            $studentsQuery->where(function ($query) use ($studentSearchLike) {
+                $query->where('students.student_id_number', 'like', $studentSearchLike)
+                    ->orWhere('users.first_name', 'like', $studentSearchLike)
+                    ->orWhere('users.last_name', 'like', $studentSearchLike)
+                    ->orWhere('users.middle_initial', 'like', $studentSearchLike)
+                    ->orWhereRaw(
+                        "TRIM(CONCAT(users.first_name, ' ', COALESCE(CONCAT(users.middle_initial, ' '), ''), users.last_name)) like ?",
+                        [$studentSearchLike]
+                    )
+                    ->orWhereRaw(
+                        "TRIM(CONCAT(users.last_name, ', ', users.first_name, ' ', COALESCE(users.middle_initial, ''))) like ?",
+                        [$studentSearchLike]
+                    )
+                    ->orWhereRaw(
+                        "TRIM(CONCAT(users.first_name, ' ', users.last_name)) like ?",
+                        [$studentSearchLike]
+                    );
+            });
+        }
+
+        if ($studentProgramId !== null && $studentProgramId !== '') {
+            $studentsQuery->where('students.program_id', $studentProgramId);
+        }
+
+        if ($studentYearLevel !== null && $studentYearLevel !== '') {
+            $studentsQuery->where('students.year_level', $studentYearLevel);
+        }
+
+        $students = $studentsQuery
+            ->orderBy('users.last_name')
+            ->orderBy('users.first_name')
+            ->orderBy('users.middle_initial')
+            ->get();
+
+        return view('admin.students', [
+            'programs' => \App\Models\Program::orderBy('code')->get(),
+            'students' => $students,
+            'yearLevels' => [1, 2, 3, 4],
+            'studentNameExtensions' => User::studentNameExtensionOptions(),
+            'studentSearch' => $studentSearch,
+            'studentProgramId' => $studentProgramId,
+            'studentYearLevel' => $studentYearLevel,
+            'hasStudents' => $students->isNotEmpty(),
+        ]);
+    }
+
     public function store(Request $request)
     {
+        $redirectTo = route('admin.students.index');
+
         $data = $this->validateForm(
             $request,
             'studentCreate',
@@ -27,7 +89,7 @@ class StudentAdminController extends Controller
                 'year_level' => ['required', 'integer', 'between:1,4'],
                 'password' => ['required', 'string', 'min:8'],
             ],
-            $this->adminSectionUrl('accounts-records'),
+            $redirectTo,
             $this->studentValidationMessages(),
         );
 
@@ -62,7 +124,7 @@ class StudentAdminController extends Controller
         });
 
         return $this->redirectWithMessage(
-            $this->adminSectionUrl('accounts-records'),
+            $redirectTo,
             'success',
             'Student account created successfully.',
         );
@@ -70,6 +132,8 @@ class StudentAdminController extends Controller
 
     public function update(Request $request, Student $student)
     {
+        $redirectTo = route('admin.students.index');
+
         $data = $this->validateForm(
             $request,
             'studentUpdate',
@@ -83,7 +147,7 @@ class StudentAdminController extends Controller
                 'year_level' => ['required', 'integer', 'between:1,4'],
                 'password' => ['nullable', 'string', 'min:8'],
             ],
-            $this->adminSectionUrl('accounts-records'),
+            $redirectTo,
             $this->studentValidationMessages(),
         );
 
@@ -118,7 +182,7 @@ class StudentAdminController extends Controller
         });
 
         return $this->redirectWithMessage(
-            $this->adminSectionUrl('accounts-records'),
+            $redirectTo,
             'success',
             'Student account updated successfully.',
         );

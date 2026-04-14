@@ -30,8 +30,13 @@ Route::post('/logout', [PortalAuthController::class, 'logout'])
 Route::prefix('admin')
     ->middleware(['auth', 'role:admin'])
     ->group(function () {
-        Route::get('/programs', [ProgramAdminController::class, 'index'])->name('admin.programs.index');
         Route::get('/', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+        Route::get('/programs', [ProgramAdminController::class, 'index'])->name('admin.programs.index');
+        Route::get('/semesters', [SemesterAdminController::class, 'index'])->name('admin.semesters.index');
+        Route::get('/routing', [AdminOfficeDesignationController::class, 'index'])->name('admin.routing.index');
+        Route::get('/students', [StudentAdminController::class, 'index'])->name('admin.students.index');
+        Route::get('/office-accounts', [OfficeAccountAdminController::class, 'index'])->name('admin.office-accounts.index');
+        Route::get('/clearance-history', [AdminClearanceReportController::class, 'index'])->name('admin.clearance-history.index');
         Route::get('/clearances/{clearance}', [AdminClearanceDetailController::class, 'show'])
             ->name('admin.clearances.show');
         Route::post('/clearance-reports/completed', [AdminClearanceReportController::class, 'export'])

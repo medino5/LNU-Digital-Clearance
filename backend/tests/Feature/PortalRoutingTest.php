@@ -77,9 +77,9 @@ class PortalRoutingTest extends TestCase
         $this->actingAs($admin)
             ->get(route('portal.login'))
             ->assertOk()
-            ->assertSee('Shared Portal Login')
-            ->assertSee('Signing in here will replace the current portal session.')
-            ->assertSee('Log Out / Switch Account');
+            ->assertSee('Digital Clearance Login Portal')
+            ->assertSee('Signing in will switch your session.')
+            ->assertSee('Return to Current Dashboard');
     }
 
     public function test_shared_login_routes_admin_to_admin_dashboard(): void
@@ -144,7 +144,7 @@ class PortalRoutingTest extends TestCase
 
         $this->get(route('office.dashboard'))
             ->assertOk()
-            ->assertSee('Log Out / Switch Account');
+            ->assertSee('Sign Out');
     }
 
     public function test_shared_login_rejects_student_accounts(): void
@@ -243,8 +243,8 @@ class PortalRoutingTest extends TestCase
 
     public function test_admin_dashboard_shows_logout_and_switch_actions(): void
     {
-        // The admin dashboard should expose the shared login entry point and
-        // logout action after the shared-portal update.
+        // The admin shell should expose route-based navigation and a logout
+        // action after the admin redesign work.
         $admin = User::factory()->create([
             'name' => 'MIS Admin',
             'role' => User::ROLE_ADMIN,
@@ -255,7 +255,8 @@ class PortalRoutingTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('Shared Login')
+            ->assertSee('Dashboard')
+            ->assertSee('Programs')
             ->assertSee('Log Out');
     }
 
@@ -284,7 +285,6 @@ class PortalRoutingTest extends TestCase
         $this->actingAs($officeUser)
             ->get(route('office.dashboard'))
             ->assertOk()
-            ->assertSee('Open Shared Login')
-            ->assertSee('Log Out / Switch Account');
+            ->assertSee('Sign Out');
     }
 }
