@@ -315,6 +315,60 @@ class ClearanceWorkflowTest extends TestCase
             ->assertSee('Flag reason is required before marking this clearance step as flagged.');
     }
 
+    public function test_processed_approved_step_keeps_view_and_undo_actions_on_office_dashboard(): void
+    {
+        $clearance = $this->startClearanceForSeededStudent();
+
+        $step = $clearance->steps->firstWhere(
+            'office_label',
+            'DIGITS Academic Organization Treasurer'
+        );
+        $officeUser = $step->officeDesignation->activeUsers->first();
+        $this->assertNotNull($officeUser);
+
+        $this->actingAs($officeUser)
+            ->post(route('office.steps.process', $step), [
+                'action' => 'approve',
+                'confirm_action' => 'approve',
+                'remarks' => 'Approved by office dashboard test.',
+            ])
+            ->assertRedirect();
+
+        $this->actingAs($officeUser)
+            ->get('/office')
+            ->assertOk()
+            ->assertSee('Undo Approval')
+            ->assertSee('Approved by office dashboard test.')
+            ->assertSee('Processed Note');
+    }
+
+    public function test_processed_flagged_step_keeps_view_action_and_flag_reason_on_office_dashboard(): void
+    {
+        $clearance = $this->startClearanceForSeededStudent();
+
+        $step = $clearance->steps->firstWhere(
+            'office_label',
+            'DIGITS Academic Organization Treasurer'
+        );
+        $officeUser = $step->officeDesignation->activeUsers->first();
+        $this->assertNotNull($officeUser);
+
+        $this->actingAs($officeUser)
+            ->post(route('office.steps.process', $step), [
+                'action' => 'flag',
+                'remarks' => 'Missing supporting document.',
+                'step_id' => $step->id,
+            ])
+            ->assertRedirect();
+
+        $this->actingAs($officeUser)
+            ->get('/office')
+            ->assertOk()
+            ->assertSee('Flag Reason')
+            ->assertSee('Missing supporting document.')
+            ->assertSee('View');
+    }
+
     public function test_any_active_holder_of_a_designation_can_process_the_step(): void
     {
         $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();

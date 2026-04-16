@@ -85,6 +85,8 @@
                                                 data-modal-step-status="Awaiting Action"
                                                 data-modal-clearance-status="{{ ucwords(str_replace('_', ' ', $step->clearance->status)) }}"
                                                 data-modal-last-processed="{{ optional($step->signed_at)->format('M d, Y h:i A') ?? '-' }}"
+                                                data-modal-designation="{{ $step->office_label ?: '-' }}"
+                                                data-modal-note-label="Previous Office Note"
                                                 data-modal-previous-note="{{ $step->remarks ?: '-' }}"
                                             >
                                                 View
@@ -160,17 +162,35 @@
                                             {{ ucwords(str_replace('_', ' ', $step->status)) }}
                                         </span>
 
-                                        @if($step->status === 'approved')
+                                        <div class="office-action-buttons">
                                             <button
                                                 type="button"
-                                                class="button ghost undo-trigger"
-                                                data-step-id="{{ $step->id }}"
-                                                data-student-name="{{ $student->displayName() }}"
-                                                data-step-action="{{ route('office.steps.process', $step) }}"
+                                                class="button ghost detail-trigger"
+                                                data-modal-step-id="{{ $step->id }}"
+                                                data-modal-student-name="{{ $student->displayName() }}"
+                                                data-modal-student-meta="{{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}"
+                                                data-modal-step-status="{{ ucwords(str_replace('_', ' ', $step->status)) }}"
+                                                data-modal-clearance-status="{{ ucwords(str_replace('_', ' ', $step->clearance->status)) }}"
+                                                data-modal-last-processed="{{ optional($step->signed_at)->format('M d, Y h:i A') ?? '-' }}"
+                                                data-modal-designation="{{ $step->office_label ?: '-' }}"
+                                                data-modal-note-label="{{ $step->status === 'flagged' ? 'Flag Reason' : 'Processed Note' }}"
+                                                data-modal-previous-note="{{ $step->remarks ?: '-' }}"
                                             >
-                                                Undo Approval
+                                                View
                                             </button>
-                                        @endif
+
+                                            @if($step->status === 'approved')
+                                                <button
+                                                    type="button"
+                                                    class="button ghost undo-trigger"
+                                                    data-step-id="{{ $step->id }}"
+                                                    data-student-name="{{ $student->displayName() }}"
+                                                    data-step-action="{{ route('office.steps.process', $step) }}"
+                                                >
+                                                    Undo Approval
+                                                </button>
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
 
@@ -186,7 +206,7 @@
                                     </p>
 
                                     <p class="mini">
-                                        <strong>Remarks:</strong>
+                                        <strong>{{ $step->status === 'flagged' ? 'Flag Reason' : 'Remarks' }}:</strong>
                                         {{ $step->remarks ?: '-' }}
                                     </p>
 
@@ -227,11 +247,15 @@
                 </div>
 
                 <div class="office-detail-block">
+                    <p><strong>Designation:</strong> <span id="modalDesignation">-</span></p>
+                </div>
+
+                <div class="office-detail-block">
                     <p><strong>Last Processed:</strong> <span id="modalLastProcessed">-</span></p>
                 </div>
 
                 <div class="office-detail-block">
-                    <label class="office-label">Previous Office Note</label>
+                    <label class="office-label" id="modalNoteLabel">Previous Office Note</label>
                     <div class="office-note-box" id="modalPreviousNote">-</div>
                 </div>
 
@@ -609,7 +633,9 @@
             const detailMeta = document.getElementById('officeModalMeta');
             const detailStepStatus = document.getElementById('modalStepStatus');
             const detailClearanceStatus = document.getElementById('modalClearanceStatus');
+            const detailDesignation = document.getElementById('modalDesignation');
             const detailLastProcessed = document.getElementById('modalLastProcessed');
+            const detailNoteLabel = document.getElementById('modalNoteLabel');
             const detailPreviousNote = document.getElementById('modalPreviousNote');
             const detailButtons = document.querySelectorAll('.detail-trigger');
             const detailCloseButton = document.getElementById('closeOfficeModal');
@@ -656,7 +682,9 @@
                 detailMeta.textContent = button.dataset.modalStudentMeta;
                 detailStepStatus.textContent = button.dataset.modalStepStatus;
                 detailClearanceStatus.textContent = 'Full Clearance Status: ' + button.dataset.modalClearanceStatus;
+                detailDesignation.textContent = button.dataset.modalDesignation || '-';
                 detailLastProcessed.textContent = button.dataset.modalLastProcessed;
+                detailNoteLabel.textContent = button.dataset.modalNoteLabel || 'Previous Office Note';
                 detailPreviousNote.textContent = button.dataset.modalPreviousNote;
                 showModal(detailModal);
             }
@@ -765,4 +793,3 @@
         });
     </script>
 @endsection
-
