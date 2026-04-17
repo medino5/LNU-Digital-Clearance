@@ -32,8 +32,8 @@
                     </a>
 
                     <a href="{{ route('admin.clearance-history.index') }}" class="quick-action-card quick-action-card--accent">
-                        <span class="quick-action-label">Download Report</span>
-                        <span class="quick-action-copy">Open clearance history to filter records and export the Excel report.</span>
+                        <span class="quick-action-label">Open Clearance History</span>
+                        <span class="quick-action-copy">Open completed clearance records for review, filtering, and export.</span>
                     </a>
                 </div>
             </div>
@@ -77,16 +77,16 @@
                 </a>
 
                 <a href="{{ route('admin.clearance-history.index') }}" class="card stat-card clickable-card">
-                    <div class="eyebrow">Clearance History</div>
+                    <div class="eyebrow">Completed Clearances</div>
                     <p class="metric">{{ $completedClearanceCount }}</p>
-                    <p class="metric-note">Completed records available for review and export.</p>
+                    <p class="metric-note">Completed clearance records available for review and export.</p>
                     <span class="manage-pill">Open</span>
                 </a>
 
                 <a href="{{ route('admin.routing.index') }}" class="card stat-card clickable-card">
-                    <div class="eyebrow">Routing</div>
+                    <div class="eyebrow">Routing Designations</div>
                     <p class="metric">{{ $designationCount }}</p>
-                    <p class="metric-note">Active designations and assignment coverage.</p>
+                    <p class="metric-note">Active routing designations and assignment coverage.</p>
                     <span class="manage-pill">Open</span>
                 </a>
             </div>
