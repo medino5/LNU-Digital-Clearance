@@ -14,6 +14,7 @@
             <div>
                 <h1>CLEARANCE HISTORY</h1>
                 <p>Review completed clearances and export records by semester and academic year.</p>
+                <p class="compact-copy">Completed clearance records by semester and academic year.</p>
             </div>
         </section>
 

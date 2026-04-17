@@ -346,7 +346,11 @@ class AdminManagementTest extends TestCase
             ->assertSee('Create Student')
             ->assertSee('Create Office Account')
             ->assertSee('Assign Holders')
-            ->assertSee('Download Report');
+            ->assertSee('Download Report')
+            ->assertSee('Clearances Per Semester')
+            ->assertSee('Clearance Status Distribution')
+            ->assertSee('No clearance records yet to chart by semester.')
+            ->assertSee('No clearance records yet to chart by status.');
 
         $this->actingAs($admin)
             ->get(route('admin.students.index'))
@@ -357,6 +361,50 @@ class AdminManagementTest extends TestCase
             ->get(route('admin.office-accounts.index'))
             ->assertOk()
             ->assertSee('Search by name, username, or scope');
+    }
+
+    public function test_admin_dashboard_renders_real_chart_data_when_clearances_exist(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+        $student = Student::with('user', 'program')->where('student_id_number', '2302314')->firstOrFail();
+        $secondStudent = Student::factory()->create([
+            'program_id' => $student->program_id,
+            'year_level' => 2,
+        ]);
+        $thirdStudent = Student::factory()->create([
+            'program_id' => $student->program_id,
+            'year_level' => 4,
+        ]);
+        $baseSemester = Semester::where('label', '2nd Semester 2024-2025')->firstOrFail();
+        $olderSemester = Semester::factory()->create([
+            'label' => '1st Semester 2024-2025',
+            'academic_year' => '2024-2025',
+        ]);
+
+        \App\Models\Clearance::factory()->forStudentAndSemester($student, $olderSemester)->create([
+            'status' => \App\Models\Clearance::STATUS_COMPLETED,
+            'completed_at' => now()->subDays(10),
+            'reference_number' => 'CLR-OLDER-0001',
+        ]);
+
+        \App\Models\Clearance::factory()->forStudentAndSemester($secondStudent, $baseSemester)->create([
+            'status' => \App\Models\Clearance::STATUS_IN_PROGRESS,
+        ]);
+
+        \App\Models\Clearance::factory()->forStudentAndSemester($thirdStudent, $baseSemester)->create([
+            'status' => \App\Models\Clearance::STATUS_FLAGGED,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('1st Semester 2024-2025')
+            ->assertSee('2nd Semester 2024-2025')
+            ->assertSee('In Progress')
+            ->assertSee('Flagged')
+            ->assertSee('Completed')
+            ->assertDontSee('No clearance records yet to chart by semester.')
+            ->assertDontSee('No clearance records yet to chart by status.');
     }
 
     public function test_admin_can_open_the_new_route_based_admin_pages(): void
