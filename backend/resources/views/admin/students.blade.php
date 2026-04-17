@@ -7,23 +7,19 @@
     @php($validationErrors = collect($errors->getBags())->flatMap(fn ($bag) => $bag->all()))
     @php($activeFormKey = old('_form_key'))
 
-    <div class="stack">
+    <div class="admin-page">
         @include('admin.partials.page-feedback')
 
-        <section class="dashboard-section" style="margin-top: 0; padding-top: 0; border-top: 0;">
-            <div class="section-heading">
-                <div>
-                    <div class="eyebrow">Accounts and Records</div>
-                    <h2>Students</h2>
-                    <p class="section-copy">Add new student accounts and manage the searchable student roster.</p>
-                </div>
+        <section class="admin-page-header">
+            <div>
+                <h1>STUDENTS</h1>
+                <p>Add new student accounts and manage the searchable student roster.</p>
             </div>
+        </section>
 
-            <div class="grid-2">
-                <div class="card" id="student-create-card">
+            <div class="grid-2 align-stretch">
+                <div class="admin-section-card" id="student-create-card">
                     <div class="eyebrow">Create Student</div>
-                    <h3>Create a student account</h3>
-                    <p class="section-copy compact-copy">Add the student identity, program, year level, and login details in one step.</p>
                     @php($studentCreateFormKey = 'student-create')
                     <form method="POST" action="{{ route('admin.students.store') }}">
                         @csrf
@@ -123,21 +119,22 @@
                                 @endif
                             </label>
                         </div>
-                        <button
-                            type="submit"
-                            data-loading-button
-                            data-loading-text="Creating Student..."
-                        >
-                            Create Student
-                        </button>
+                        <div class="form-actions">
+                            <button
+                                type="submit"
+                                data-loading-button
+                                data-loading-text="Creating Student..."
+                            >
+                                Create Student
+                            </button>
+                        </div>
                     </form>
                 </div>
 
-                <div class="card" id="student-records">
+                <div class="admin-section-card full-height" id="student-records">
                     <div class="eyebrow">Existing Students</div>
-                    <h3>Student account records</h3>
 
-                    <form method="GET" action="{{ route('admin.students.index') }}" class="roster-filter-bar">
+                    <form method="GET" action="{{ route('admin.students.index') }}" class="student-filter-bar">
                         <input type="text" name="student_search" value="{{ $studentSearch }}" placeholder="Search by name or ID">
 
                         <select name="student_program">
@@ -150,7 +147,7 @@
                         </select>
 
                         <select name="student_year_level">
-                            <option value="">Year Level</option>
+                            <option value="">Year level</option>
                             @foreach($yearLevels as $yearLevel)
                                 <option value="{{ $yearLevel }}" {{ (string) $studentYearLevel === (string) $yearLevel ? 'selected' : '' }}>
                                     {{ $yearLevel }}{{ ['st', 'nd', 'rd', 'th'][$yearLevel - 1] ?? 'th' }} Year
@@ -159,15 +156,15 @@
                         </select>
 
                         <button type="submit" class="button">Apply</button>
-                        <a href="{{ route('admin.students.index') }}" class="button secondary-button">Reset</a>
+                        <a href="{{ route('admin.students.index') }}" class="button secondary secondary-button">Reset</a>
                     </form>
 
                     @if(!$hasStudents)
-                        <div class="record">
-                            <p class="muted" style="margin: 0;">No matching records found.</p>
-                        </div>
-                    @else
-                        <div class="list scrollable-list">
+                    <div class="empty-state">
+                        No matching student records found.
+                    </div>
+                @else
+                    <div class="list scrollable-list flex-grow">
                             @foreach($students as $student)
                                 @php($studentUpdateFormKey = 'student-update-' . $student->id)
                                 @php($studentNameParts = $student->user->studentNameParts())
@@ -274,13 +271,15 @@
                                                 @endif
                                             </label>
                                         </div>
-                                        <button
-                                            type="submit"
-                                            data-loading-button
-                                            data-loading-text="Updating Student..."
-                                        >
-                                            Update Student
-                                        </button>
+                                        <div class="form-actions">
+                                            <button
+                                                type="submit"
+                                                data-loading-button
+                                                data-loading-text="Updating Student..."
+                                            >
+                                                Update Student
+                                            </button>
+                                        </div>
                                     </form>
                                 </details>
                             @endforeach
@@ -288,8 +287,7 @@
                     @endif
                 </div>
             </div>
-        </section>
-    </div>
+        </div>
 
     @push('styles')
     <style>
@@ -299,7 +297,7 @@
             max-width: 60ch;
         }
 
-        .roster-filter-bar {
+        .student-filter-bar {
             display: grid;
             grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) auto auto;
             gap: 10px;
@@ -307,14 +305,16 @@
             margin-bottom: 14px;
         }
 
-        .roster-filter-bar input,
-        .roster-filter-bar select,
-        .roster-filter-bar .button {
+        .student-filter-bar input,
+        .student-filter-bar select,
+        .student-filter-bar .button,
+        .student-filter-bar .secondary-button {
             width: 100%;
             margin: 0;
         }
 
-        .roster-filter-bar .button {
+        .student-filter-bar .button,
+        .student-filter-bar .secondary-button {
             width: auto;
             white-space: nowrap;
         }
@@ -327,17 +327,18 @@
         }
 
         @media (max-width: 1100px) {
-            .roster-filter-bar {
+            .student-filter-bar {
                 grid-template-columns: 1fr 1fr;
             }
         }
 
         @media (max-width: 720px) {
-            .roster-filter-bar {
+            .student-filter-bar {
                 grid-template-columns: 1fr;
             }
 
-            .roster-filter-bar .button {
+            .student-filter-bar .button,
+            .student-filter-bar .secondary-button {
                 width: 100%;
             }
         }

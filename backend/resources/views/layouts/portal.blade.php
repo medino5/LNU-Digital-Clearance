@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Student Clearance System' }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --navy: #16385f;
@@ -22,7 +23,7 @@
 
         body {
             margin: 0;
-            font-family: Georgia, "Times New Roman", serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             background:
                 radial-gradient(circle at top left, rgba(210, 168, 61, 0.18), transparent 32%),
                 linear-gradient(180deg, #f8f5ed 0%, #efe8d7 100%);
@@ -356,9 +357,10 @@
 
         /* New: scrollable list container for long records */
         .scrollable-list {
-            max-height: 320px;
+            max-height: 480px;
             overflow-y: auto;
             padding-right: 6px;
+            position: relative;
         }
 
         /* optional: nicer scrollbar */
@@ -509,10 +511,33 @@
             background: #f8f5ed;
             min-height: 100vh;
         }
+
+        .align-stretch {
+            align-items: stretch;
+        }
+
+        .full-height {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .flex-grow {
+            flex: 1;
+        }
+
+        h1 {
+            font-weight: 900;
+        }
+
+        h2, h3 {
+            font-weight: 600;
+        }
     </style>
     @stack('styles')
 </head>
 <body>
+
 @if(auth()->check() && request()->routeIs('admin.*'))
     <div class="admin-layout">
 

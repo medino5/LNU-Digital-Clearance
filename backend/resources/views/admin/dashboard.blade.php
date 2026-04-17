@@ -4,14 +4,13 @@
 ])
 
 @section('page')
-    <div class="stack">
+    <div class="admin-page">
         @include('admin.partials.page-feedback')
 
         <section class="dashboard-intro-shell">
-            <div class="card dashboard-quick-actions">
+            <div class="admin-section-card dashboard-quick-actions">
                 <div>
-                    <div class="eyebrow">Most Used</div>
-                    <h2>Common admin actions</h2>
+                    <h1>COMMON ADMIN ACTIONS</h1>
                     <p class="section-copy">Open the page you need without scrolling through one long admin workspace.</p>
                 </div>
 
@@ -39,56 +38,53 @@
             </div>
         </section>
 
-        <section class="dashboard-section" style="margin-top: 0;">
-            <div class="section-heading">
-                <div>
-                    <h2>System Snapshot</h2>
-                    <p class="section-copy">Each card opens the dedicated page for that admin area.</p>
-                </div>
+        <section class="admin-section-card">
+            <div>
+                <h1>SYSTEM SNAPSHOTS</h1>
             </div>
 
             <div class="grid-3">
-                <a href="{{ route('admin.programs.index') }}" class="card stat-card clickable-card">
+                <div class="stat-card stat-tile">
                     <div class="eyebrow">Programs</div>
-                    <p class="metric">{{ $programCount }}</p>
-                    <p class="metric-note">Official academic programs and organization labels.</p>
-                    <span class="manage-pill">Open</span>
-                </a>
+                    <div class="metric-circle">
+                        <span>{{ $programCount }}</span>
+                    </div>
+                </div>
 
-                <a href="{{ route('admin.semesters.index') }}" class="card stat-card clickable-card">
+                <div class="stat-card stat-tile">
                     <div class="eyebrow">Semesters</div>
-                    <p class="metric">{{ $semesterCount }}</p>
-                    <p class="metric-note">Current and past clearance periods.</p>
-                    <span class="manage-pill">Open</span>
-                </a>
+                    <div class="metric-circle">
+                        <span>{{ $semesterCount }}</span>
+                    </div>
+                </div>
 
-                <a href="{{ route('admin.students.index') }}" class="card stat-card clickable-card">
+                <div class="stat-card stat-tile">
                     <div class="eyebrow">Students</div>
-                    <p class="metric">{{ $studentCount }}</p>
-                    <p class="metric-note">Student accounts and roster records.</p>
-                    <span class="manage-pill">Open</span>
-                </a>
+                    <div class="metric-circle">
+                        <span>{{ $studentCount }}</span>
+                    </div>
+                </div>
 
-                <a href="{{ route('admin.office-accounts.index') }}" class="card stat-card clickable-card">
+                <div class="stat-card stat-tile">
                     <div class="eyebrow">Office Accounts</div>
-                    <p class="metric">{{ $officeAccountCount }}</p>
-                    <p class="metric-note">Staff accounts used for non-student designations.</p>
-                    <span class="manage-pill">Open</span>
-                </a>
+                    <div class="metric-circle">
+                        <span>{{ $officeAccountCount }}</span>
+                    </div>
+                </div>
 
-                <a href="{{ route('admin.clearance-history.index') }}" class="card stat-card clickable-card">
+                <div class="stat-card stat-tile">
                     <div class="eyebrow">Completed Clearances</div>
-                    <p class="metric">{{ $completedClearanceCount }}</p>
-                    <p class="metric-note">Completed clearance records available for review and export.</p>
-                    <span class="manage-pill">Open</span>
-                </a>
+                    <div class="metric-circle">
+                        <span>{{ $completedClearanceCount }}</span>
+                    </div>
+                </div>
 
-                <a href="{{ route('admin.routing.index') }}" class="card stat-card clickable-card">
+                <div class="stat-card stat-tile">
                     <div class="eyebrow">Routing Designations</div>
-                    <p class="metric">{{ $designationCount }}</p>
-                    <p class="metric-note">Active routing designations and assignment coverage.</p>
-                    <span class="manage-pill">Open</span>
-                </a>
+                    <div class="metric-circle">
+                        <span>{{ $designationCount }}</span>
+                    </div>
+                </div>
             </div>
         </section>
     </div>
@@ -175,6 +171,63 @@
             .quick-action-grid {
                 grid-template-columns: 1fr;
             }
+        }
+
+        .metric-circle {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, #173c66 0%, #27588f 100%);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 1.4rem;
+            box-shadow: 0 6px 14px rgba(23, 60, 102, 0.2);
+            margin-bottom: 10px;
+        }
+
+        .metric-circle span {
+            line-height: 1;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(180px, 1fr));
+            justify-content: center;   /* centers the whole grid */
+            gap: 24px;
+        }
+
+        .admin-section-card .grid-3 {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .stat-tile {
+            display: grid;
+            justify-items: center;
+            text-align: center;
+            gap: 4px; 
+            padding: 16px 12px; 
+        }
+
+        .stat-tile .eyebrow {
+            margin-bottom: 2px;
+            font-size: 0.7rem;
+            letter-spacing: 0.06em;
+        }
+
+        .metric-circle {
+            width: 64px;   /* was 72px */
+            height: 64px;
+            font-size: 1.2rem;
+            margin-bottom: 6px;
+        }
+
+        .stat-tile .metric-note {
+            margin-top: 2px;
+            font-size: 0.85rem;
+            color: #6b7280; /* softer */
         }
     </style>
     @endpush

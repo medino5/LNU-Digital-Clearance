@@ -9,24 +9,20 @@
         $activeFormKey = old('_form_key');
     @endphp
 
-    <div class="stack">
+    <div class="admin-page">
         @include('admin.partials.page-feedback')
 
-        <section class="dashboard-section" style="margin-top: 0; padding-top: 0; border-top: 0;">
-            <div class="section-heading">
-                <div>
-                    <div class="eyebrow">Academic Configuration</div>
-                    <h2>PROGRAMS</h2>
-                    <p class="section-copy">Manage the official program code, name, and organization label used across routing and records.</p>
-                </div>
+        <section class="admin-page-header">
+            <div>
+                <h1>PROGRAMS</h1>
+                <p>Manage program codes, names, and organization labels.</p>
             </div>
+        </section>
 
-            <div class="grid-2" style="align-items: stretch;">
+            <div class="grid-2">
                 <div class="section-stack">
-                    <div class="card" style="height: 100%;">
+                    <div class="admin-section-card">
                         <div class="eyebrow">Create Program</div>
-                        <h3>Add a program</h3>
-                        <p class="section-copy compact-copy">Add the official program code, name, and organization label.</p>
 
                         @php($programCreateFormKey = 'program-create')
 
@@ -92,11 +88,10 @@
                 </div>
 
                 <div class="section-stack">
-                    <div class="card" style="height: 100%;">
+                    <div class="admin-section-card">
                         <div class="eyebrow">Programs</div>
-                        <h3>Current programs</h3>
 
-                        <div class="list scrollable-list" style="max-height: 420px;">
+                        <div class="list scrollable-list">
                             @forelse($programs as $program)
                                 @php($programUpdateFormKey = 'program-update-' . $program->id)
 
@@ -162,14 +157,13 @@
                                     </form>
                                 </details>
                             @empty
-                                <div class="record">
-                                    <p class="muted" style="margin: 0;">No programs added yet.</p>
+                                <div class="empty-state">
+                                    No programs added yet.
                                 </div>
                             @endforelse
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
-    </div>
+        </div>
 @endsection
