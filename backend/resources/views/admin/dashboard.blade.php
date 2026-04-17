@@ -10,7 +10,7 @@
         <section class="dashboard-intro-shell">
             <div class="admin-section-card dashboard-quick-actions">
                 <div>
-                    <h1>COMMON ADMIN ACTIONS</h1>
+                    <h1>Common admin actions</h1>
                     <p class="section-copy">Open the page you need without scrolling through one long admin workspace.</p>
                 </div>
 
@@ -31,7 +31,7 @@
                     </a>
 
                     <a href="{{ route('admin.clearance-history.index') }}" class="quick-action-card quick-action-card--accent">
-                        <span class="quick-action-label">Open Clearance History</span>
+                        <span class="quick-action-label">Download Report</span>
                         <span class="quick-action-copy">Open completed clearance records for review, filtering, and export.</span>
                     </a>
                 </div>
@@ -40,7 +40,7 @@
 
         <section class="admin-section-card">
             <div>
-                <h1>SYSTEM SNAPSHOTS</h1>
+                <h1>System Snapshots</h1>
             </div>
 
             <div class="grid-3">
@@ -87,10 +87,126 @@
                 </div>
             </div>
         </section>
+
+        <section class="dashboard-chart-grid">
+            <div class="admin-section-card chart-panel">
+                <div class="chart-panel-header">
+                    <div>
+                        <h1>CLEARANCES PER SEMESTER</h1>
+                        <h2 class="chart-title">Clearances Per Semester</h2>
+                        <p class="section-copy compact-copy">Live counts from recorded clearances across your configured semesters.</p>
+                    </div>
+                </div>
+
+                @if($semesterChartHasData)
+                    <div class="semester-chart" role="img" aria-label="Bar chart showing clearance counts per semester">
+                        @foreach($clearancesPerSemester as $semesterPoint)
+                            @php
+                                $heightRatio = $semesterPoint['count'] > 0
+                                    ? max(($semesterPoint['count'] / $semesterChartMax) * 100, 8)
+                                    : 0;
+                            @endphp
+
+                            <div class="semester-bar-group">
+                                <div class="semester-bar-value">{{ $semesterPoint['count'] }}</div>
+                                <div class="semester-bar-track">
+                                    <div
+                                        class="semester-bar-fill"
+                                        style="height: {{ $heightRatio }}%;"
+                                        title="{{ $semesterPoint['label'] }}: {{ $semesterPoint['count'] }} clearance{{ $semesterPoint['count'] === 1 ? '' : 's' }}"
+                                    ></div>
+                                </div>
+                                <div class="semester-bar-label">{{ $semesterPoint['label'] }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="chart-empty-state">
+                        <p>No clearance records yet to chart by semester.</p>
+                    </div>
+                @endif
+            </div>
+
+            <div class="admin-section-card chart-panel">
+                <div class="chart-panel-header">
+                    <div>
+                        <h1>CLEARANCE STATUS DISTRIBUTION</h1>
+                        <h2 class="chart-title">Clearance Status Distribution</h2>
+                        <p class="section-copy compact-copy">Current breakdown of in-progress, flagged, and completed clearances.</p>
+                    </div>
+                </div>
+
+                @if($statusChartHasData)
+                    @php
+                        $statusSegments = [];
+                        $statusOffset = 0;
+                    @endphp
+
+                    @foreach($statusChart as $statusPoint)
+                        @php
+                            $percentage = round(($statusPoint['count'] / $statusChartTotal) * 100, 2);
+                            $statusSegments[] = $statusPoint['color'] . ' ' . $statusOffset . '% ' . ($statusOffset + $percentage) . '%';
+                            $statusOffset += $percentage;
+                        @endphp
+                    @endforeach
+
+                    <div class="status-chart-layout">
+                        <div
+                            class="status-donut"
+                            style="background: conic-gradient({{ implode(', ', $statusSegments) }});"
+                            role="img"
+                            aria-label="Donut chart showing clearance status distribution"
+                        >
+                            <div class="status-donut-hole">
+                                <span class="status-donut-total">{{ $statusChartTotal }}</span>
+                                <span class="status-donut-caption">Total</span>
+                            </div>
+                        </div>
+
+                        <div class="status-legend">
+                            @foreach($statusChart as $statusPoint)
+                                @php
+                                    $statusPercentage = $statusChartTotal > 0
+                                        ? round(($statusPoint['count'] / $statusChartTotal) * 100)
+                                        : 0;
+                                @endphp
+
+                                <div class="status-legend-item">
+                                    <span class="status-dot" style="background-color: {{ $statusPoint['color'] }};"></span>
+                                    <div class="status-legend-copy">
+                                        <strong>{{ $statusPoint['label'] }}</strong>
+                                        <span>{{ $statusPoint['count'] }} clearance{{ $statusPoint['count'] === 1 ? '' : 's' }} ({{ $statusPercentage }}%)</span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @else
+                    <div class="chart-empty-state">
+                        <p>No clearance records yet to chart by status.</p>
+                    </div>
+                @endif
+            </div>
+        </section>
     </div>
 
     @push('styles')
     <style>
+        .admin-page {
+            display: grid;
+            gap: 20px;
+        }
+
+        .admin-section-card {
+            display: grid;
+            gap: 18px;
+            padding: 24px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, #fbf7ef 0%, #fffdf8 100%);
+            border: 1px solid #e8dfd1;
+            box-shadow: 0 12px 28px rgba(24, 58, 99, 0.05);
+        }
+
         .dashboard-intro-shell {
             display: grid;
             gap: 18px;
@@ -99,14 +215,6 @@
         .dashboard-quick-actions {
             display: grid;
             gap: 20px;
-            padding: 24px;
-            border-radius: 24px;
-            background: linear-gradient(135deg, #fbf7ef 0%, #fffdf8 100%);
-            border: 1px solid #e8dfd1;
-        }
-
-        .dashboard-quick-actions h2 {
-            margin: 6px 0 8px;
         }
 
         .quick-action-grid {
@@ -157,58 +265,26 @@
 
         .compact-copy {
             margin-top: 0;
-            margin-bottom: 14px;
+            margin-bottom: 0;
             max-width: 60ch;
-        }
-
-        @media (max-width: 1100px) {
-            .quick-action-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-
-        @media (max-width: 720px) {
-            .quick-action-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .metric-circle {
-            width: 72px;
-            height: 72px;
-            border-radius: 50%;
-            display: grid;
-            place-items: center;
-            background: linear-gradient(135deg, #173c66 0%, #27588f 100%);
-            color: #ffffff;
-            font-weight: 700;
-            font-size: 1.4rem;
-            box-shadow: 0 6px 14px rgba(23, 60, 102, 0.2);
-            margin-bottom: 10px;
-        }
-
-        .metric-circle span {
-            line-height: 1;
         }
 
         .grid-3 {
             display: grid;
             grid-template-columns: repeat(3, minmax(180px, 1fr));
-            justify-content: center;   /* centers the whole grid */
+            justify-content: center;
             gap: 24px;
-        }
-
-        .admin-section-card .grid-3 {
-            max-width: 800px;
-            margin: 0 auto;
         }
 
         .stat-tile {
             display: grid;
             justify-items: center;
             text-align: center;
-            gap: 4px; 
-            padding: 16px 12px; 
+            gap: 4px;
+            padding: 16px 12px;
+            background: rgba(255, 255, 255, 0.75);
+            border: 1px solid #e4dacd;
+            border-radius: 20px;
         }
 
         .stat-tile .eyebrow {
@@ -218,16 +294,228 @@
         }
 
         .metric-circle {
-            width: 64px;   /* was 72px */
+            width: 64px;
             height: 64px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, #173c66 0%, #27588f 100%);
+            color: #ffffff;
+            font-weight: 700;
             font-size: 1.2rem;
+            box-shadow: 0 6px 14px rgba(23, 60, 102, 0.2);
             margin-bottom: 6px;
         }
 
-        .stat-tile .metric-note {
-            margin-top: 2px;
-            font-size: 0.85rem;
-            color: #6b7280; /* softer */
+        .metric-circle span {
+            line-height: 1;
+        }
+
+        .dashboard-chart-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .chart-panel {
+            align-content: start;
+            min-height: 100%;
+        }
+
+        .chart-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .chart-title {
+            margin: 4px 0 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #173c66;
+        }
+
+        .semester-chart {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+            gap: 16px;
+            align-items: end;
+            min-height: 290px;
+            padding-top: 12px;
+        }
+
+        .semester-bar-group {
+            display: grid;
+            gap: 10px;
+            justify-items: center;
+            align-items: end;
+        }
+
+        .semester-bar-value {
+            font-size: 0.82rem;
+            color: #5b6679;
+            font-weight: 600;
+        }
+
+        .semester-bar-track {
+            width: 100%;
+            max-width: 64px;
+            height: 180px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, #edf2f8 0%, #dbe5f1 100%);
+            display: flex;
+            align-items: flex-end;
+            overflow: hidden;
+            box-shadow: inset 0 0 0 1px rgba(22, 56, 95, 0.08);
+        }
+
+        .semester-bar-fill {
+            width: 100%;
+            border-radius: 999px;
+            background: linear-gradient(180deg, #285892 0%, #173c66 100%);
+            box-shadow: 0 8px 18px rgba(23, 60, 102, 0.18);
+        }
+
+        .semester-bar-label {
+            font-size: 0.78rem;
+            line-height: 1.4;
+            color: #334155;
+            text-align: center;
+        }
+
+        .status-chart-layout {
+            display: grid;
+            grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+            gap: 24px;
+            align-items: center;
+        }
+
+        .status-donut {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            position: relative;
+            display: grid;
+            place-items: center;
+            margin: 0 auto;
+            box-shadow: inset 0 0 0 1px rgba(22, 56, 95, 0.08);
+        }
+
+        .status-donut-hole {
+            width: 118px;
+            height: 118px;
+            border-radius: 50%;
+            background: #fffdf9;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+        }
+
+        .status-donut-total {
+            display: block;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #173c66;
+            line-height: 1;
+        }
+
+        .status-donut-caption {
+            display: block;
+            margin-top: 6px;
+            font-size: 0.82rem;
+            color: #64748b;
+        }
+
+        .status-legend {
+            display: grid;
+            gap: 14px;
+        }
+
+        .status-legend-item {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: #fff;
+            border: 1px solid #e7dfd2;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-top: 4px;
+            flex-shrink: 0;
+        }
+
+        .status-legend-copy {
+            display: grid;
+            gap: 4px;
+        }
+
+        .status-legend-copy strong {
+            color: #183a63;
+        }
+
+        .status-legend-copy span {
+            color: #58657a;
+            font-size: 0.92rem;
+            line-height: 1.4;
+        }
+
+        .chart-empty-state {
+            display: grid;
+            place-items: center;
+            min-height: 250px;
+            border: 1px dashed #d5cbbd;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.7);
+            color: #64748b;
+            text-align: center;
+            padding: 24px;
+        }
+
+        @media (max-width: 1100px) {
+            .quick-action-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .dashboard-chart-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 860px) {
+            .status-chart-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .quick-action-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .semester-chart {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .status-donut {
+                width: 180px;
+                height: 180px;
+            }
+
+            .status-donut-hole {
+                width: 96px;
+                height: 96px;
+            }
         }
     </style>
     @endpush

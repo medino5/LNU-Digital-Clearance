@@ -1,6 +1,7 @@
 <section id="routing-configuration" class="admin-section-card">
     <div class="routing-header">
         <h1>DESIGNATION ASSIGNMENT</h1>
+        <h2>Assign Holders</h2>
         <p class="section-copy compact-copy">Assign current holders to active designations.</p>
     </div>
 

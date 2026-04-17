@@ -14,6 +14,7 @@
             <div>
                 <h1>SEMESTERS</h1>
                 <p>Manage active and historical clearance periods.</p>
+                <p>Add or change the current semester.</p>
             </div>
         </section>
 
