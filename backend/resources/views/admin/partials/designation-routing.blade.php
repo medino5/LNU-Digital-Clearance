@@ -1,18 +1,10 @@
-<section id="routing-configuration" class="dashboard-section">
-    <div class="section-heading">
-        <div>
-            <div class="eyebrow">Routing Configuration</div>
-            <h2>DESIGNATION ASSIGNMENT</h2>
-        </div>
+<section id="routing-configuration" class="admin-section-card">
+    <div class="routing-header">
+        <h1>DESIGNATION ASSIGNMENT</h1>
+        <p class="section-copy compact-copy">Assign current holders to active designations.</p>
     </div>
 
-    <div class="card">
-        <div class="section-subheader">
-            <div>
-                <h3>Assign Holders</h3>
-                <p class="section-copy">Choose who currently handles each designation.</p>
-            </div>
-        </div>
+    <div>
 
         <div class="list routing-list">
             @forelse($designations as $designation)
@@ -129,8 +121,7 @@
                             </p>
                         @endif
 
-                        <div class="toolbar" style="margin-top: 14px;">
-                            {{-- Added for MAE-XX: loading indicator + duplicate-submit protection --}}
+                        <div class="form-actions">
                             <button
                                 type="submit"
                                 data-loading-button
@@ -143,10 +134,62 @@
                     </form>
                 </details>
             @empty
-                <div class="record">
-                    <p class="muted" style="margin: 0;">No active designations yet.</p>
+                <div class="empty-state">
+                    No active designations yet.
                 </div>
             @endforelse
         </div>
     </div>
 </section>
+
+@push('styles')
+<style>
+    #routing-configuration {
+        display: grid;
+        gap: 20px;
+    }
+
+    #routing-configuration {
+        padding: 22px;
+    }
+
+    #routing-configuration .list {
+        gap: 14px;
+    }
+
+    #routing-configuration .compact-copy {
+        margin-top: 0;
+        margin-bottom: 0;
+        max-width: 60ch;
+    }
+
+    #routing-configuration .routing-list {
+        max-height: 560px;
+    }
+
+    #routing-configuration details.record summary {
+        line-height: 1.4;
+    }
+
+    #routing-configuration .form-actions {
+        margin-top: 14px;
+    }
+
+    #routing-configuration .routing-header {
+        margin-top: 0;
+        margin-bottom: 4px;
+    }
+
+    #routing-configuration .routing-header h2 {
+        margin: 0 0 8px;
+    }
+
+    #routing-configuration .routing-header .section-copy {
+        margin: 0;
+    }
+
+    #routing-configuration .routing-header .section-copy + .section-copy {
+        margin-top: 6px;
+    }
+</style>
+@endpush

@@ -7,7 +7,7 @@
     @php($validationErrors = collect($errors->getBags())->flatMap(fn ($bag) => $bag->all()))
     @php($activeFormKey = old('_form_key'))
 
-    <div class="stack">
+    <div class="admin-page">
         @include('admin.partials.page-feedback')
 
         @include('admin.partials.designation-routing', [

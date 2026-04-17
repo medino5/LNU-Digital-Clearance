@@ -7,24 +7,20 @@
     @php($validationErrors = collect($errors->getBags())->flatMap(fn ($bag) => $bag->all()))
     @php($activeFormKey = old('_form_key'))
 
-    <div class="stack">
+    <div class="admin-page">
         @include('admin.partials.page-feedback')
 
-        <section class="dashboard-section" style="margin-top: 0; padding-top: 0; border-top: 0;">
-            <div class="section-heading">
-                <div>
-                    <div class="eyebrow">Academic Configuration</div>
-                    <h2>Semesters</h2>
-                    <p class="section-copy">Keep the active semester and academic year ready before students start clearances.</p>
-                </div>
+        <section class="admin-page-header">
+            <div>
+                <h1>SEMESTERS</h1>
+                <p>Manage active and historical clearance periods.</p>
             </div>
+        </section>
 
-            <div class="grid-2">
+            <div class="grid-2 align-stretch">
                 <div class="section-stack">
-                    <div class="card">
+                    <div class="admin-section-card">
                         <div class="eyebrow">Create Semester</div>
-                        <h3>Add or change the current semester</h3>
-                        <p class="section-copy compact-copy">Only one semester should remain active at a time.</p>
                         @php($semesterCreateFormKey = 'semester-create')
                         <form method="POST" action="{{ route('admin.semesters.store') }}">
                             @csrf
@@ -47,22 +43,23 @@
                                 <input type="checkbox" name="is_active" value="1" {{ $activeFormKey === $semesterCreateFormKey && old('is_active') ? 'checked' : '' }}>
                                 Set as the active semester
                             </label>
-                            <button
-                                type="submit"
-                                data-loading-button
-                                data-loading-text="Saving Semester..."
-                            >
-                                Save Semester
-                            </button>
+                            <div class="form-actions">
+                                <button
+                                    type="submit"
+                                    data-loading-button
+                                    data-loading-text="Saving Semester..."
+                                >
+                                    Save Semester
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
 
                 <div class="section-stack">
-                    <div class="card">
-                        <div class="eyebrow">Semester List</div>
-                        <h3>Current and past semesters</h3>
-                        <div class="list">
+                    <div class="admin-section-card">
+                        <div class="eyebrow">Semesters</div>
+                        <div class="list scrollable-list">
                             @foreach($semesters as $semester)
                                 @php($semesterUpdateFormKey = 'semester-update-' . $semester->id)
                                 <details class="record" {{ $activeFormKey === $semesterUpdateFormKey ? 'open' : '' }}>
@@ -100,13 +97,15 @@
                                             >
                                             Keep this semester active
                                         </label>
-                                        <button
-                                            type="submit"
-                                            data-loading-button
-                                            data-loading-text="Updating Semester..."
-                                        >
-                                            Update Semester
-                                        </button>
+                                        <div class="form-actions">
+                                            <button
+                                                type="submit"
+                                                data-loading-button
+                                                data-loading-text="Updating Semester..."
+                                            >
+                                                Update Semester
+                                            </button>
+                                        </div>
                                     </form>
                                 </details>
                             @endforeach
@@ -114,6 +113,5 @@
                     </div>
                 </div>
             </div>
-        </section>
-    </div>
+        </div>
 @endsection

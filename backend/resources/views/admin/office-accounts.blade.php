@@ -7,23 +7,19 @@
     @php($validationErrors = collect($errors->getBags())->flatMap(fn ($bag) => $bag->all()))
     @php($activeFormKey = old('_form_key'))
 
-    <div class="stack">
+    <div class="admin-page">
         @include('admin.partials.page-feedback')
 
-        <section class="dashboard-section" style="margin-top: 0; padding-top: 0; border-top: 0;">
-            <div class="section-heading">
-                <div>
-                    <div class="eyebrow">Accounts and Records</div>
-                    <h2>Office Accounts</h2>
-                    <p class="section-copy">Manage reusable staff accounts for non-student designation assignment.</p>
-                </div>
+        <section class="admin-page-header">
+            <div>
+                <h1>OFFICE ACCOUNTS</h1>
+                <p>Manage reusable staff accounts for designation assignments.</p>
             </div>
+        </section>
 
-            <div class="grid-2">
-                <div class="card" id="office-account-create-card">
+            <div class="grid-2 align-stretch">
+                <div class="admin-section-card" id="office-account-create-card">
                     <div class="eyebrow">Create Office Account</div>
-                    <h3>Create a staff account</h3>
-                    <p class="section-copy compact-copy">Create the account first, then assign it to an eligible designation from the routing page.</p>
                     @php($officeCreateFormKey = 'office-account-create')
                     <form method="POST" action="{{ route('admin.office-accounts.store') }}" data-office-account-form>
                         @csrf
@@ -100,21 +96,22 @@
                                 @endif
                             </label>
                         </div>
-                        <button
-                            type="submit"
-                            data-loading-button
-                            data-loading-text="Creating Office Account..."
-                        >
-                            Create Office Account
-                        </button>
+                        <div class="form-actions">
+                            <button
+                                type="submit"
+                                data-loading-button
+                                data-loading-text="Creating Office Account..."
+                            >
+                                Create Office Account
+                            </button>
+                        </div>
                     </form>
                 </div>
 
-                <div class="card" id="office-records">
-                    <div class="eyebrow">Office List</div>
-                    <h3>Staff office accounts</h3>
+                <div class="admin-section-card full-height" id="office-records">
+                    <div class="eyebrow">Office Account List</div>
 
-                    <form method="GET" action="{{ route('admin.office-accounts.index') }}" class="roster-filter-bar">
+                    <form method="GET" action="{{ route('admin.office-accounts.index') }}" class="office-filter-bar">
                         <input type="text" name="office_search" value="{{ $officeSearch }}" placeholder="Search by name, username, or scope">
 
                         <select name="office_program">
@@ -136,16 +133,16 @@
                             @endforeach
                         </select>
 
-                        <button type="submit" class="button">Apply</button>
-                        <a href="{{ route('admin.office-accounts.index') }}" class="button secondary-button">Reset</a>
+                        <button type="submit" class="button">Apply Filters</button>
+                        <a href="{{ route('admin.office-accounts.index') }}" class="button secondary secondary-button">Reset</a>
                     </form>
 
                     @if(!$hasOfficeAccounts)
-                        <div class="record">
-                            <p class="muted" style="margin: 0;">No matching records found.</p>
+                        <div class="empty-state">
+                            No matching office accounts found.
                         </div>
                     @else
-                        <div class="list scrollable-list">
+                        <div class="list scrollable-list flex-grow">
                             @foreach($officeAccounts as $officeAccount)
                                 @php($officeUpdateFormKey = 'office-account-update-' . $officeAccount->id)
                                 @php($editTypeOptions = $officeAccountEditTypeOptions[$officeAccount->id] ?? [])
@@ -244,13 +241,15 @@
                                                 @endif
                                             </label>
                                         </div>
-                                        <button
-                                            type="submit"
-                                            data-loading-button
-                                            data-loading-text="Updating Office Account..."
-                                        >
-                                            Update Office Account
-                                        </button>
+                                        <div class="form-actions">
+                                            <button
+                                                type="submit"
+                                                data-loading-button
+                                                data-loading-text="Updating Office Account..."
+                                            >
+                                                Update Office Account
+                                            </button>
+                                        </div>
                                     </form>
                                 </details>
                             @endforeach
@@ -258,8 +257,7 @@
                     @endif
                 </div>
             </div>
-        </section>
-    </div>
+        </div>
 
     @push('styles')
     <style>
@@ -269,7 +267,7 @@
             max-width: 60ch;
         }
 
-        .roster-filter-bar {
+        .office-filter-bar {
             display: grid;
             grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) auto auto;
             gap: 10px;
@@ -277,14 +275,16 @@
             margin-bottom: 14px;
         }
 
-        .roster-filter-bar input,
-        .roster-filter-bar select,
-        .roster-filter-bar .button {
+        .office-filter-bar input,
+        .office-filter-bar select,
+        .office-filter-bar .button,
+        .office-filter-bar .secondary-button {
             width: 100%;
             margin: 0;
         }
 
-        .roster-filter-bar .button {
+        .office-filter-bar .button,
+        .office-filter-bar .secondary-button {
             width: auto;
             white-space: nowrap;
         }
@@ -297,17 +297,18 @@
         }
 
         @media (max-width: 1100px) {
-            .roster-filter-bar {
+            .office-filter-bar {
                 grid-template-columns: 1fr 1fr;
             }
         }
 
         @media (max-width: 720px) {
-            .roster-filter-bar {
+            .office-filter-bar {
                 grid-template-columns: 1fr;
             }
 
-            .roster-filter-bar .button {
+            .office-filter-bar .button,
+            .office-filter-bar .secondary-button {
                 width: 100%;
             }
         }

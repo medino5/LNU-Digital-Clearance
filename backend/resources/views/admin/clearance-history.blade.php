@@ -7,15 +7,19 @@
     @php($validationErrors = collect($errors->getBags())->flatMap(fn ($bag) => $bag->all()))
     @php($activeFormKey = old('_form_key'))
 
-    <div class="stack">
+    <div class="admin-page">
         @include('admin.partials.page-feedback')
 
-        <div class="card history-panel">
-            <div class="section-subheader">
+        <section class="admin-page-header">
+            <div>
+                <h1>CLEARANCE HISTORY</h1>
+                <p>Review completed clearances and export records by semester and academic year.</p>
+            </div>
+        </section>
+
+        <div class="admin-section-card history-panel">
                 <div>
                     <div class="eyebrow">Clearance History</div>
-                    <h3>Completed clearance records by semester and academic year</h3>
-                    <p class="section-copy compact-copy">Review finished clearances and export a workbook grouped by program.</p>
                 </div>
                 <div class="toolbar" style="gap: 12px; align-items: flex-end;">
                     <form method="GET" action="{{ route('admin.clearance-history.index') }}" class="toolbar" style="gap: 12px; align-items: flex-end;">
@@ -54,10 +58,9 @@
                         <input type="hidden" name="academic_year" value="{{ old('academic_year', $selectedAcademicYear) }}">
                     </form>
                 </div>
-            </div>
-
+                
             @if($activeFormKey === 'history-export')
-                <div class="record" style="margin-bottom: 12px;">
+                <div class="empty-state" style="margin-bottom: 12px;">
                     <p class="mini" style="margin: 0 0 8px;">Export validation</p>
                     <x-field-error field="semester_id" bag="historyExport" />
                     <x-field-error field="academic_year" bag="historyExport" />
@@ -66,9 +69,10 @@
 
             @if($historyHasRecords)
                 @foreach($history as $semesterLabel => $records)
-                    <div class="record history-record">
+                    <div class="record history-record table-card">
                         <h3 style="margin-top: 0;">{{ $semesterLabel }}</h3>
-                        <table>
+                        <div class="table-wrap">
+                            <table>
                             <thead>
                                 <tr>
                                     <th>Student</th>
@@ -104,10 +108,12 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+
                 @endforeach
             @else
-                <div class="record">
-                    <p class="muted" style="margin: 0;">No completed clearances found for the selected semester and academic year filter.</p>
+                <div class="empty-state">
+                    No completed clearances found for the selected semester and academic year filter.
                 </div>
             @endif
         </div>
@@ -121,13 +127,35 @@
             max-width: 60ch;
         }
 
-        .history-panel .section-subheader {
+        .history-panel {
+            display: grid;
             gap: 18px;
+        }
+
+        .history-panel .toolbar {
+            gap: 12px;
             align-items: flex-end;
         }
 
         .history-download-button {
             min-width: 220px;
+        }
+
+        .history-record + .history-record {
+            margin-top: 2px;
+        }
+
+        @media (max-width: 980px) {
+            .history-panel .toolbar,
+            .history-panel .toolbar form {
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch !important;
+            }
+
+            .history-download-button {
+                width: 100%;
+            }
         }
     </style>
     @endpush
