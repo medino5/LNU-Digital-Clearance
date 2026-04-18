@@ -415,21 +415,29 @@
         }
 
         .admin-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 260px;
+            height: 100vh;
             background: linear-gradient(180deg, var(--navy-deep), var(--navy));
             color: white;
             display: flex;
             flex-direction: column;
             padding: 24px 18px;
+            overflow-y: auto;
+            z-index: 1000;
         }
 
         .sidebar-header {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             margin-bottom: 26px;
             padding: 16px 0 12px 0;
             position: relative;
+            text-align: center;
         }
 
         .sidebar-header::after {
@@ -445,6 +453,15 @@
             width: 120px;
             height: 120px;
             object-fit: contain;
+        }
+
+        .sidebar-brand-text {
+            margin-top: 12px;
+            font-size: 16px;   
+            font-weight: 800;  
+            letter-spacing: 0.12em; 
+            color: rgba(255, 255, 255, 0.95);
+            text-align: center;
         }
 
         .sidebar-title {
@@ -491,23 +508,46 @@
             flex: 1;
             display: flex;
             flex-direction: column;
+            margin-left: 260px;
         }
 
         .admin-header {
+            position: fixed;
+            top: 0;
+            left: 260px;
+            right: 0;
             background: linear-gradient(135deg, var(--navy-deep), var(--navy));
             color: white;
             padding: 22px 28px;
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             align-items: center;
+            z-index: 999;
         }
 
         .admin-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             font-weight: 600;
         }
 
+        .admin-user-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
         .admin-content {
-            padding: 28px;
+            padding: 110px 28px 28px;
             background: #f8f5ed;
             min-height: 100vh;
         }
@@ -544,6 +584,7 @@
         <aside class="admin-sidebar">
             <div class="sidebar-header">
                 <img src="{{ asset('images/lnu-logo.png') }}" class="sidebar-logo">
+                <div class="sidebar-brand-text">DIGITAL CLEARANCE</div>
             </div>
 
             <nav class="sidebar-nav">
@@ -564,13 +605,11 @@
 
         <main class="admin-main">
             <header class="admin-header">
-                <div>
-                    <h1>{{ $title ?? 'Super Admin Dashboard' }}</h1>
-                    <p>{{ $subtitle ?? 'Manage programs, semesters, accounts, and clearance history.' }}</p>
-                </div>
-
                 <div class="admin-user">
-                    {{ auth()->user()->name }}
+                    <span>{{ auth()->user()->name }}</span>
+                    <div class="admin-user-avatar">
+                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                    </div>
                 </div>
             </header>
 
