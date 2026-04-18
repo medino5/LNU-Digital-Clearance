@@ -114,7 +114,41 @@ class ClearanceWorkflowService
                 'action' => 'undo_approval',
             ]);
 
-            $this->syncClearanceStatus($step->clearance);
+            $this->syncClearanceStatus($step->clearance->fresh());
+        });
+
+        return $step->fresh(['clearance.steps', 'officeDesignation.activeUsers', 'events']);
+    }
+
+    public function undoFlag(ClearanceStep $step, User $actor): ClearanceStep
+    {
+        $step->loadMissing('clearance', 'officeDesignation');
+
+        if (! $actor->activeOfficeDesignations()
+            ->where('office_designations.id', $step->office_designation_id)
+            ->exists()
+        ) {
+            throw new RuntimeException('You are not allowed to undo this flagged clearance step.');
+        }
+
+        if ($step->status !== ClearanceStep::STATUS_FLAGGED) {
+            throw new RuntimeException('Only flagged steps can be undone.');
+        }
+
+        DB::transaction(function () use ($step, $actor) {
+            $step->update([
+                'status' => ClearanceStep::STATUS_AWAITING_ACTION,
+                'remarks' => null,
+                'signed_at' => null,
+            ]);
+
+            $step->events()->create([
+                'actor_user_id' => $actor->id,
+                'actor_role' => $actor->role,
+                'action' => 'undo_flag',
+            ]);
+
+            $this->syncClearanceStatus($step->clearance->fresh());
         });
 
         return $step->fresh(['clearance.steps', 'officeDesignation.activeUsers', 'events']);
@@ -142,7 +176,7 @@ class ClearanceWorkflowService
                 'action' => 'resubmitted',
             ]);
 
-            $this->syncClearanceStatus($step->clearance);
+            $this->syncClearanceStatus($step->clearance->fresh());
         });
 
         return $step->fresh(['officeDesignation.activeUsers', 'events']);
@@ -267,7 +301,7 @@ class ClearanceWorkflowService
                 'remarks' => $remarks ? trim($remarks) : null,
             ]);
 
-            $this->syncClearanceStatus($step->clearance);
+            $this->syncClearanceStatus($step->clearance->fresh());
         });
 
         return $step->fresh(['clearance.steps', 'officeDesignation.activeUsers', 'events']);
