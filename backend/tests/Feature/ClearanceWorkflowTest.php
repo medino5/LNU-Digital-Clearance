@@ -342,6 +342,51 @@ class ClearanceWorkflowTest extends TestCase
             ->assertSee('Processed Note');
     }
 
+    public function test_office_user_can_undo_an_approved_step_and_reopen_the_clearance(): void
+    {
+        $clearance = $this->startClearanceForSeededStudent();
+
+        $step = $clearance->steps->firstWhere(
+            'office_label',
+            'DIGITS Academic Organization Treasurer'
+        );
+        $officeUser = $step->officeDesignation->activeUsers->first();
+        $this->assertNotNull($officeUser);
+
+        $this->actingAs($officeUser)
+            ->post(route('office.steps.process', $step), [
+                'action' => 'approve',
+                'confirm_action' => 'approve',
+                'remarks' => 'Approved before undo.',
+            ])
+            ->assertRedirect();
+
+        $clearance->refresh();
+        $step->refresh();
+
+        $this->assertSame(Clearance::STATUS_IN_PROGRESS, $clearance->status);
+        $this->assertSame(ClearanceStep::STATUS_APPROVED, $step->status);
+
+        $this->actingAs($officeUser)
+            ->post(route('office.steps.process', $step), [
+                'action' => 'undo_approval',
+                'confirm_action' => 'undo_approval',
+            ])
+            ->assertRedirect();
+
+        $clearance->refresh();
+        $step->refresh();
+
+        $this->assertSame(Clearance::STATUS_IN_PROGRESS, $clearance->status);
+        $this->assertSame(ClearanceStep::STATUS_AWAITING_ACTION, $step->status);
+        $this->assertNull($step->signed_at);
+        $this->assertDatabaseHas('clearance_step_events', [
+            'clearance_step_id' => $step->id,
+            'actor_user_id' => $officeUser->id,
+            'action' => 'undo_approval',
+        ]);
+    }
+
     public function test_processed_flagged_step_keeps_view_action_and_flag_reason_on_office_dashboard(): void
     {
         $clearance = $this->startClearanceForSeededStudent();
@@ -366,7 +411,54 @@ class ClearanceWorkflowTest extends TestCase
             ->assertOk()
             ->assertSee('Flag Reason')
             ->assertSee('Missing supporting document.')
-            ->assertSee('View');
+            ->assertSee('View')
+            ->assertSee('Undo Flag');
+    }
+
+    public function test_office_user_can_undo_a_flagged_step_and_reopen_the_clearance(): void
+    {
+        $clearance = $this->startClearanceForSeededStudent();
+
+        $step = $clearance->steps->firstWhere(
+            'office_label',
+            'DIGITS Academic Organization Treasurer'
+        );
+        $officeUser = $step->officeDesignation->activeUsers->first();
+        $this->assertNotNull($officeUser);
+
+        $this->actingAs($officeUser)
+            ->post(route('office.steps.process', $step), [
+                'action' => 'flag',
+                'remarks' => 'Incorrectly flagged by mistake.',
+                'step_id' => $step->id,
+            ])
+            ->assertRedirect();
+
+        $clearance->refresh();
+        $step->refresh();
+
+        $this->assertSame(Clearance::STATUS_FLAGGED, $clearance->status);
+        $this->assertSame(ClearanceStep::STATUS_FLAGGED, $step->status);
+
+        $this->actingAs($officeUser)
+            ->post(route('office.steps.process', $step), [
+                'action' => 'undo_flag',
+                'confirm_action' => 'undo_flag',
+            ])
+            ->assertRedirect();
+
+        $clearance->refresh();
+        $step->refresh();
+
+        $this->assertSame(Clearance::STATUS_IN_PROGRESS, $clearance->status);
+        $this->assertSame(ClearanceStep::STATUS_AWAITING_ACTION, $step->status);
+        $this->assertNull($step->signed_at);
+        $this->assertNull($step->remarks);
+        $this->assertDatabaseHas('clearance_step_events', [
+            'clearance_step_id' => $step->id,
+            'actor_user_id' => $officeUser->id,
+            'action' => 'undo_flag',
+        ]);
     }
 
     public function test_any_active_holder_of_a_designation_can_process_the_step(): void

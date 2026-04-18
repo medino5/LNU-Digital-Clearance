@@ -189,6 +189,16 @@
                                                 >
                                                     Undo Approval
                                                 </button>
+                                            @elseif($step->status === 'flagged')
+                                                <button
+                                                    type="button"
+                                                    class="button ghost undo-flag-trigger"
+                                                    data-step-id="{{ $step->id }}"
+                                                    data-student-name="{{ $student->displayName() }}"
+                                                    data-step-action="{{ route('office.steps.process', $step) }}"
+                                                >
+                                                    Undo Flag
+                                                </button>
                                             @endif
                                         </div>
                                     </div>
@@ -364,6 +374,37 @@
                     </div>
 
                     <button type="button" class="office-cancel-link" id="cancelUndoModal">Cancel</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="office-modal-backdrop" id="undoFlagModal" hidden>
+        <div class="office-modal" role="dialog" aria-modal="true" aria-labelledby="undoFlagModalTitle">
+            <div class="office-modal-header">
+                <div>
+                    <h2 id="undoFlagModalTitle">Undo Flag</h2>
+                    <p id="undoFlagModalMeta">Student Name</p>
+                </div>
+
+                <button type="button" class="office-modal-close" id="closeUndoFlagModal" aria-label="Close modal">
+                    &times;
+                </button>
+            </div>
+
+            <div class="office-modal-body">
+                <p>Are you sure you want to remove this flag and return the step to awaiting action?</p>
+
+                <form method="POST" id="undoFlagForm">
+                    @csrf
+                    <input type="hidden" name="action" value="undo_flag">
+                    <input type="hidden" name="confirm_action" value="undo_flag">
+
+                    <div class="office-modal-actions">
+                        <button type="submit" class="warn">Confirm Undo Flag</button>
+                    </div>
+
+                    <button type="button" class="office-cancel-link" id="cancelUndoFlagModal">Cancel</button>
                 </form>
             </div>
         </div>
@@ -664,6 +705,13 @@
             const closeUndoModal = document.getElementById('closeUndoModal');
             const cancelUndoModal = document.getElementById('cancelUndoModal');
 
+            const undoFlagModal = document.getElementById('undoFlagModal');
+            const undoFlagForm = document.getElementById('undoFlagForm');
+            const undoFlagMeta = document.getElementById('undoFlagModalMeta');
+            const undoFlagButtons = document.querySelectorAll('.undo-flag-trigger');
+            const closeUndoFlagModal = document.getElementById('closeUndoFlagModal');
+            const cancelUndoFlagModal = document.getElementById('cancelUndoFlagModal');
+
             const reopenStepId = @json(old('step_id'));
             const oldRemarks = @json(old('remarks'));
 
@@ -709,6 +757,12 @@
                 showModal(undoModal);
             }
 
+            function openUndoFlagModal(button) {
+                undoFlagMeta.textContent = button.dataset.studentName;
+                undoFlagForm.action = button.dataset.stepAction;
+                showModal(undoFlagModal);
+            }
+
             detailButtons.forEach(button => {
                 button.addEventListener('click', function () {
                     openDetailModal(button);
@@ -730,6 +784,12 @@
             undoButtons.forEach(button => {
                 button.addEventListener('click', function () {
                     openUndoModal(button);
+                });
+            });
+
+            undoFlagButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    openUndoFlagModal(button);
                 });
             });
 
@@ -773,7 +833,15 @@
                 hideModal(undoModal);
             });
 
-            [detailModal, approveModal, flagModal, undoModal].forEach(modal => {
+            closeUndoFlagModal.addEventListener('click', function () {
+                hideModal(undoFlagModal);
+            });
+
+            cancelUndoFlagModal.addEventListener('click', function () {
+                hideModal(undoFlagModal);
+            });
+
+            [detailModal, approveModal, flagModal, undoModal, undoFlagModal].forEach(modal => {
                 modal.addEventListener('click', function (event) {
                     if (event.target === modal) {
                         hideModal(modal);
@@ -783,7 +851,7 @@
 
             document.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape') {
-                    [detailModal, approveModal, flagModal, undoModal].forEach(modal => {
+                    [detailModal, approveModal, flagModal, undoModal, undoFlagModal].forEach(modal => {
                         if (!modal.hidden) {
                             hideModal(modal);
                         }
