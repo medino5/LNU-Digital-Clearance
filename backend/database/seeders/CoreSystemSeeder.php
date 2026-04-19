@@ -38,6 +38,21 @@ class CoreSystemSeeder extends Seeder
                 'name' => 'Bachelor of Science in Entrepreneurship',
                 'org_name' => 'Entrep Society',
             ],
+            [
+                'code' => 'AS',
+                'name' => 'Bachelor of Science in Social Work',
+                'org_name' => "Junior Social Worker's Association of the Philippines LNU Chapter",
+            ],
+            [
+                'code' => 'EC',
+                'name' => 'Bachelor of Early Childhood Education',
+                'org_name' => 'Early Childhood Educator Association (ECEO)',
+            ],
+            [
+                'code' => 'SM',
+                'name' => 'Bachelor of Secondary Education Major in Mathematics',
+                'org_name' => 'Math Student Society',
+            ],
         ];
 
         $programModels = collect($programs)->mapWithKeys(function (array $program) {
@@ -109,6 +124,9 @@ class CoreSystemSeeder extends Seeder
                     'BAEL' => 'Elena Garcia',
                     'BSTM' => 'Marco Rivera',
                     'BSEntrep' => 'Nina Torres',
+                    'AS' => 'Rica Manalo',
+                    'EC' => 'Hazel Aquino',
+                    'SM' => 'Daniel Reyes',
                     default => $program->org_name . ' Treasurer',
                 },
                 OfficeAccount::TYPE_ACAD_ORG_TREASURER,
@@ -122,6 +140,9 @@ class CoreSystemSeeder extends Seeder
                     'BAEL' => 'Prof. Lucia Mendoza',
                     'BSTM' => 'Prof. Celeste Ramos',
                     'BSEntrep' => 'Prof. Joel Mercado',
+                    'AS' => 'Prof. Miriam Santiago',
+                    'EC' => 'Prof. Arlene Bautista',
+                    'SM' => 'Prof. Victor Dizon',
                     default => $program->org_name . ' Adviser',
                 },
                 OfficeAccount::TYPE_ACAD_ORG_ADVISER,

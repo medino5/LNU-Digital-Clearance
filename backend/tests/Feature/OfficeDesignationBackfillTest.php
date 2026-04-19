@@ -20,9 +20,9 @@ class OfficeDesignationBackfillTest extends TestCase
     {
         $this->seed(CoreSystemSeeder::class);
 
-        $this->assertSame(14, OfficeAccount::query()->count());
-        $this->assertSame(14, OfficeDesignation::query()->count());
-        $this->assertSame(14, OfficeDesignationAssignment::query()->where('is_active', true)->count());
+        $this->assertSame(20, OfficeAccount::query()->count());
+        $this->assertSame(20, OfficeDesignation::query()->count());
+        $this->assertSame(20, OfficeDesignationAssignment::query()->where('is_active', true)->count());
 
         $bsitTreasurer = User::query()
             ->where('username', 'bsit.treasurer')
