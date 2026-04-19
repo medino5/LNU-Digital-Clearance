@@ -19,19 +19,35 @@ class UatDatabaseSeederTest extends TestCase
         // bootstrap data does not accidentally include the large UAT roster.
         $this->seed(DatabaseSeeder::class);
 
+        $this->assertSame(7, Program::query()->count());
         $this->assertSame(1, Student::count());
         $this->assertDatabaseHas('students', [
             'student_id_number' => '2302314',
         ]);
+        $this->assertDatabaseHas('programs', [
+            'code' => 'AS',
+            'name' => 'Bachelor of Science in Social Work',
+            'org_name' => "Junior Social Worker's Association of the Philippines LNU Chapter",
+        ]);
+        $this->assertDatabaseHas('programs', [
+            'code' => 'EC',
+            'name' => 'Bachelor of Early Childhood Education',
+            'org_name' => 'Early Childhood Educator Association (ECEO)',
+        ]);
+        $this->assertDatabaseHas('programs', [
+            'code' => 'SM',
+            'name' => 'Bachelor of Secondary Education Major in Mathematics',
+            'org_name' => 'Math Student Society',
+        ]);
     }
 
-    public function test_uat_database_seeder_adds_a_balanced_100_student_roster(): void
+    public function test_uat_database_seeder_adds_a_balanced_2100_student_roster(): void
     {
         // This protects the manual-testing dataset: UAT should always reseed
-        // with 100 deterministic student accounts plus the canonical demo student.
+        // with 300 deterministic student accounts per program plus the demo student.
         $this->seed(UatDatabaseSeeder::class);
 
-        $this->assertSame(101, Student::query()->count());
+        $this->assertSame(2101, Student::query()->count());
         $this->assertNotNull(Student::query()->where('student_id_number', '2302314')->first());
 
         $generatedStudents = Student::query()
@@ -39,9 +55,9 @@ class UatDatabaseSeederTest extends TestCase
             ->with(['program', 'user'])
             ->get();
 
-        $this->assertSame(100, $generatedStudents->count());
+        $this->assertSame(2100, $generatedStudents->count());
         $this->assertSame(
-            100,
+            2100,
             $generatedStudents
                 ->pluck('student_id_number')
                 ->filter(fn (string $studentId) => str_starts_with($studentId, '2') && strlen($studentId) === 7)
@@ -54,36 +70,42 @@ class UatDatabaseSeederTest extends TestCase
             $this->assertSame($student->student_id_number, $student->user->username);
         }
 
-        foreach (['BSIT', 'BAEL', 'BSTM', 'BSEntrep'] as $programCode) {
+        foreach (['BSIT', 'BAEL', 'BSTM', 'BSEntrep', 'AS', 'EC', 'SM'] as $programCode) {
             $programId = Program::where('code', $programCode)->value('id');
 
             $this->assertSame(
-                25,
+                300,
                 $generatedStudents->where('program_id', $programId)->count(),
-                "Expected 25 generated students for {$programCode}."
+                "Expected 300 generated students for {$programCode}."
             );
         }
 
         foreach ([1, 2, 3, 4] as $yearLevel) {
             $this->assertSame(
-                25,
+                525,
                 $generatedStudents->where('year_level', $yearLevel)->count(),
-                "Expected 25 generated students for year level {$yearLevel}."
+                "Expected 525 generated students for year level {$yearLevel}."
             );
         }
 
         $this->assertDatabaseHas('users', [
             'username' => '2400001',
-            'name' => 'Adrian A. Abad',
-            'first_name' => 'Adrian',
-            'middle_initial' => 'A',
-            'last_name' => 'Abad',
+            'name' => 'Bianca C. Dela Cruz',
+            'first_name' => 'Bianca',
+            'middle_initial' => 'C',
+            'last_name' => 'Dela Cruz',
             'name_extension' => null,
         ]);
 
         $this->assertDatabaseHas('students', [
-            'student_id_number' => '2400100',
+            'student_id_number' => '2402100',
             'year_level' => 4,
+        ]);
+
+        $this->assertDatabaseHas('students', [
+            'student_id_number' => '2401201',
+            'year_level' => 1,
+            'program_id' => Program::where('code', 'AS')->value('id'),
         ]);
 
         $this->assertDatabaseHas('users', [
