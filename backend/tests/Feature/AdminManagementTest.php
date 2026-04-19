@@ -429,6 +429,36 @@ class AdminManagementTest extends TestCase
             ->assertSee('Download Excel Report');
     }
 
+    public function test_admin_sidebar_highlights_each_current_route_based_page(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+
+        $pages = [
+            route('admin.dashboard') => 'Dashboard',
+            route('admin.programs.index') => 'Programs',
+            route('admin.semesters.index') => 'Semesters',
+            route('admin.routing.index') => 'Routing',
+            route('admin.students.index') => 'Students',
+            route('admin.office-accounts.index') => 'Office Accounts',
+            route('admin.clearance-history.index') => 'Clearance History',
+        ];
+
+        foreach ($pages as $url => $label) {
+            $response = $this->actingAs($admin)->get($url);
+
+            $response->assertOk()
+                ->assertSee('DIGITAL CLEARANCE')
+                ->assertSee('Log Out')
+                ->assertSee('href="' . $url . '" class="nav-item active">' . $label, false);
+
+            $this->assertSame(
+                1,
+                substr_count($response->getContent(), 'class="nav-item active"'),
+                "Expected only the {$label} sidebar item to be active."
+            );
+        }
+    }
+
     public function test_admin_can_reassign_designation_to_an_eligible_office_user(): void
     {
         // Staff office accounts are now a general pool for non-student
