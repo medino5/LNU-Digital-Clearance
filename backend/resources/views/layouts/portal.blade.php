@@ -47,6 +47,12 @@
             box-shadow: 0 24px 70px rgba(14, 39, 66, 0.12);
         }
 
+        .page-shell-flat {
+            min-height: 100vh;
+            width: 100%;
+            padding: 28px 32px 40px;
+        }
+
         .topbar {
             background: linear-gradient(135deg, var(--navy-deep), var(--navy));
             color: white;
@@ -420,13 +426,16 @@
             left: 0;
             width: 260px;
             height: 100vh;
-            background: linear-gradient(180deg, var(--navy-deep), var(--navy));
+            background:
+                radial-gradient(circle at top left, rgba(210, 168, 61, 0.25), transparent 35%),
+                linear-gradient(180deg, #081a2b 0%, #16385f 50%, #2a5d94 100%);
             color: white;
             display: flex;
             flex-direction: column;
             padding: 24px 18px;
             overflow-y: auto;
             z-index: 1000;
+            box-shadow: 8px 0 24px rgba(14, 39, 66, 0.18);
         }
 
         .sidebar-header {
@@ -488,9 +497,10 @@
         }
 
         .nav-item.active {
-            background: var(--gold);
-            color: #000;
-            font-weight: 600;
+            background: linear-gradient(180deg, #d9b24a 0%, #c89d2d 100%);
+            color: #111;
+            font-weight: 700;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
         }
 
         .sidebar-logout {
@@ -516,13 +526,15 @@
             top: 0;
             left: 260px;
             right: 0;
-            background: linear-gradient(135deg, var(--navy-deep), var(--navy));
+            background:
+                linear-gradient(135deg, #0e2742 0%, #16385f 65%, #1b4675 100%);
             color: white;
             padding: 22px 28px;
             display: flex;
             justify-content: flex-end;
             align-items: center;
             z-index: 999;
+            box-shadow: 0 4px 18px rgba(14, 39, 66, 0.10);
         }
 
         .admin-user {
@@ -548,7 +560,9 @@
 
         .admin-content {
             padding: 110px 28px 28px;
-            background: #f8f5ed;
+            background:
+                radial-gradient(circle at top right, rgba(210, 168, 61, 0.10), transparent 22%),
+                linear-gradient(180deg, #f8f5ed 0%, #f1ebdf 100%);
             min-height: 100vh;
         }
 
@@ -620,8 +634,16 @@
 
     </div>
 @else
-    @if(request()->routeIs('portal.login') || request()->routeIs('admin.login') || request()->routeIs('office.login'))
+    @if(
+        request()->routeIs('portal.login') ||
+        request()->routeIs('admin.login') ||
+        request()->routeIs('office.login')
+    )
         @yield('page')
+    @elseif(request()->routeIs('office.dashboard'))
+        <div class="page-shell page-shell-flat">
+            @yield('page')
+        </div>
     @else
         <div class="page-shell">
             <div class="panel">

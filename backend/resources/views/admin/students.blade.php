@@ -77,7 +77,7 @@
                                     data-student-id-input
                                     required
                                 >
-                                <span class="mini">Use the 7-digit format, for example 2302314.</span>
+                                <span class="mini">Use the 7-digit format.</span>
                                 @if($activeFormKey === $studentCreateFormKey)
                                     <x-field-error field="student_id_number" bag="studentCreate" />
                                 @endif
@@ -92,6 +92,7 @@
                                         </option>
                                     @endforeach
                                 </select>
+                                <span class="field-helper"></span>
                                 @if($activeFormKey === $studentCreateFormKey)
                                     <x-field-error field="program_id" bag="studentCreate" />
                                 @endif
@@ -111,9 +112,33 @@
                                     <x-field-error field="year_level" bag="studentCreate" />
                                 @endif
                             </label>
-                            <label>
+                            <label class="password-wrapper">
                                 Password
-                                <input type="password" name="password" required>
+                                <div class="password-field">
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        id="student-create-password"
+                                        required
+                                    >
+
+                                    <button
+                                        type="button"
+                                        class="password-toggle"
+                                        data-password-toggle
+                                        data-target="student-create-password"
+                                        aria-label="Show password"
+                                        title="Show password"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                            fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                            <path d="M1 12s4-6 11-6 11 6 11 6-4 6-11 6-11-6-11-6z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                    </button>
+                                </div>
+
                                 @if($activeFormKey === $studentCreateFormKey)
                                     <x-field-error field="password" bag="studentCreate" />
                                 @endif
@@ -229,7 +254,7 @@
                                                     data-student-id-input
                                                     required
                                                 >
-                                                <span class="mini">Use the 7-digit format, for example 2302314.</span>
+                                                <span class="mini">Use the 7-digit format.</span>
                                                 @if($activeFormKey === $studentUpdateFormKey)
                                                     <x-field-error field="student_id_number" bag="studentUpdate" />
                                                 @endif
@@ -244,6 +269,7 @@
                                                         </option>
                                                     @endforeach
                                                 </select>
+                                                <span class="field-helper"></span>
                                                 @if($activeFormKey === $studentUpdateFormKey)
                                                     <x-field-error field="program_id" bag="studentUpdate" />
                                                 @endif
@@ -263,9 +289,33 @@
                                                     <x-field-error field="year_level" bag="studentUpdate" />
                                                 @endif
                                             </label>
-                                            <label>
+                                            <label class="password-wrapper">
                                                 Password
-                                                <input type="password" name="password" placeholder="Leave blank to keep the current password">
+                                                <div class="password-field">
+                                                    <input
+                                                        type="password"
+                                                        name="password"
+                                                        id="student-update-password-{{ $student->id }}"
+                                                        placeholder="Leave blank to keep the current password"
+                                                    >
+
+                                                    <button
+                                                        type="button"
+                                                        class="password-toggle"
+                                                        data-password-toggle
+                                                        data-target="student-update-password-{{ $student->id }}"
+                                                        aria-label="Show password"
+                                                        title="Show password"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                            fill="none" stroke="currentColor" stroke-width="2"
+                                                            stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                                            <path d="M1 12s4-6 11-6 11 6 11 6-4 6-11 6-11-6-11-6z"/>
+                                                            <circle cx="12" cy="12" r="3"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+
                                                 @if($activeFormKey === $studentUpdateFormKey)
                                                     <x-field-error field="password" bag="studentUpdate" />
                                                 @endif
@@ -291,6 +341,74 @@
 
     @push('styles')
     <style>
+
+        .password-wrapper {
+            display: grid;
+            gap: 6px;
+        }
+
+        .password-field {
+            position: relative;
+        }
+
+        .password-field input {
+            width: 100%;
+            padding-right: 52px;
+        }
+
+        .password-field .password-toggle {
+            position: absolute;
+            top: 50%;
+            right: 14px;
+            transform: translateY(-50%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            margin: 0;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            color: var(--muted);
+            box-shadow: none;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .password-field .password-toggle:hover,
+        .password-field .password-toggle:focus-visible {
+            background: transparent;
+            color: var(--navy);
+            outline: none;
+            transform: translateY(-50%);
+        }
+
+        .password-field .password-toggle svg {
+            width: 18px;
+            height: 18px;
+            display: block;
+            pointer-events: none;
+        }
+
+        .field-grid {
+            align-items: start;
+        }
+
+        .field-grid > label {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .field-grid > label .mini,
+        .field-grid > label .field-helper {
+            display: block;
+            min-height: 36px;
+            line-height: 1.35;
+        }
+        
         .compact-copy {
             margin-top: 0;
             margin-bottom: 14px;
@@ -347,41 +465,55 @@
 
     @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const normalizeStudentId = (value) => value.replace(/\D+/g, '').slice(0, 7);
+    document.addEventListener('DOMContentLoaded', () => {
 
-            document.querySelectorAll('input[data-student-id-input]').forEach((input) => {
-                input.addEventListener('beforeinput', (event) => {
-                    if (event.inputType === 'insertText' && event.data && /\D/.test(event.data)) {
-                        event.preventDefault();
-                    }
-                });
+        document.querySelectorAll('[data-password-toggle]').forEach((toggleButton) => {
+            const targetId = toggleButton.dataset.target;
+            const passwordInput = document.getElementById(targetId);
 
-                input.addEventListener('input', () => {
-                    const normalized = normalizeStudentId(input.value);
+            if (!passwordInput) return;
 
-                    if (input.value !== normalized) {
-                        input.value = normalized;
-                    }
-                });
+            toggleButton.addEventListener('click', () => {
+                const isHidden = passwordInput.type === 'password';
 
-                input.addEventListener('paste', (event) => {
-                    event.preventDefault();
-
-                    const clipboard = event.clipboardData || window.clipboardData;
-                    const pastedText = clipboard ? clipboard.getData('text') : '';
-                    const selectionStart = input.selectionStart ?? input.value.length;
-                    const selectionEnd = input.selectionEnd ?? input.value.length;
-                    const nextValue = normalizeStudentId(
-                        input.value.slice(0, selectionStart) +
-                        pastedText +
-                        input.value.slice(selectionEnd)
-                    );
-
-                    input.value = nextValue;
-                });
+                passwordInput.type = isHidden ? 'text' : 'password';
+                toggleButton.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
+                toggleButton.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+                toggleButton.setAttribute('title', isHidden ? 'Hide password' : 'Show password');
             });
         });
+
+        const normalizeStudentId = (value) => value.replace(/\D+/g, '').slice(0, 7);
+
+        document.querySelectorAll('input[data-student-id-input]').forEach((input) => {
+            input.addEventListener('beforeinput', (event) => {
+                if (event.inputType === 'insertText' && event.data && /\D/.test(event.data)) {
+                    event.preventDefault();
+                }
+            });
+
+            input.addEventListener('input', () => {
+                const normalized = normalizeStudentId(input.value);
+                if (input.value !== normalized) input.value = normalized;
+            });
+
+            input.addEventListener('paste', (event) => {
+                event.preventDefault();
+
+                const clipboard = event.clipboardData || window.clipboardData;
+                const pastedText = clipboard ? clipboard.getData('text') : '';
+                const selectionStart = input.selectionStart ?? input.value.length;
+                const selectionEnd = input.selectionEnd ?? input.value.length;
+
+                input.value = normalizeStudentId(
+                    input.value.slice(0, selectionStart) +
+                    pastedText +
+                    input.value.slice(selectionEnd)
+                );
+            });
+        });
+
+    });
     </script>
     @endpush
 @endsection
