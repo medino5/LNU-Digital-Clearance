@@ -44,7 +44,7 @@
         @endif
 
         @if(!$hasActiveDesignation)
-            <section class="card office-empty-dashboard">
+            <section class="office-empty-dashboard">
                 <div class="eyebrow">Assignment Status</div>
                 <div class="office-empty-dashboard-body">
                     <h2>No Active Designation Assigned</h2>
@@ -55,7 +55,7 @@
             </section>
         @else
             <div class="office-columns">
-                <section class="card office-column">
+                <section class="office-column">
                     <div class="eyebrow">Pending</div>
                     <h2>Clearance steps awaiting your action</h2>
 
@@ -140,7 +140,7 @@
                     </div>
                 </section>
 
-                <section class="card office-column">
+                <section class="office-column">
                     <div class="eyebrow">Processed</div>
                     <h2>Recently completed</h2>
 
@@ -411,27 +411,86 @@
     </div>
 
     <style>
+        .office-modal-close {
+            display: none !important;
+        }
+        
+        .topbar {
+            margin: -28px -32px 0;
+            border-radius: 0;
+        }
+
+        .topbar {
+            background: linear-gradient(
+                135deg,
+                #0e2742 0%,
+                #16385f 60%,
+                #1f4f85 100%
+            );
+            color: white;
+        }
+
         .office-dashboard {
             gap: 24px;
+            width: 100%;
+            margin: 0;
+            padding: 28px 32px 40px;
+            background: transparent;
+            border-radius: 0;
         }
 
         .office-columns {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 28px;
             align-items: start;
+            margin-top: 8px;
         }
 
         .office-column {
             min-height: 100%;
+            padding: 0;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            box-shadow: none;
+        }
+
+        .office-column h2 {
+            margin: 4px 0 0;
+            font-size: 1.1rem;
+            line-height: 1.25;
+            color: var(--navy-deep);
+        }
+
+        .office-column .list {
+            margin-top: 18px;
+            display: grid;
+            gap: 14px;
+        }
+
+        .office-column .eyebrow {
+            margin-bottom: 8px;
+        }
+
+        .office-column h2 {
+            margin: 0 0 10px;
         }
 
         .office-record {
             border-radius: 18px;
-            padding: 20px;
-            border: 1px solid #d8d3ca;
-            background: #fffdfa;
-            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+            padding: 18px;
+            border: 1px solid #ddd3c4;
+            background: #f8f7f3;
+            box-shadow: none;
+            transition: border-color 0.15s ease, background 0.15s ease;
+        }
+
+        .office-record:hover {
+            border-color: #cdbb9c;
+            background: #fcfbf7;
+            transform: none;
+            box-shadow: none;
         }
 
         .record-top {
@@ -443,8 +502,9 @@
 
         .record-name {
             display: block;
-            font-size: 1.1rem;
+            font-size: 1.08rem;
             margin-bottom: 4px;
+            color: var(--navy-deep);
         }
 
         .record-actions {
@@ -464,6 +524,8 @@
 
         .record-meta {
             margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid #d9d1c4;
             display: grid;
             gap: 8px;
         }
@@ -474,40 +536,68 @@
 
         .button.ghost,
         .detail-trigger {
-            background: transparent;
-            border: 1px solid #9aa9c0;
-            color: #294c7a;
+            background: white;
+            border: 1px solid rgba(22, 56, 95, 0.22);
+            color: var(--navy);
             border-radius: 999px;
             padding: 10px 16px;
             font-weight: 600;
             cursor: pointer;
+            box-shadow: 0 2px 8px rgba(16, 24, 40, 0.04);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+
+        .button.ghost:hover,
+        .detail-trigger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(16, 24, 40, 0.08);
+            border-color: rgba(22, 56, 95, 0.35);
+        }
+
+        .approve-trigger {
+            box-shadow: 0 6px 14px rgba(22, 56, 95, 0.14);
+        }
+
+        .flag-trigger,
+        .warn {
+            box-shadow: 0 6px 14px rgba(181, 68, 44, 0.14);
         }
 
         .office-empty-state {
-            padding: 24px 20px;
+            padding: 22px 20px;
+            border-radius: 18px;
+            background: #f8f7f3;
+            border: 1px dashed #d6ccbd;
+            box-shadow: none;
         }
 
         .office-empty-dashboard {
             max-width: 780px;
-            margin: 0 auto;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            box-shadow: none;
         }
 
         .office-empty-dashboard-body {
-            text-align: center;
-            padding: 28px 24px 30px;
-            border-top: 1px solid #e5dfd4;
+            text-align: left;
+            padding: 0;
+            border-top: 0;
         }
 
         .office-empty-dashboard-body h2 {
-            margin: 0 0 18px;
-            font-size: 2rem;
+            margin: 0 0 16px;
+            font-size: 1.9rem;
             line-height: 1.2;
+            color: var(--navy-deep);
         }
 
         .office-empty-dashboard-body p {
-            margin: 0 0 14px;
-            color: #444;
-            font-size: 1.02rem;
+            margin: 0 0 12px;
+            color: #4b5565;
+            font-size: 1rem;
         }
 
         .office-empty-dashboard-body p:last-child {
@@ -549,7 +639,7 @@
             color: white;
             padding: 24px 28px;
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start; /* CHANGE THIS */
             align-items: flex-start;
             gap: 12px;
         }
@@ -655,6 +745,10 @@
             .record-actions {
                 width: 100%;
                 align-items: flex-start;
+            }
+
+            .office-action-buttons {
+                justify-content: flex-start;
             }
 
             .office-modal-actions {
