@@ -79,6 +79,7 @@ class FakeClearanceService extends ClearanceService {
     this.resubmitError,
     this.downloadError,
     this.downloadPath = '/tmp/student-clearance.pdf',
+    this.payloadQueue = const [],
   }) : super(tokenStore: FakeTokenStore());
 
   Map<String, dynamic>? currentPayload;
@@ -90,6 +91,9 @@ class FakeClearanceService extends ClearanceService {
   Object? downloadError;
   String downloadPath;
   int downloadCalls = 0;
+
+  final List<Map<String, dynamic>> payloadQueue;
+  int loadCalls = 0;
 
   @override
   Future<Map<String, dynamic>> createOrResumeClearance() async {
@@ -117,6 +121,13 @@ class FakeClearanceService extends ClearanceService {
       throw loadError!;
     }
 
+    if (payloadQueue.isNotEmpty) {
+      final index = loadCalls.clamp(0, payloadQueue.length - 1);
+      loadCalls += 1;
+      return payloadQueue[index];
+    }
+
+    loadCalls += 1;
     return currentPayload ?? const <String, dynamic>{};
   }
 

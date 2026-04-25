@@ -87,6 +87,40 @@ void main() {
     });
 
     testWidgets(
+      'refresh updates the shared clearance payload across the shell',
+      (WidgetTester tester) async {
+        final clearanceService = FakeClearanceService(
+          payloadQueue: [
+            buildTestPayload(clearanceStatus: 'in_progress'),
+            buildTestPayload(clearanceStatus: 'completed'),
+          ],
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: AppShell(
+              authService: FakeAuthService(),
+              clearanceService: clearanceService,
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        expect(find.text('In Progress'), findsOneWidget);
+        expect(find.text('Completed'), findsNothing);
+
+        await tester.tap(find.byTooltip('Refresh'));
+        await tester.pump();
+        await tester.pumpAndSettle();
+
+        expect(clearanceService.loadCalls, 2);
+        expect(find.text('Completed'), findsWidgets);
+        expect(find.text('Download Clearance PDF'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
       'profile screen exposes the logout action for the student session',
       (WidgetTester tester) async {
         // This verifies the new logout location after the mobile makeover: the
