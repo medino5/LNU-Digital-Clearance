@@ -161,7 +161,7 @@ class AdminManagementTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.students.index'))
             ->assertOk()
-            ->assertSee('Use the 7-digit format, for example 2302314.')
+            ->assertSee('Use the 7-digit format.')
             ->assertSee('data-student-id-input', false)
             ->assertSee('inputmode="numeric"', false)
             ->assertSee('maxlength="7"', false)

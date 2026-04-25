@@ -186,10 +186,15 @@
 
                     @if(!$hasStudents)
                     <div class="empty-state">
-                        No matching student records found.
+                        No matching student records found for the current filters.
                     </div>
                 @else
                     <div class="list scrollable-list flex-grow">
+
+                            <div class="mini" style="margin-bottom: 10px;">
+                                Showing {{ $students->firstItem() }} – {{ $students->lastItem() }} of {{ $students->total() }} students
+                            </div>
+
                             @foreach($students as $student)
                                 @php($studentUpdateFormKey = 'student-update-' . $student->id)
                                 @php($studentNameParts = $student->user->studentNameParts())
@@ -333,6 +338,13 @@
                                     </form>
                                 </details>
                             @endforeach
+
+                            <div style="margin-top: 12px; display: flex; justify-content: center;">
+                                <div class="pagination-wrapper">
+                                    {{ $students->links('pagination::bootstrap-5') }}
+                                </div>
+                            </div>
+
                         </div>
                     @endif
                 </div>
@@ -341,6 +353,60 @@
 
     @push('styles')
     <style>
+        .list {
+            padding-bottom: 10px;
+        }
+
+        .pagination-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-top: 16px;
+        }
+
+        .pagination-wrapper {
+            margin-top: 20px;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 6px;
+            list-style: none;
+            padding: 0;
+        }
+
+        .pagination li {
+            display: inline-block;
+        }
+
+        .pagination li a,
+        .pagination li span {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 13px;
+            border: 1px solid #ddd;
+            color: #1b3a6b;
+            background: #fff;
+            transition: 0.2s ease;
+        }
+
+        .pagination li a:hover {
+            background: #1b3a6b;
+            color: #fff;
+        }
+
+        .pagination li.active span {
+            background: #d1a33b;
+            color: #fff;
+            border-color: #d1a33b;
+            font-weight: bold;
+        }
+
+        .pagination li.disabled span {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 
         .password-wrapper {
             display: grid;
