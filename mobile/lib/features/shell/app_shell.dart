@@ -64,6 +64,10 @@ class _AppShellState extends State<AppShell> {
   Future<void> _loadClearance({
     ShellLoadMode mode = ShellLoadMode.initial,
   }) async {
+    if (mode == ShellLoadMode.refresh && _isRefreshing) {
+      return;
+    }
+    
     if (mode == ShellLoadMode.initial) {
       setState(() {
         // Ticket polish: full loading only on first load
