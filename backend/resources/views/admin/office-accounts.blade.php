@@ -163,10 +163,13 @@
 
                     @if(!$hasOfficeAccounts)
                         <div class="empty-state">
-                            No matching office accounts found.
+                            No matching office accounts found for the current filters.
                         </div>
                     @else
                         <div class="list scrollable-list flex-grow">
+                            <div class="mini" style="margin-bottom: 10px;">
+                                Showing {{ $officeAccounts->firstItem() }} – {{ $officeAccounts->lastItem() }} of {{ $officeAccounts->total() }} office accounts
+                            </div>
                             @foreach($officeAccounts as $officeAccount)
                                 @php($officeUpdateFormKey = 'office-account-update-' . $officeAccount->id)
                                 @php($editTypeOptions = $officeAccountEditTypeOptions[$officeAccount->id] ?? [])
@@ -301,6 +304,11 @@
                                     </form>
                                 </details>
                             @endforeach
+                            <div style="margin-top: 12px;">
+                                <div class="pagination-wrapper">
+                                    {{ $officeAccounts->links('pagination::bootstrap-5') }}
+                                </div>
+                            </div>
                         </div>
                     @endif
                 </div>
@@ -309,6 +317,56 @@
 
     @push('styles')
     <style>
+        .list {
+            padding-bottom: 10px;
+        }
+
+        .pagination-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-top: 16px;
+        }
+
+        .pagination-wrapper {
+            margin-top: 20px;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 6px;
+            list-style: none;
+            padding: 0;
+        }
+
+        .pagination li a,
+        .pagination li span {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 13px;
+            border: 1px solid #ddd;
+            color: #1b3a6b;
+            background: #fff;
+        }
+
+        .pagination li a:hover {
+            background: #1b3a6b;
+            color: #fff;
+        }
+
+        .pagination li.active span {
+            background: #d1a33b;
+            color: #fff;
+            border-color: #d1a33b;
+            font-weight: bold;
+        }
+
+        .pagination li.disabled span {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .password-wrapper {
             display: grid;
             gap: 6px;

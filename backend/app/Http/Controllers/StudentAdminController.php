@@ -58,7 +58,8 @@ class StudentAdminController extends Controller
             ->orderBy('users.last_name')
             ->orderBy('users.first_name')
             ->orderBy('users.middle_initial')
-            ->get();
+            ->paginate(50)
+            ->withQueryString();
 
         return view('admin.students', [
             'programs' => \App\Models\Program::orderBy('code')->get(),
@@ -68,7 +69,7 @@ class StudentAdminController extends Controller
             'studentSearch' => $studentSearch,
             'studentProgramId' => $studentProgramId,
             'studentYearLevel' => $studentYearLevel,
-            'hasStudents' => $students->isNotEmpty(),
+            'hasStudents' => $students->total() > 0,
         ]);
     }
 

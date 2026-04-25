@@ -73,7 +73,8 @@ class OfficeAccountAdminController extends Controller
 
         $officeAccounts = $officeAccountsQuery
             ->orderBy('display_name')
-            ->get();
+            ->paginate(50)
+            ->withQueryString();
 
         return view('admin.office-accounts', [
             'programs' => \App\Models\Program::orderBy('code')->get(),
@@ -89,7 +90,7 @@ class OfficeAccountAdminController extends Controller
             'officeSearch' => $officeSearch,
             'officeProgramId' => $officeProgramId,
             'selectedOfficeType' => $officeType,
-            'hasOfficeAccounts' => $officeAccounts->isNotEmpty(),
+            'hasOfficeAccounts' => $officeAccounts->total() > 0,
         ]);
     }
 
