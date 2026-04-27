@@ -3,10 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\Semester;
+use App\Support\CompletedClearanceReportExporter;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use ZipArchive;
+use Illuminate\Support\Collection;
+use RuntimeException;
 use Tests\TestCase;
+use ZipArchive;
 
 class AdminClearanceReportExportTest extends TestCase
 {
@@ -17,6 +20,26 @@ class AdminClearanceReportExportTest extends TestCase
         parent::setUp();
 
         $this->seed(DatabaseSeeder::class);
+    }
+
+    public function test_clearance_history_page_uses_explicit_report_filters(): void
+    {
+        $clearance = $this->createCompletedSeededClearance();
+        $semester = $clearance->semester;
+
+        $response = $this->actingAs($this->seededAdminUser())
+            ->get(route('admin.clearance-history.index', [
+                'history_semester' => $semester->id,
+            ]));
+
+        $response->assertOk()
+            ->assertSee('id="history-export-form"', false)
+            ->assertSee('data-export-semester-select', false)
+            ->assertSee('name="semester_id"', false)
+            ->assertSee('data-export-academic-year-select', false)
+            ->assertSee('name="academic_year"', false)
+            ->assertSee('Download Excel Report')
+            ->assertSee($semester->displayAcademicYear());
     }
 
     public function test_admin_can_download_completed_clearance_excel_report_for_selected_period(): void
@@ -68,6 +91,43 @@ class AdminClearanceReportExportTest extends TestCase
         $this->assertStringContainsString($clearance->reference_number, $programSheetXml);
     }
 
+    public function test_export_redirects_with_validation_when_required_filters_are_missing(): void
+    {
+        $response = $this->actingAs($this->seededAdminUser())
+            ->from(route('admin.clearance-history.index'))
+            ->post(route('admin.clearance-reports.completed.export'), [
+                '_form_key' => 'history-export',
+            ]);
+
+        $response->assertRedirect(route('admin.clearance-history.index'));
+        $response->assertSessionHasErrors(['semester_id', 'academic_year'], null, 'historyExport');
+    }
+
+    public function test_export_redirects_with_message_when_semester_and_academic_year_do_not_match(): void
+    {
+        $admin = $this->seededAdminUser();
+
+        $semester = Semester::create([
+            'label' => '1st Semester 2025-2026',
+            'academic_year' => '2025-2026',
+            'is_active' => false,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->from(route('admin.clearance-history.index'))
+            ->post(route('admin.clearance-reports.completed.export'), [
+                '_form_key' => 'history-export',
+                'semester_id' => $semester->id,
+                'academic_year' => '2024-2025',
+            ]);
+
+        $response->assertRedirect(route('admin.clearance-history.index', [
+            'history_semester' => $semester->id,
+            'history_academic_year' => '2024-2025',
+        ]));
+        $response->assertSessionHas('error', 'The selected semester does not belong to the selected academic year.');
+    }
+
     public function test_export_redirects_with_message_when_selected_period_has_no_completed_clearances(): void
     {
         $admin = $this->seededAdminUser();
@@ -85,7 +145,41 @@ class AdminClearanceReportExportTest extends TestCase
                 'academic_year' => '2025-2026',
             ]);
 
-        $response->assertRedirect(route('admin.clearance-history.index'));
+        $response->assertRedirect(route('admin.clearance-history.index', [
+            'history_semester' => $semester->id,
+            'history_academic_year' => '2025-2026',
+        ]));
         $response->assertSessionHas('error', 'No completed clearances found for the selected semester and academic year.');
+    }
+
+    public function test_export_redirects_with_message_when_report_file_cannot_be_created(): void
+    {
+        $clearance = $this->createCompletedSeededClearance();
+        $semester = $clearance->semester;
+
+        $this->app->instance(CompletedClearanceReportExporter::class, new class extends CompletedClearanceReportExporter
+        {
+            public function export(Semester $semester, Collection $clearances): string
+            {
+                throw new RuntimeException('Spreadsheet support is unavailable.');
+            }
+        });
+
+        $response = $this->actingAs($this->seededAdminUser())
+            ->from(route('admin.clearance-history.index'))
+            ->post(route('admin.clearance-reports.completed.export'), [
+                '_form_key' => 'history-export',
+                'semester_id' => $semester->id,
+                'academic_year' => $semester->displayAcademicYear(),
+            ]);
+
+        $response->assertRedirect(route('admin.clearance-history.index', [
+            'history_semester' => $semester->id,
+            'history_academic_year' => $semester->displayAcademicYear(),
+        ]));
+        $response->assertSessionHas(
+            'error',
+            'Unable to create the Excel report. Please check that PHP ZIP and XML support are enabled, then try again.'
+        );
     }
 }
