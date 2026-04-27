@@ -387,6 +387,43 @@ class ClearanceWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_undoing_approval_on_completed_clearance_clears_completion_artifacts(): void
+    {
+        $clearance = $this->createCompletedSeededClearance();
+        $step = $clearance->steps->first();
+        $officeUser = $step->officeDesignation->activeUsers->first();
+        $oldPdfPath = $clearance->pdf_path;
+
+        $this->assertNotNull($officeUser);
+        $this->assertSame(Clearance::STATUS_COMPLETED, $clearance->status);
+        $this->assertNotNull($clearance->reference_number);
+        $this->assertNotNull($oldPdfPath);
+        $this->assertTrue(Storage::disk('local')->exists($oldPdfPath));
+
+        $this->actingAs($officeUser)
+            ->post(route('office.steps.process', $step), [
+                'action' => 'undo_approval',
+                'confirm_action' => 'undo_approval',
+            ])
+            ->assertRedirect();
+
+        $clearance->refresh();
+        $step->refresh();
+
+        $this->assertSame(Clearance::STATUS_IN_PROGRESS, $clearance->status);
+        $this->assertSame(ClearanceStep::STATUS_AWAITING_ACTION, $step->status);
+        $this->assertNull($clearance->completed_at);
+        $this->assertNull($clearance->reference_number);
+        $this->assertNull($clearance->pdf_path);
+        $this->assertFalse(Storage::disk('local')->exists($oldPdfPath));
+
+        Sanctum::actingAs($clearance->student->user);
+        $this->getJson('/api/clearance/current')
+            ->assertOk()
+            ->assertJsonPath('clearance.status', Clearance::STATUS_IN_PROGRESS)
+            ->assertJsonPath('clearance.pdf_available', false);
+    }
+
     public function test_processed_flagged_step_keeps_view_action_and_flag_reason_on_office_dashboard(): void
     {
         $clearance = $this->startClearanceForSeededStudent();

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ClearanceStep;
 use App\Services\ClearanceWorkflowService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use RuntimeException;
 
@@ -127,6 +128,15 @@ class OfficeDashboardController extends Controller
                 $redirectTo,
                 'error',
                 $exception->getMessage(),
+            );
+        } catch (QueryException $exception) {
+            report($exception);
+
+            return $this->redirectWithInputAndMessage(
+                $request,
+                $redirectTo,
+                'error',
+                'Unable to save this clearance action. Please run the latest database migrations and try again.',
             );
         }
 
