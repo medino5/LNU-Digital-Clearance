@@ -9,6 +9,7 @@ use App\Models\Semester;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
 class ClearanceWorkflowService
@@ -205,11 +206,17 @@ class ClearanceWorkflowService
             return $clearance->fresh(['steps.officeDesignation.activeUsers', 'steps.events']);
         }
 
+        if ($clearance->pdf_path) {
+            Storage::disk('local')->delete($clearance->pdf_path);
+        }
+
         $clearance->update([
             'status' => $statuses->contains(ClearanceStep::STATUS_FLAGGED)
                 ? Clearance::STATUS_FLAGGED
                 : Clearance::STATUS_IN_PROGRESS,
             'completed_at' => null,
+            'reference_number' => null,
+            'pdf_path' => null,
         ]);
 
         return $clearance->fresh(['steps.officeDesignation.activeUsers', 'steps.events']);

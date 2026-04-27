@@ -44,7 +44,8 @@ class StudentClearancePayloadBuilder
                 'status' => $clearance->status,
                 'reference_number' => $clearance->reference_number,
                 'completed_at' => $clearance->completed_at?->toISOString(),
-                'pdf_available' => filled($clearance->pdf_path),
+                'pdf_available' => $clearance->status === Clearance::STATUS_COMPLETED
+                    && filled($clearance->pdf_path),
                 'counts' => [
                     'total' => $steps->count(),
                     'approved' => $steps->where('status', 'approved')->count(),
