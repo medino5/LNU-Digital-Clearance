@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\Clearance;
 use App\Models\Semester;
 use Illuminate\Support\Collection;
+use RuntimeException;
 use ZipArchive;
 
 class CompletedClearanceReportExporter
@@ -14,6 +15,14 @@ class CompletedClearanceReportExporter
      */
     public function export(Semester $semester, Collection $clearances): string
     {
+        if (! class_exists(ZipArchive::class)) {
+            throw new RuntimeException('PHP ZipArchive is required to create Excel reports.');
+        }
+
+        if (! class_exists(\XMLWriter::class)) {
+            throw new RuntimeException('PHP XMLWriter is required to create Excel reports.');
+        }
+
         $clearances = $clearances
             ->sortBy([
                 ['program_code', 'asc'],
@@ -26,7 +35,7 @@ class CompletedClearanceReportExporter
         $tempPath = tempnam(sys_get_temp_dir(), 'clearance-report-');
 
         if ($tempPath === false) {
-            throw new \RuntimeException('Unable to create a temporary report file.');
+            throw new RuntimeException('Unable to create a temporary report file.');
         }
 
         $xlsxPath = $tempPath . '.xlsx';
@@ -40,7 +49,7 @@ class CompletedClearanceReportExporter
         $zip = new ZipArchive();
 
         if ($zip->open($xlsxPath, ZipArchive::CREATE) !== true) {
-            throw new \RuntimeException('Unable to create the Excel report archive.');
+            throw new RuntimeException('Unable to create the Excel report archive.');
         }
 
         $sheetCount = count($workbook['sheets']);

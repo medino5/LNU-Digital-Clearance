@@ -6,6 +6,9 @@
 @section('page')
     @php($validationErrors = collect($errors->getBags())->flatMap(fn ($bag) => $bag->all()))
     @php($activeFormKey = old('_form_key'))
+    @php($selectedSemester = $semesters->firstWhere('id', $selectedSemesterId))
+    @php($exportSemesterId = old('semester_id', $selectedSemesterId ?: ''))
+    @php($exportAcademicYear = old('academic_year', $selectedAcademicYear ?: ($selectedSemester?->displayAcademicYear() ?? '')))
 
     <div class="admin-page">
         @include('admin.partials.page-feedback')
@@ -22,7 +25,7 @@
                 <div>
                     <div class="eyebrow">Clearance History</div>
                 </div>
-                <div class="toolbar" style="gap: 12px; align-items: flex-end;">
+                <div class="history-toolbar">
                     <form method="GET" action="{{ route('admin.clearance-history.index') }}" class="toolbar" style="gap: 12px; align-items: flex-end;">
                         <label class="history-filter">
                             <span class="mini">Academic Year</span>
@@ -48,21 +51,59 @@
                         </label>
                     </form>
 
-                    <form method="POST" action="{{ route('admin.clearance-reports.completed.export') }}" id="history-export-form">
+                    <form method="POST" action="{{ route('admin.clearance-reports.completed.export') }}" id="history-export-form" class="history-export-form">
                         @csrf
                         <input type="hidden" name="_form_key" value="history-export">
+
                         <label class="history-filter">
-                            <span class="mini">Download Report</span>
-                            <button type="submit" class="button history-download-button">Download Excel Report</button>
+                            <span class="mini">Report Semester</span>
+                            <select name="semester_id" data-export-semester-select required>
+                                <option value="">Choose semester</option>
+                                @foreach($semesters as $semester)
+                                    <option
+                                        value="{{ $semester->id }}"
+                                        data-academic-year="{{ $semester->displayAcademicYear() }}"
+                                        {{ (string) $exportSemesterId === (string) $semester->id ? 'selected' : '' }}
+                                    >
+                                        {{ $semester->label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @if($activeFormKey === 'history-export')
+                                <x-field-error field="semester_id" bag="historyExport" />
+                            @endif
                         </label>
-                        <input type="hidden" name="semester_id" value="{{ old('semester_id', $selectedSemesterId) }}">
-                        <input type="hidden" name="academic_year" value="{{ old('academic_year', $selectedAcademicYear) }}">
+
+                        <label class="history-filter">
+                            <span class="mini">Report Academic Year</span>
+                            <select name="academic_year" data-export-academic-year-select required>
+                                <option value="">Choose academic year</option>
+                                @foreach($academicYears as $academicYear)
+                                    <option value="{{ $academicYear }}" {{ $exportAcademicYear === $academicYear ? 'selected' : '' }}>
+                                        {{ $academicYear }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @if($activeFormKey === 'history-export')
+                                <x-field-error field="academic_year" bag="historyExport" />
+                            @endif
+                        </label>
+
+                        <button
+                            type="submit"
+                            class="button history-download-button"
+                            data-loading-button
+                            data-loading-text="Preparing Excel..."
+                            {{ $semesters->isEmpty() ? 'disabled' : '' }}
+                        >
+                            Download Excel Report
+                        </button>
                     </form>
                 </div>
                 
             @if($activeFormKey === 'history-export')
                 <div class="empty-state" style="margin-bottom: 12px;">
-                    <p class="mini" style="margin: 0 0 8px;">Export validation</p>
+                    <p class="mini" style="margin: 0 0 8px;">Report download needs a semester and academic year.</p>
                     <x-field-error field="semester_id" bag="historyExport" />
                     <x-field-error field="academic_year" bag="historyExport" />
                 </div>
@@ -133,13 +174,28 @@
             gap: 18px;
         }
 
+        .history-toolbar {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(320px, 0.85fr);
+            gap: 16px;
+            align-items: end;
+        }
+
         .history-panel .toolbar {
             gap: 12px;
             align-items: flex-end;
         }
 
+        .history-export-form {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: start;
+        }
+
         .history-download-button {
             min-width: 220px;
+            margin-top: 20px;
         }
 
         .history-record + .history-record {
@@ -147,17 +203,43 @@
         }
 
         @media (max-width: 980px) {
+            .history-toolbar,
+            .history-export-form,
             .history-panel .toolbar,
             .history-panel .toolbar form {
                 width: 100%;
+                grid-template-columns: 1fr;
                 flex-direction: column;
                 align-items: stretch !important;
             }
 
             .history-download-button {
                 width: 100%;
+                margin-top: 0;
             }
         }
     </style>
+    @endpush
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const semesterSelect = document.querySelector('[data-export-semester-select]');
+            const academicYearSelect = document.querySelector('[data-export-academic-year-select]');
+
+            if (!semesterSelect || !academicYearSelect) {
+                return;
+            }
+
+            semesterSelect.addEventListener('change', function () {
+                const selectedOption = semesterSelect.options[semesterSelect.selectedIndex];
+                const academicYear = selectedOption?.dataset.academicYear || '';
+
+                if (academicYear) {
+                    academicYearSelect.value = academicYear;
+                }
+            });
+        });
+    </script>
     @endpush
 @endsection

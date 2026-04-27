@@ -6,6 +6,7 @@ use App\Models\Clearance;
 use App\Models\Semester;
 use App\Support\CompletedClearanceReportExporter;
 use Illuminate\Http\Request;
+use RuntimeException;
 
 class AdminClearanceReportController extends Controller
 {
@@ -64,16 +65,22 @@ class AdminClearanceReportController extends Controller
             ],
             $redirectTo,
             [
+                'semester_id.required' => 'Choose a semester before downloading the report.',
+                'academic_year.required' => 'Choose an academic year before downloading the report.',
                 'academic_year.regex' => 'Academic year must use the YYYY-YYYY format.',
             ],
         );
 
         $semester = Semester::query()->findOrFail($data['semester_id']);
+        $filteredRedirectTo = route('admin.clearance-history.index', [
+            'history_semester' => $semester->id,
+            'history_academic_year' => $data['academic_year'],
+        ]);
 
         if ($semester->displayAcademicYear() !== $data['academic_year']) {
             return $this->redirectWithInputAndMessage(
                 $request,
-                $redirectTo,
+                $filteredRedirectTo,
                 'error',
                 'The selected semester does not belong to the selected academic year.',
             );
@@ -89,13 +96,25 @@ class AdminClearanceReportController extends Controller
         if ($clearances->isEmpty()) {
             return $this->redirectWithInputAndMessage(
                 $request,
-                $redirectTo,
+                $filteredRedirectTo,
                 'error',
                 'No completed clearances found for the selected semester and academic year.',
             );
         }
 
-        $filePath = $this->exporter->export($semester, $clearances);
+        try {
+            $filePath = $this->exporter->export($semester, $clearances);
+        } catch (RuntimeException $exception) {
+            report($exception);
+
+            return $this->redirectWithInputAndMessage(
+                $request,
+                $filteredRedirectTo,
+                'error',
+                'Unable to create the Excel report. Please check that PHP ZIP and XML support are enabled, then try again.',
+            );
+        }
+
         $fileName = sprintf(
             'completed-clearances-%s-%s.xlsx',
             str($semester->label)->lower()->replaceMatches('/[^a-z0-9]+/', '-')->trim('-'),
