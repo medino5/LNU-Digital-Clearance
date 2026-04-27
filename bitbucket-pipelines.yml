@@ -1,0 +1,42 @@
+definitions:
+  caches:
+    composer-cache: ~/.composer/cache
+    flutter-pub-cache: ~/.pub-cache
+
+  steps:
+    - step: &backend-tests
+        name: Backend Laravel Tests
+        image: composer:2
+        caches:
+          - composer-cache
+        script:
+          - cd backend
+          - apk add --no-cache git unzip libzip-dev sqlite-dev
+          - docker-php-ext-install zip pdo_sqlite
+          - composer install --no-interaction --prefer-dist --no-progress
+          - cp .env.example .env
+          - php artisan key:generate
+          - php artisan test
+
+    - step: &mobile-tests
+        name: Mobile Flutter Tests
+        image: ghcr.io/cirruslabs/flutter:stable
+        caches:
+          - flutter-pub-cache
+        script:
+          - cd mobile
+          - flutter pub get
+          - flutter analyze
+          - flutter test
+
+pipelines:
+  default:
+    - parallel:
+        - step: *backend-tests
+        - step: *mobile-tests
+
+  branches:
+    main:
+      - parallel:
+          - step: *backend-tests
+          - step: *mobile-tests
