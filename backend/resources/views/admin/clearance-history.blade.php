@@ -18,7 +18,7 @@
             </div>
         </section>
 
-        <div class="admin-section-card history-panel">
+        <div class="admin-section-card history-panel" id="clearance-history-panel">
                 <div>
                     <div class="eyebrow">Clearance History</div>
                 </div>

@@ -21,7 +21,7 @@
 
             <div class="grid-2">
                 <div class="section-stack">
-                    <div class="admin-section-card">
+                    <div class="admin-section-card" id="program-create-card">
                         <div class="eyebrow">Create Program</div>
 
                         @php($programCreateFormKey = 'program-create')
@@ -88,7 +88,7 @@
                 </div>
 
                 <div class="section-stack">
-                    <div class="admin-section-card">
+                    <div class="admin-section-card" id="program-records">
                         <div class="eyebrow">Programs</div>
 
                         <div class="list scrollable-list">

@@ -531,10 +531,127 @@
             color: white;
             padding: 22px 28px;
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
             align-items: center;
+            gap: 18px;
             z-index: 999;
             box-shadow: 0 4px 18px rgba(14, 39, 66, 0.10);
+        }
+
+        .admin-action-search {
+            position: relative;
+            width: min(560px, 52vw);
+        }
+
+        .admin-action-search-input {
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            padding: 12px 44px 12px 18px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        .admin-action-search-input::placeholder {
+            color: rgba(255, 255, 255, 0.72);
+        }
+
+        .admin-action-search-input:focus {
+            outline: 2px solid rgba(210, 168, 61, 0.6);
+            outline-offset: 2px;
+            border-color: rgba(210, 168, 61, 0.72);
+            background: rgba(255, 255, 255, 0.18);
+        }
+
+        .admin-action-search-mark {
+            position: absolute;
+            top: 50%;
+            right: 16px;
+            transform: translateY(-50%);
+            font-size: 13px;
+            font-weight: 800;
+            color: rgba(255, 255, 255, 0.72);
+            pointer-events: none;
+        }
+
+        .admin-action-search-results {
+            position: absolute;
+            top: calc(100% + 10px);
+            left: 0;
+            right: 0;
+            display: none;
+            max-height: 360px;
+            overflow-y: auto;
+            padding: 8px;
+            border-radius: 18px;
+            background: #fffdf8;
+            border: 1px solid #e4dacd;
+            box-shadow: 0 20px 44px rgba(14, 39, 66, 0.22);
+            z-index: 1100;
+        }
+
+        .admin-action-search-results.is-open {
+            display: grid;
+            gap: 6px;
+        }
+
+        .admin-action-search-result {
+            display: grid;
+            gap: 4px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            color: #183a63;
+            text-decoration: none;
+        }
+
+        .admin-action-search-result:hover,
+        .admin-action-search-result:focus-visible,
+        .admin-action-search-result.is-active {
+            background: rgba(210, 168, 61, 0.16);
+            outline: none;
+        }
+
+        .admin-action-search-result strong {
+            font-size: 14px;
+        }
+
+        .admin-action-search-result span {
+            color: #667085;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .admin-action-search-empty {
+            padding: 12px 14px;
+            color: #667085;
+            font-size: 13px;
+        }
+
+        .admin-main [id] {
+            scroll-margin-top: 130px;
+        }
+
+        .admin-focus-target {
+            animation: adminTargetPulse 1.8s ease;
+            outline: 3px solid rgba(210, 168, 61, 0.72);
+            outline-offset: 4px;
+        }
+
+        @keyframes adminTargetPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(210, 168, 61, 0.38);
+            }
+
+            100% {
+                box-shadow: 0 0 0 18px rgba(210, 168, 61, 0);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .admin-action-search {
+                width: 100%;
+            }
         }
 
         .admin-user {
@@ -593,6 +710,94 @@
 <body>
 
 @if(auth()->check() && request()->routeIs('admin.*'))
+    @php
+        $adminActionSearchItems = [
+            [
+                'title' => 'Dashboard',
+                'description' => 'Open the super admin overview and system snapshots.',
+                'url' => route('admin.dashboard'),
+                'keywords' => ['home', 'overview', 'stats', 'statistics', 'summary'],
+            ],
+            [
+                'title' => 'Students',
+                'description' => 'Open the student roster and account tools.',
+                'url' => route('admin.students.index') . '#student-records',
+                'keywords' => ['student', 'students', 'roster', 'accounts', 'search students'],
+            ],
+            [
+                'title' => 'Add Student',
+                'description' => 'Create a new student account.',
+                'url' => route('admin.students.index') . '#student-create-card',
+                'keywords' => ['add student', 'create student', 'new student', 'student account'],
+            ],
+            [
+                'title' => 'Search Students',
+                'description' => 'Find students by name, ID, program, or year level.',
+                'url' => route('admin.students.index') . '#student-records',
+                'keywords' => ['search student', 'find student', 'student filter', 'student lookup'],
+            ],
+            [
+                'title' => 'Programs',
+                'description' => 'Manage program codes, names, and organizations.',
+                'url' => route('admin.programs.index') . '#program-records',
+                'keywords' => ['program', 'programs', 'course', 'organization', 'org'],
+            ],
+            [
+                'title' => 'Add Program',
+                'description' => 'Create a new program entry.',
+                'url' => route('admin.programs.index') . '#program-create-card',
+                'keywords' => ['add program', 'create program', 'new program', 'program code'],
+            ],
+            [
+                'title' => 'Semesters',
+                'description' => 'Manage active and historical clearance periods.',
+                'url' => route('admin.semesters.index') . '#semester-records',
+                'keywords' => ['semester', 'semesters', 'academic year', 'school year', 'period'],
+            ],
+            [
+                'title' => 'Add Semester',
+                'description' => 'Create a new semester and academic year.',
+                'url' => route('admin.semesters.index') . '#semester-create-card',
+                'keywords' => ['add semester', 'create semester', 'new semester', 'active semester'],
+            ],
+            [
+                'title' => 'Routing Configuration',
+                'description' => 'Review designation routing and assignment rules.',
+                'url' => route('admin.routing.index') . '#routing-configuration',
+                'keywords' => ['routing', 'route', 'designation', 'designations', 'configuration'],
+            ],
+            [
+                'title' => 'Assign Designation Holder',
+                'description' => 'Assign eligible users to active office designations.',
+                'url' => route('admin.routing.index') . '#routing-configuration',
+                'keywords' => ['assign', 'assign holder', 'designation holder', 'office holder'],
+            ],
+            [
+                'title' => 'Office Accounts',
+                'description' => 'Open staff office account records.',
+                'url' => route('admin.office-accounts.index') . '#office-records',
+                'keywords' => ['office account', 'office accounts', 'staff', 'signer', 'officer'],
+            ],
+            [
+                'title' => 'Add Office Account',
+                'description' => 'Create a new staff office account.',
+                'url' => route('admin.office-accounts.index') . '#office-account-create-card',
+                'keywords' => ['add office account', 'create office account', 'new office account', 'staff account'],
+            ],
+            [
+                'title' => 'Clearance History',
+                'description' => 'Review completed clearances by semester and academic year.',
+                'url' => route('admin.clearance-history.index') . '#clearance-history-panel',
+                'keywords' => ['clearance history', 'history', 'completed clearance', 'completed clearances'],
+            ],
+            [
+                'title' => 'Download Excel Report',
+                'description' => 'Export completed clearance history as an Excel workbook.',
+                'url' => route('admin.clearance-history.index') . '#history-export-form',
+                'keywords' => ['excel', 'report', 'download', 'export', 'xlsx', 'clearance report'],
+            ],
+        ];
+    @endphp
     <div class="admin-layout">
 
         <aside class="admin-sidebar">
@@ -619,6 +824,25 @@
 
         <main class="admin-main">
             <header class="admin-header">
+                <div class="admin-action-search" data-admin-action-search>
+                    <input
+                        type="search"
+                        class="admin-action-search-input"
+                        data-admin-action-search-input
+                        aria-label="Search admin actions"
+                        aria-controls="admin-action-search-results"
+                        autocomplete="off"
+                        placeholder="Search admin actions"
+                    >
+                    <span class="admin-action-search-mark">/</span>
+                    <div
+                        id="admin-action-search-results"
+                        class="admin-action-search-results"
+                        data-admin-action-search-results
+                        role="listbox"
+                    ></div>
+                </div>
+
                 <div class="admin-user">
                     <span>{{ auth()->user()->name }}</span>
                     <div class="admin-user-avatar">
@@ -674,6 +898,167 @@ document.addEventListener('DOMContentLoaded', function () {
                 submitButton.dataset.loadingText || 'Processing...';
         });
     });
+
+    @if(auth()->check() && request()->routeIs('admin.*'))
+        const adminActionSearchItems = @json($adminActionSearchItems);
+        const adminActionSearch = document.querySelector('[data-admin-action-search]');
+        const adminActionSearchInput = document.querySelector('[data-admin-action-search-input]');
+        const adminActionSearchResults = document.querySelector('[data-admin-action-search-results]');
+        let adminActionActiveIndex = 0;
+        let adminActionRenderedLinks = [];
+
+        const normalizeAdminActionSearch = function (value) {
+            return String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
+        };
+
+        const indexedAdminActionItems = adminActionSearchItems.map(function (item) {
+            return {
+                ...item,
+                searchText: normalizeAdminActionSearch([
+                    item.title,
+                    item.description,
+                    ...(item.keywords || []),
+                ].join(' ')),
+            };
+        });
+
+        const closeAdminActionResults = function () {
+            adminActionSearchResults.classList.remove('is-open');
+            adminActionSearchResults.innerHTML = '';
+            adminActionRenderedLinks = [];
+            adminActionActiveIndex = 0;
+        };
+
+        const setAdminActionActiveResult = function (index) {
+            adminActionActiveIndex = index;
+            adminActionRenderedLinks.forEach(function (link, linkIndex) {
+                link.classList.toggle('is-active', linkIndex === adminActionActiveIndex);
+                link.setAttribute('aria-selected', linkIndex === adminActionActiveIndex ? 'true' : 'false');
+            });
+        };
+
+        const renderAdminActionResults = function () {
+            const query = normalizeAdminActionSearch(adminActionSearchInput.value);
+
+            adminActionSearchResults.innerHTML = '';
+            adminActionRenderedLinks = [];
+            adminActionActiveIndex = 0;
+
+            if (!query) {
+                closeAdminActionResults();
+                return;
+            }
+
+            const queryWords = query.split(' ');
+            const matches = indexedAdminActionItems
+                .filter(function (item) {
+                    return queryWords.every(function (word) {
+                        return item.searchText.includes(word);
+                    });
+                })
+                .slice(0, 8);
+
+            adminActionSearchResults.classList.add('is-open');
+
+            if (matches.length === 0) {
+                const emptyResult = document.createElement('div');
+                emptyResult.className = 'admin-action-search-empty';
+                emptyResult.textContent = 'No matching admin action found.';
+                adminActionSearchResults.appendChild(emptyResult);
+                return;
+            }
+
+            matches.forEach(function (item, index) {
+                const resultLink = document.createElement('a');
+                const resultTitle = document.createElement('strong');
+                const resultDescription = document.createElement('span');
+
+                resultLink.className = 'admin-action-search-result';
+                resultLink.href = item.url;
+                resultLink.setAttribute('role', 'option');
+                resultLink.setAttribute('aria-selected', index === 0 ? 'true' : 'false');
+
+                resultTitle.textContent = item.title;
+                resultDescription.textContent = item.description;
+
+                resultLink.appendChild(resultTitle);
+                resultLink.appendChild(resultDescription);
+                adminActionSearchResults.appendChild(resultLink);
+                adminActionRenderedLinks.push(resultLink);
+            });
+
+            setAdminActionActiveResult(0);
+        };
+
+        if (adminActionSearch && adminActionSearchInput && adminActionSearchResults) {
+            adminActionSearchInput.addEventListener('input', renderAdminActionResults);
+
+            adminActionSearchInput.addEventListener('focus', function () {
+                if (adminActionSearchInput.value.trim() !== '') {
+                    renderAdminActionResults();
+                }
+            });
+
+            adminActionSearchInput.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    closeAdminActionResults();
+                    adminActionSearchInput.blur();
+                    return;
+                }
+
+                if (!adminActionRenderedLinks.length) {
+                    return;
+                }
+
+                if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    setAdminActionActiveResult((adminActionActiveIndex + 1) % adminActionRenderedLinks.length);
+                }
+
+                if (event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    setAdminActionActiveResult(
+                        (adminActionActiveIndex - 1 + adminActionRenderedLinks.length) % adminActionRenderedLinks.length
+                    );
+                }
+
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    window.location.href = adminActionRenderedLinks[adminActionActiveIndex].href;
+                }
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!adminActionSearch.contains(event.target)) {
+                    closeAdminActionResults();
+                }
+            });
+        }
+
+        const highlightAdminHashTarget = function () {
+            const targetId = decodeURIComponent(window.location.hash.replace('#', ''));
+
+            if (!targetId) {
+                return;
+            }
+
+            const target = document.getElementById(targetId);
+
+            if (!target) {
+                return;
+            }
+
+            target.classList.add('admin-focus-target');
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            setTimeout(function () {
+                target.classList.remove('admin-focus-target');
+            }, 2200);
+        };
+
+        highlightAdminHashTarget();
+        window.addEventListener('hashchange', highlightAdminHashTarget);
+    @endif
 });
 </script>
 @stack('scripts')

@@ -20,7 +20,7 @@
 
             <div class="grid-2 align-stretch">
                 <div class="section-stack">
-                    <div class="admin-section-card">
+                    <div class="admin-section-card" id="semester-create-card">
                         <div class="eyebrow">Create Semester</div>
                         @php($semesterCreateFormKey = 'semester-create')
                         <form method="POST" action="{{ route('admin.semesters.store') }}">
@@ -58,7 +58,7 @@
                 </div>
 
                 <div class="section-stack">
-                    <div class="admin-section-card">
+                    <div class="admin-section-card" id="semester-records">
                         <div class="eyebrow">Semesters</div>
                         <div class="list scrollable-list">
                             @foreach($semesters as $semester)
