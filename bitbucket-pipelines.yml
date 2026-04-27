@@ -30,11 +30,6 @@ definitions:
           - flutter test
 
 pipelines:
-  default:
-    - parallel:
-        - step: *backend-tests
-        - step: *mobile-tests
-
   branches:
     main:
       - parallel:
