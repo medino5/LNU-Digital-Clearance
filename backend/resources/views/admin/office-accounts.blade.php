@@ -10,15 +10,20 @@
     <div class="admin-page">
         @include('admin.partials.page-feedback')
 
-        <section class="admin-page-header">
+        <section class="admin-page-header office-accounts-header">
             <div>
                 <h1>OFFICE ACCOUNTS</h1>
                 <p>Manage reusable staff accounts for designation assignments.</p>
             </div>
+
+            <button type="button" class="button" id="openOfficeCreateModal">
+                + Add Office Account
+            </button>
         </section>
 
-            <div class="grid-2 align-stretch">
-                <div class="admin-section-card" id="office-account-create-card">
+            <div class="office-accounts-layout">
+                <div class="office-create-modal-backdrop" id="officeCreateModal" hidden>
+                    <div class="admin-section-card office-create-modal" id="office-account-create-card">
                     <div class="eyebrow">Create Office Account</div>
                     @php($officeCreateFormKey = 'office-account-create')
                     <form method="POST" action="{{ route('admin.office-accounts.store') }}" data-office-account-form>
@@ -120,7 +125,7 @@
                                 @endif
                             </label>
                         </div>
-                        <div class="form-actions">
+                        <div class="form-actions office-modal-actions">
                             <button
                                 type="submit"
                                 data-loading-button
@@ -128,11 +133,21 @@
                             >
                                 Create Office Account
                             </button>
-                        </div>
-                    </form>
-                </div>
 
-                <div class="admin-section-card full-height" id="office-records">
+                            <button
+                                type="button"
+                                class="button secondary secondary-button"
+                                onclick="document.getElementById('officeCreateModal').hidden = true; document.body.style.overflow = '';"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+
+                        </form>
+                </div>
+            </div>
+
+                <div class="admin-section-card full-height office-list-card" id="office-records">
                     <div class="eyebrow">Office Account List</div>
 
                     <form method="GET" action="{{ route('admin.office-accounts.index') }}" class="office-filter-bar">
@@ -162,11 +177,14 @@
                     </form>
 
                     @if(!$hasOfficeAccounts)
-                        <div class="empty-state">
-                            No matching office accounts found for the current filters.
+                        <div class="empty-state office-empty-state">
+                            <strong>No office accounts found.</strong>
+                            <p class="mini">
+                                No staff accounts matched your current filters. Try changing the name, username, scope, or office type filter.
+                            </p>
                         </div>
                     @else
-                        <div class="list scrollable-list flex-grow">
+                        <div class="list flex-grow office-account-list">
                             <div class="mini" style="margin-bottom: 10px;">
                                 Showing {{ $officeAccounts->firstItem() }} – {{ $officeAccounts->lastItem() }} of {{ $officeAccounts->total() }} office accounts
                             </div>
@@ -174,11 +192,20 @@
                                 @php($officeUpdateFormKey = 'office-account-update-' . $officeAccount->id)
                                 @php($editTypeOptions = $officeAccountEditTypeOptions[$officeAccount->id] ?? [])
                                 <details class="record" {{ $activeFormKey === $officeUpdateFormKey ? 'open' : '' }}>
-                                    <summary>{{ $officeAccount->display_name }}</summary>
-                                    <p class="mini">
-                                        {{ $officeAccount->officeTypeLabel() }}
-                                        | {{ $officeAccount->scopeSummaryLabel() }}
-                                        | Username: {{ $officeAccount->user->username }}
+                                    <summary class="office-account-summary">
+                                        <div>
+                                            <strong class="office-account-name">{{ $officeAccount->display_name }}</strong>
+                                            <div class="mini">Username: {{ $officeAccount->user->username }}</div>
+                                        </div>
+
+                                        <div class="office-account-badges">
+                                            <span class="office-pill">{{ $officeAccount->officeTypeLabel() }}</span>
+                                            <span class="office-pill">{{ $officeAccount->scopeSummaryLabel() }}</span>
+                                        </div>
+                                    </summary>
+
+                                    <p class="mini assignment-note">
+                                        Reusable staff account for designation assignment.
                                     </p>
                                     <div class="divider"></div>
                                     <form method="POST" action="{{ route('admin.office-accounts.update', $officeAccount) }}" data-office-account-form>
@@ -418,6 +445,15 @@
             pointer-events: none;
         }
 
+        .admin-page-header {
+            position: sticky;
+            top: 90px;
+            z-index: 20;
+            background: #f7f1e6;
+            padding-top: 18px;
+            padding-bottom: 14px;
+        }
+
         .compact-copy {
             margin-top: 0;
             margin-bottom: 14px;
@@ -451,6 +487,136 @@
             align-items: center;
             justify-content: center;
             text-decoration: none;
+        }
+
+        .office-accounts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .office-accounts-layout {
+            display: grid;
+            gap: 18px;
+        }
+
+        .office-list-card {
+            width: 100%;
+        }
+
+        .office-account-list {
+            max-height: none !important;
+            overflow: visible !important;
+        }
+
+        #office-records {
+            max-height: none !important;
+            overflow: visible !important;
+        }
+
+        .office-create-modal-backdrop[hidden] {
+            display: none !important;
+        }
+
+        .office-create-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 24px;
+            z-index: 1000;
+        }
+
+        .office-create-modal {
+            width: min(720px, 100%);
+            max-height: 90vh;
+            overflow-y: auto;
+
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 24px 28px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+
+            position: relative;
+            z-index: 1001;
+        }
+
+        .office-account-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 14px;
+        }
+
+        .office-account-name {
+            color: var(--navy);
+        }
+
+        .office-account-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .office-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #f3efe6;
+            color: #1b3a6b;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .assignment-note {
+            margin-top: 8px;
+            color: #5b6578;
+        }
+
+        .office-empty-state p {
+            margin-bottom: 0;
+        }
+
+        #closeOfficeCreateModal {
+            margin-top: 12px;
+            position: relative;
+            z-index: 5;
+            pointer-events: auto;
+        }
+
+        .office-modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            align-items: center;
+        }
+
+        .office-modal-actions button {
+            flex: none;
+        }
+
+        html {
+            scrollbar-width: thin;
+        }
+
+        body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        body::-webkit-scrollbar-thumb {
+            background: rgba(15, 23, 42, 0.25);
+            border-radius: 999px;
+        }
+
+        body::-webkit-scrollbar-track {
+            background: transparent;
         }
 
         @media (max-width: 1100px) {
@@ -492,6 +658,27 @@
                 toggleButton.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
                 toggleButton.setAttribute('title', isHidden ? 'Hide password' : 'Show password');
             });
+        });
+
+        const openOfficeCreateModal = document.getElementById('openOfficeCreateModal');
+        const closeOfficeCreateModal = document.getElementById('closeOfficeCreateModal');
+        const officeCreateModal = document.getElementById('officeCreateModal');
+
+        openOfficeCreateModal?.addEventListener('click', () => {
+            officeCreateModal.hidden = false;
+            document.body.style.overflow = 'hidden';
+        });
+
+        closeOfficeCreateModal?.addEventListener('click', () => {
+            officeCreateModal.hidden = true;
+            document.body.style.overflow = '';
+        });
+
+        officeCreateModal?.addEventListener('click', (event) => {
+            if (event.target === officeCreateModal) {
+                officeCreateModal.hidden = true;
+                document.body.style.overflow = '';
+            }
         });
 
         // Office scope behavior
