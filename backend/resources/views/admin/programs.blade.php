@@ -32,8 +32,6 @@
             <div class="management-card-header">
                 <div>
                     <div class="eyebrow">Program Records</div>
-                    <h2>Programs list</h2>
-                    <p class="section-copy">View and update official program details.</p>
                 </div>
             </div>
 

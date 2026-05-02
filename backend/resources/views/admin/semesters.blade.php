@@ -32,8 +32,6 @@
             <div class="management-card-header">
                 <div>
                     <div class="eyebrow">Semester Records</div>
-                    <h2>Semesters list</h2>
-                    <p class="section-copy">View active and historical clearance periods.</p>
                 </div>
             </div>
 

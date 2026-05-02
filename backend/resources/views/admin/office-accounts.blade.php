@@ -32,8 +32,6 @@
             <div class="management-card-header">
                 <div>
                     <div class="eyebrow">Office Account List</div>
-                    <h2>Office accounts list</h2>
-                    <p class="section-copy">Search, filter, and update reusable office accounts.</p>
                 </div>
             </div>
 
