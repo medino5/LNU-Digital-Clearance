@@ -5,165 +5,251 @@
 
 @section('page')
     @php
-        $validationErrors = collect($errors->getBags())->flatMap(fn ($bag) => $bag->all());
         $activeFormKey = old('_form_key');
+        $programCreateFormKey = 'program-create';
+        $shouldOpenCreate = $activeFormKey === $programCreateFormKey;
     @endphp
 
-    <div class="admin-page">
+    <div class="admin-page management-page">
         @include('admin.partials.page-feedback')
 
-        <section class="admin-page-header">
+        <section class="admin-page-header management-header">
             <div>
                 <h1>PROGRAMS</h1>
                 <p>Manage program codes, names, and organization labels.</p>
             </div>
+
+            <button
+                type="button"
+                class="management-primary-action"
+                data-modal-open="program-create-card"
+            >
+                Add Program
+            </button>
         </section>
 
-            <div class="grid-2">
-                <div class="section-stack">
-                    <div class="admin-section-card" id="program-create-card">
+        <section class="admin-section-card management-card" id="program-records">
+            <div class="management-card-header">
+                <div>
+                    <div class="eyebrow">Program Records</div>
+                    <h2>Programs list</h2>
+                    <p class="section-copy">View and update official program details.</p>
+                </div>
+            </div>
+
+            <div class="management-table-wrap">
+                <table class="management-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Program Name</th>
+                            <th>Organization</th>
+                            <th class="management-action-col">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($programs as $program)
+                            @php
+                                $programUpdateFormKey = 'program-update-' . $program->id;
+                            @endphp
+
+                            <tr>
+                                <td>
+                                    <strong class="program-code">{{ $program->code }}</strong>
+                                </td>
+                                <td>
+                                    <div class="table-main-text">{{ $program->name }}</div>
+                                </td>
+                                <td>
+                                    <span class="org-pill">{{ $program->org_name }}</span>
+                                </td>
+                                <td>
+                                    <button
+                                        type="button"
+                                        class="button secondary table-action-button"
+                                        data-modal-open="program-edit-{{ $program->id }}"
+                                    >
+                                        Edit
+                                    </button>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4">
+                                    <div class="empty-state">No programs added yet.</div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        {{-- CREATE MODAL --}}
+        <div
+            class="management-modal {{ $shouldOpenCreate ? 'is-open' : '' }}"
+            id="program-create-card"
+            data-modal
+        >
+            <div class="management-modal-panel">
+                <div class="management-modal-header">
+                    <div>
                         <div class="eyebrow">Create Program</div>
+                        <h2>Add Program</h2>
+                    </div>
 
-                        @php($programCreateFormKey = 'program-create')
+                    <button type="button" class="modal-close-button" data-modal-close>&times;</button>
+                </div>
 
-                        <form method="POST" action="{{ route('admin.programs.store') }}">
-                            @csrf
-                            <input type="hidden" name="_form_key" value="{{ $programCreateFormKey }}">
+                <form method="POST" action="{{ route('admin.programs.store') }}">
+                    @csrf
+                    <input type="hidden" name="_form_key" value="{{ $programCreateFormKey }}">
 
-                            <div class="field-grid">
-                                <label>
-                                    Program Code
-                                    <input
-                                        type="text"
-                                        name="code"
-                                        placeholder="BSIT"
-                                        value="{{ $activeFormKey === $programCreateFormKey ? old('code') : '' }}"
-                                        required
-                                    >
-                                    @if($activeFormKey === $programCreateFormKey)
-                                        <x-field-error field="code" bag="programCreate" />
-                                    @endif
-                                </label>
+                    <div class="field-grid">
+                        <label>
+                            Program Code
+                            <input
+                                type="text"
+                                name="code"
+                                placeholder="BSIT"
+                                value="{{ $shouldOpenCreate ? old('code') : '' }}"
+                                required
+                            >
+                            @if($shouldOpenCreate)
+                                <x-field-error field="code" bag="programCreate" />
+                            @endif
+                        </label>
 
-                                <label>
-                                    Organization Name
-                                    <input
-                                        type="text"
-                                        name="org_name"
-                                        placeholder="DIGITS"
-                                        value="{{ $activeFormKey === $programCreateFormKey ? old('org_name') : '' }}"
-                                        required
-                                    >
-                                    @if($activeFormKey === $programCreateFormKey)
-                                        <x-field-error field="org_name" bag="programCreate" />
-                                    @endif
-                                </label>
-                            </div>
+                        <label>
+                            Organization Name
+                            <input
+                                type="text"
+                                name="org_name"
+                                placeholder="DIGITS"
+                                value="{{ $shouldOpenCreate ? old('org_name') : '' }}"
+                                required
+                            >
+                            @if($shouldOpenCreate)
+                                <x-field-error field="org_name" bag="programCreate" />
+                            @endif
+                        </label>
+                    </div>
 
-                            <p class="mini" style="margin-top: -4px;">Letters, numbers, and hyphens only. Saved in uppercase.</p>
+                    <p class="mini">Letters, numbers, and hyphens only. Saved in uppercase.</p>
 
+                    <label>
+                        Program Name
+                        <input
+                            type="text"
+                            name="name"
+                            placeholder="Bachelor of Science in Information Technology"
+                            value="{{ $shouldOpenCreate ? old('name') : '' }}"
+                            required
+                        >
+                        @if($shouldOpenCreate)
+                            <x-field-error field="name" bag="programCreate" />
+                        @endif
+                    </label>
+
+                    <div class="form-actions modal-actions">
+                        <button type="button" class="secondary" data-modal-close>Cancel</button>
+                        <button
+                            type="submit"
+                            data-loading-button
+                            data-loading-text="Saving Program..."
+                        >
+                            Save Program
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {{-- EDIT MODALS --}}
+        @foreach($programs as $program)
+            @php
+                $programUpdateFormKey = 'program-update-' . $program->id;
+                $shouldOpenEdit = $activeFormKey === $programUpdateFormKey;
+            @endphp
+
+            <div
+                class="management-modal {{ $shouldOpenEdit ? 'is-open' : '' }}"
+                id="program-edit-{{ $program->id }}"
+                data-modal
+            >
+                <div class="management-modal-panel">
+                    <div class="management-modal-header">
+                        <div>
+                            <div class="eyebrow">Edit Program</div>
+                            <h2>{{ $program->code }}</h2>
+                        </div>
+
+                        <button type="button" class="modal-close-button" data-modal-close>&times;</button>
+                    </div>
+
+                    <form method="POST" action="{{ route('admin.programs.update', $program) }}">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="_form_key" value="{{ $programUpdateFormKey }}">
+
+                        <div class="field-grid">
                             <label>
-                                Program Name
+                                Program Code
                                 <input
                                     type="text"
-                                    name="name"
-                                    placeholder="Bachelor of Science in Information Technology"
-                                    value="{{ $activeFormKey === $programCreateFormKey ? old('name') : '' }}"
+                                    name="code"
+                                    value="{{ $shouldOpenEdit ? old('code', $program->code) : $program->code }}"
                                     required
                                 >
-                                @if($activeFormKey === $programCreateFormKey)
-                                    <x-field-error field="name" bag="programCreate" />
+                                @if($shouldOpenEdit)
+                                    <x-field-error field="code" bag="programUpdate" />
                                 @endif
                             </label>
 
+                            <label>
+                                Organization Name
+                                <input
+                                    type="text"
+                                    name="org_name"
+                                    value="{{ $shouldOpenEdit ? old('org_name', $program->org_name) : $program->org_name }}"
+                                    required
+                                >
+                                @if($shouldOpenEdit)
+                                    <x-field-error field="org_name" bag="programUpdate" />
+                                @endif
+                            </label>
+                        </div>
+
+                        <p class="mini">Letters, numbers, and hyphens only. Saved in uppercase.</p>
+
+                        <label>
+                            Program Name
+                            <input
+                                type="text"
+                                name="name"
+                                value="{{ $shouldOpenEdit ? old('name', $program->name) : $program->name }}"
+                                required
+                            >
+                            @if($shouldOpenEdit)
+                                <x-field-error field="name" bag="programUpdate" />
+                            @endif
+                        </label>
+
+                        <div class="form-actions modal-actions">
+                            <button type="button" class="secondary" data-modal-close>Cancel</button>
                             <button
                                 type="submit"
                                 data-loading-button
-                                data-loading-text="Saving Program..."
+                                data-loading-text="Updating Program..."
                             >
-                                Save Program
+                                Update Program
                             </button>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="section-stack">
-                    <div class="admin-section-card" id="program-records">
-                        <div class="eyebrow">Programs</div>
-
-                        <div class="list scrollable-list">
-                            @forelse($programs as $program)
-                                @php($programUpdateFormKey = 'program-update-' . $program->id)
-
-                                <details class="record" {{ $activeFormKey === $programUpdateFormKey ? 'open' : '' }}>
-                                    <summary>{{ $program->code }} - {{ $program->name }}</summary>
-                                    <div class="divider"></div>
-
-                                    <form method="POST" action="{{ route('admin.programs.update', $program) }}">
-                                        @csrf
-                                        @method('PUT')
-                                        <input type="hidden" name="_form_key" value="{{ $programUpdateFormKey }}">
-
-                                        <div class="field-grid">
-                                            <label>
-                                                Program Code
-                                                <input
-                                                    type="text"
-                                                    name="code"
-                                                    value="{{ $activeFormKey === $programUpdateFormKey ? old('code', $program->code) : $program->code }}"
-                                                    required
-                                                >
-                                                @if($activeFormKey === $programUpdateFormKey)
-                                                    <x-field-error field="code" bag="programUpdate" />
-                                                @endif
-                                            </label>
-
-                                            <label>
-                                                Organization Name
-                                                <input
-                                                    type="text"
-                                                    name="org_name"
-                                                    value="{{ $activeFormKey === $programUpdateFormKey ? old('org_name', $program->org_name) : $program->org_name }}"
-                                                    required
-                                                >
-                                                @if($activeFormKey === $programUpdateFormKey)
-                                                    <x-field-error field="org_name" bag="programUpdate" />
-                                                @endif
-                                            </label>
-                                        </div>
-
-                                        <p class="mini" style="margin-top: -4px;">Letters, numbers, and hyphens only. Saved in uppercase.</p>
-
-                                        <label>
-                                            Program Name
-                                            <input
-                                                type="text"
-                                                name="name"
-                                                value="{{ $activeFormKey === $programUpdateFormKey ? old('name', $program->name) : $program->name }}"
-                                                required
-                                            >
-                                            @if($activeFormKey === $programUpdateFormKey)
-                                                <x-field-error field="name" bag="programUpdate" />
-                                            @endif
-                                        </label>
-
-                                        <button
-                                            type="submit"
-                                            data-loading-button
-                                            data-loading-text="Updating Program..."
-                                        >
-                                            Update Program
-                                        </button>
-                                    </form>
-                                </details>
-                            @empty
-                                <div class="empty-state">
-                                    No programs added yet.
-                                </div>
-                            @endforelse
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
-        </div>
+        @endforeach
+    </div>
+
+    @include('admin.partials.management-page-styles')
 @endsection
