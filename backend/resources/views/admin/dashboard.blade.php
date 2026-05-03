@@ -10,8 +10,8 @@
         <section class="dashboard-intro-shell">
             <div class="admin-section-card dashboard-quick-actions">
                 <div>
-                    <h1>Common admin actions</h1>
-                    <p class="section-copy">Open the page you need without scrolling through one long admin workspace.</p>
+                    <h1>Get started</h1>
+                    <p class="section-copy">Choose what you want to do next.</p>
                 </div>
 
                 <div class="quick-action-grid">
@@ -122,7 +122,14 @@
                     </div>
                 @else
                     <div class="chart-empty-state">
-                        <p>No clearance records yet to chart by semester.</p>
+                        <h5 class="fw-semibold">No clearance data yet</h5>
+                        <p class="text-muted mb-3">
+                            There are no recorded clearances for this section yet.
+                        </p>
+
+                        <a href="{{ route('admin.students.index') }}" class="btn btn-primary btn-sm">
+                            Start by adding students
+                        </a>
                     </div>
                 @endif
             </div>
@@ -183,7 +190,14 @@
                     </div>
                 @else
                     <div class="chart-empty-state">
-                        <p>No clearance records yet to chart by status.</p>
+                        <h5 class="fw-semibold">No clearance data yet</h5>
+                        <p class="text-muted mb-3">
+                            There are no clearance records to display yet.
+                        </p>
+
+                        <a href="{{ route('admin.students.index') }}" class="btn btn-primary btn-sm">
+                            Start by adding students
+                        </a>
                     </div>
                 @endif
             </div>
@@ -520,3 +534,24 @@
     </style>
     @endpush
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("form").forEach(form => {
+        form.addEventListener("submit", function () {
+            const btn = form.querySelector("button[type=submit]");
+            if (btn && !btn.disabled) {
+                btn.disabled = true;
+
+                const text = btn.querySelector(".btn-text");
+                const spinner = btn.querySelector(".spinner-border");
+
+                if (text) text.classList.add("d-none");
+                if (spinner) spinner.classList.remove("d-none");
+            }
+        });
+    });
+});
+</script>
+@endpush
