@@ -1,30 +1,39 @@
 @push('styles')
 <style>
+    .admin-page,
     .management-page {
         display: grid;
-        gap: 20px;
+        gap: 18px;
     }
 
+    .admin-page-header,
     .management-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
         gap: 18px;
-        padding: 22px 24px;
-        border-radius: 24px;
+        padding: 20px 22px;
+        border-radius: 18px;
         background: linear-gradient(135deg, #fbf7ef 0%, #fffdf8 100%);
         border: 1px solid #e8dfd1;
         box-shadow: 0 12px 28px rgba(24, 58, 99, 0.05);
     }
 
+    .admin-page-header h1,
     .management-header h1 {
         margin: 0;
         color: #173c66;
+        font-size: clamp(1.55rem, 2vw, 2.15rem);
+        line-height: 1.08;
+        letter-spacing: -0.03em;
     }
 
+    .admin-page-header p,
     .management-header p {
         margin: 6px 0 0;
         color: #667085;
+        max-width: 68ch;
+        line-height: 1.45;
     }
 
     .management-primary-action {
@@ -33,11 +42,38 @@
         box-shadow: 0 8px 18px rgba(14, 39, 66, 0.18);
     }
 
+    .management-primary-action,
+    .management-secondary-action,
+    .management-ghost-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 42px;
+        text-decoration: none;
+    }
+
+    .management-secondary-action,
+    .button.secondary.management-secondary-action {
+        background: #ffffff;
+        border: 1px solid #cfc7b7;
+        color: #173c66;
+    }
+
+    .management-ghost-action,
+    .button.ghost {
+        background: transparent;
+        border: 1px solid transparent;
+        color: #173c66;
+        box-shadow: none;
+    }
+
+    .admin-section-card,
     .management-card {
         display: grid;
         gap: 18px;
-        padding: 24px;
-        border-radius: 24px;
+        padding: 22px;
+        border-radius: 18px;
         background: linear-gradient(135deg, #fbf7ef 0%, #fffdf8 100%);
         border: 1px solid #e8dfd1;
         box-shadow: 0 12px 28px rgba(24, 58, 99, 0.05);
@@ -53,6 +89,58 @@
     .management-card-header h2 {
         margin: 0;
         color: #173c66;
+    }
+
+    .management-card-kicker {
+        margin: 0;
+        color: #667085;
+        font-size: 0.92rem;
+        line-height: 1.45;
+    }
+
+    .management-filter-bar,
+    .management-action-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .management-filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+        align-items: end;
+    }
+
+    .management-filter-grid .button,
+    .management-action-bar .button {
+        min-height: 42px;
+        white-space: nowrap;
+    }
+
+    .management-summary-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: #ffffff;
+        border: 1px solid #e4dacd;
+        color: #183a63;
+    }
+
+    .management-summary-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 11px;
+        border-radius: 999px;
+        background: #eef4fb;
+        color: #173c66;
+        font-size: 12px;
+        font-weight: 800;
     }
 
     .management-table-wrap {
@@ -142,6 +230,8 @@
         color: #667085;
         border-radius: 16px;
         background: #fffdf8;
+        border: 1px dashed #d5cbbd;
+        line-height: 1.45;
     }
 
     .management-modal {
@@ -209,6 +299,7 @@
 
     @media (max-width: 720px) {
         .management-header,
+        .admin-page-header,
         .management-card-header,
         .modal-actions {
             flex-direction: column;
@@ -216,6 +307,8 @@
         }
 
         .management-primary-action,
+        .management-secondary-action,
+        .management-ghost-action,
         .modal-actions button {
             width: 100%;
         }
