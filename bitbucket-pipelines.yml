@@ -16,7 +16,7 @@ definitions:
           - composer install --no-interaction --prefer-dist --no-progress
           - cp .env.example .env
           - php artisan key:generate
-          - php artisan test
+          - ./vendor/bin/phpunit
 
     - step: &mobile-tests
         name: Mobile Flutter Tests
