@@ -336,18 +336,6 @@
             }
         }
 
-        @media (max-width: 1024px) {
-            .admin-sidebar {
-                width: 220px;
-            }
-
-            .admin-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-        }
-
         /* Fix: keep checkbox inline with label in forms */
         .inline-check {
             display: flex;
@@ -424,7 +412,7 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 260px;
+            width: 238px;
             height: 100vh;
             background:
                 radial-gradient(circle at top left, rgba(210, 168, 61, 0.25), transparent 35%),
@@ -432,7 +420,7 @@
             color: white;
             display: flex;
             flex-direction: column;
-            padding: 24px 18px;
+            padding: 18px 14px;
             overflow-y: auto;
             z-index: 1000;
             box-shadow: 8px 0 24px rgba(14, 39, 66, 0.18);
@@ -443,8 +431,8 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            margin-bottom: 26px;
-            padding: 16px 0 12px 0;
+            margin-bottom: 18px;
+            padding: 10px 0 14px 0;
             position: relative;
             text-align: center;
         }
@@ -459,14 +447,14 @@
         }
 
         .sidebar-logo {
-            width: 120px;
-            height: 120px;
+            width: 82px;
+            height: 82px;
             object-fit: contain;
         }
 
         .sidebar-brand-text {
-            margin-top: 12px;
-            font-size: 16px;   
+            margin-top: 10px;
+            font-size: 12px;
             font-weight: 800;  
             letter-spacing: 0.12em; 
             color: rgba(255, 255, 255, 0.95);
@@ -481,15 +469,17 @@
         .sidebar-nav {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
         .nav-item {
-            padding: 12px 14px;
+            padding: 11px 13px;
             border-radius: 12px;
             text-decoration: none;
             color: white;
             transition: 0.2s ease;
+            font-size: 14px;
+            font-weight: 600;
         }
 
         .nav-item:hover {
@@ -505,11 +495,13 @@
 
         .sidebar-logout {
             margin-top: auto;
+            padding-top: 18px;
         }
 
         .sidebar-logout button {
             width: 100%;
-            background: rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         /* ================= MAIN ================= */
@@ -518,29 +510,66 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            margin-left: 260px;
+            margin-left: 238px;
         }
 
         .admin-header {
             position: fixed;
             top: 0;
-            left: 260px;
+            left: 238px;
             right: 0;
             background:
                 linear-gradient(135deg, #0e2742 0%, #16385f 65%, #1b4675 100%);
             color: white;
-            padding: 22px 28px;
+            padding: 16px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 18px;
+            gap: 16px;
             z-index: 999;
             box-shadow: 0 4px 18px rgba(14, 39, 66, 0.10);
         }
 
+        .admin-current-page {
+            min-width: 190px;
+            display: grid;
+            gap: 2px;
+        }
+
+        .admin-current-page span {
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+        }
+
+        .admin-current-page strong {
+            color: #ffffff;
+            font-size: 18px;
+            line-height: 1.2;
+        }
+
+        .admin-current-page p {
+            margin: 0;
+            max-width: 34ch;
+            color: rgba(255, 255, 255, 0.68);
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .admin-header-tools {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 14px;
+        }
+
         .admin-action-search {
             position: relative;
-            width: min(560px, 52vw);
+            width: min(520px, 44vw);
         }
 
         .admin-action-search-input {
@@ -649,8 +678,35 @@
         }
 
         @media (max-width: 1024px) {
+            .admin-sidebar {
+                width: 220px;
+            }
+
+            .admin-main {
+                margin-left: 220px;
+            }
+
+            .admin-header {
+                left: 220px;
+                align-items: stretch;
+            }
+
+            .admin-header-tools {
+                width: 100%;
+            }
+
             .admin-action-search {
                 width: 100%;
+            }
+
+            .admin-user {
+                align-self: flex-end;
+            }
+        }
+
+        @media (max-width: 1180px) {
+            .admin-current-page p {
+                display: none;
             }
         }
 
@@ -659,6 +715,7 @@
             align-items: center;
             gap: 10px;
             font-weight: 600;
+            white-space: nowrap;
         }
 
         .admin-user-avatar {
@@ -676,7 +733,7 @@
         }
 
         .admin-content {
-            padding: 110px 28px 28px;
+            padding: 96px 24px 28px;
             background:
                 radial-gradient(circle at top right, rgba(210, 168, 61, 0.10), transparent 22%),
                 linear-gradient(180deg, #f8f5ed 0%, #f1ebdf 100%);
@@ -824,29 +881,39 @@
 
         <main class="admin-main">
             <header class="admin-header">
-                <div class="admin-action-search" data-admin-action-search>
-                    <input
-                        type="search"
-                        class="admin-action-search-input"
-                        data-admin-action-search-input
-                        aria-label="Search admin actions"
-                        aria-controls="admin-action-search-results"
-                        autocomplete="off"
-                        placeholder="Search admin actions"
-                    >
-                    <span class="admin-action-search-mark">/</span>
-                    <div
-                        id="admin-action-search-results"
-                        class="admin-action-search-results"
-                        data-admin-action-search-results
-                        role="listbox"
-                    ></div>
+                <div class="admin-current-page">
+                    <span>Super Admin</span>
+                    <strong>{{ $title ?? 'Dashboard' }}</strong>
+                    @isset($subtitle)
+                        <p>{{ $subtitle }}</p>
+                    @endisset
                 </div>
 
-                <div class="admin-user">
-                    <span>{{ auth()->user()->name }}</span>
-                    <div class="admin-user-avatar">
-                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                <div class="admin-header-tools">
+                    <div class="admin-action-search" data-admin-action-search>
+                        <input
+                            type="search"
+                            class="admin-action-search-input"
+                            data-admin-action-search-input
+                            aria-label="Search admin actions"
+                            aria-controls="admin-action-search-results"
+                            autocomplete="off"
+                            placeholder="Search admin actions"
+                        >
+                        <span class="admin-action-search-mark">/</span>
+                        <div
+                            id="admin-action-search-results"
+                            class="admin-action-search-results"
+                            data-admin-action-search-results
+                            role="listbox"
+                        ></div>
+                    </div>
+
+                    <div class="admin-user">
+                        <span>{{ auth()->user()->name }}</span>
+                        <div class="admin-user-avatar">
+                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                        </div>
                     </div>
                 </div>
             </header>

@@ -92,7 +92,7 @@
             <div class="admin-section-card chart-panel">
                 <div class="chart-panel-header">
                     <div>
-                        <h1>CLEARANCES PER SEMESTER</h1>
+                        <div class="eyebrow">Clearances Per Semester</div>
                         <h2 class="chart-title">Clearances Per Semester</h2>
                         <p class="section-copy compact-copy">Live counts from recorded clearances across your configured semesters.</p>
                     </div>
@@ -137,7 +137,7 @@
             <div class="admin-section-card chart-panel">
                 <div class="chart-panel-header">
                     <div>
-                        <h1>CLEARANCE STATUS DISTRIBUTION</h1>
+                        <div class="eyebrow">Clearance Status Distribution</div>
                         <h2 class="chart-title">Clearance Status Distribution</h2>
                         <p class="section-copy compact-copy">Current breakdown of in-progress, flagged, and completed clearances.</p>
                     </div>
@@ -204,18 +204,20 @@
         </section>
     </div>
 
+    @include('admin.partials.management-page-styles')
+
     @push('styles')
     <style>
         .admin-page {
             display: grid;
-            gap: 20px;
+            gap: 18px;
         }
 
         .admin-section-card {
             display: grid;
             gap: 18px;
-            padding: 24px;
-            border-radius: 24px;
+            padding: 22px;
+            border-radius: 18px;
             background: linear-gradient(135deg, #fbf7ef 0%, #fffdf8 100%);
             border: 1px solid #e8dfd1;
             box-shadow: 0 12px 28px rgba(24, 58, 99, 0.05);
@@ -240,8 +242,8 @@
         .quick-action-card {
             display: grid;
             gap: 8px;
-            padding: 16px 18px;
-            border-radius: 18px;
+            padding: 15px 16px;
+            border-radius: 14px;
             text-decoration: none;
             color: #19324d;
             background: #ffffff;
@@ -287,7 +289,7 @@
             display: grid;
             grid-template-columns: repeat(3, minmax(180px, 1fr));
             justify-content: center;
-            gap: 24px;
+            gap: 16px;
         }
 
         .stat-tile {
@@ -295,10 +297,10 @@
             justify-items: center;
             text-align: center;
             gap: 4px;
-            padding: 16px 12px;
+            padding: 14px 12px;
             background: rgba(255, 255, 255, 0.75);
             border: 1px solid #e4dacd;
-            border-radius: 20px;
+            border-radius: 16px;
         }
 
         .stat-tile .eyebrow {

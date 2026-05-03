@@ -320,19 +320,20 @@ class AdminManagementTest extends TestCase
         );
     }
 
-    public function test_admin_dashboard_shows_designation_assignment_section_without_search_filter(): void
+    public function test_admin_dashboard_shows_designation_assignment_section_with_filters(): void
     {
-        // This keeps ticket 40 aligned with the agreed scope: the assignment
-        // controls should be visible on the dashboard, but the extra search UI
-        // should not be present.
+        // The routing page is now its own workspace, so the assignment table
+        // keeps the holder controls and includes lightweight filters.
         $admin = User::where('username', 'mis.admin')->firstOrFail();
 
         $this->actingAs($admin)
             ->get(route('admin.routing.index'))
             ->assertOk()
             ->assertSee('DESIGNATION ASSIGNMENT')
-            ->assertSee('Assign Holders')
-            ->assertDontSee('Search designation');
+            ->assertSee('Holder Assignment')
+            ->assertSee('Search designation')
+            ->assertSee('All program scopes')
+            ->assertSee('All statuses');
     }
 
     public function test_admin_dashboard_highlights_common_admin_actions_and_clearer_filters(): void
@@ -342,15 +343,16 @@ class AdminManagementTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('Common admin actions')
+            ->assertSee('Get started')
             ->assertSee('Create Student')
             ->assertSee('Create Office Account')
             ->assertSee('Assign Holders')
             ->assertSee('Download Report')
             ->assertSee('Clearances Per Semester')
             ->assertSee('Clearance Status Distribution')
-            ->assertSee('No clearance records yet to chart by semester.')
-            ->assertSee('No clearance records yet to chart by status.');
+            ->assertSee('No clearance data yet')
+            ->assertSee('There are no recorded clearances for this section yet.')
+            ->assertSee('There are no clearance records to display yet.');
 
         $this->actingAs($admin)
             ->get(route('admin.students.index'))
@@ -415,12 +417,13 @@ class AdminManagementTest extends TestCase
             ->get(route('admin.semesters.index'))
             ->assertOk()
             ->assertSee('Semesters')
-            ->assertSee('Add or change the current semester');
+            ->assertSee('Manage active and historical clearance periods')
+            ->assertSee('Add Semester');
 
         $this->actingAs($admin)
             ->get(route('admin.routing.index'))
             ->assertOk()
-            ->assertSee('Assign Holders');
+            ->assertSee('DESIGNATION ASSIGNMENT');
 
         $this->actingAs($admin)
             ->get(route('admin.clearance-history.index'))
