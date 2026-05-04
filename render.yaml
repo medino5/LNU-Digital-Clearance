@@ -48,3 +48,5 @@ services:
         value: 2025-2026
       - key: RUN_DATABASE_SEEDER
         value: true
+      - key: RUN_DATABASE_SEEDER_CLASS
+        value: Database\Seeders\UatDatabaseSeeder

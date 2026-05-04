@@ -10,7 +10,8 @@ php artisan config:clear
 php artisan migrate --force
 
 if [ "${RUN_DATABASE_SEEDER:-true}" = "true" ]; then
-    php artisan db:seed --class=Database\\Seeders\\DatabaseSeeder --force
+    seeder_class="${RUN_DATABASE_SEEDER_CLASS:-Database\\Seeders\\DatabaseSeeder}"
+    php artisan db:seed --class="${seeder_class}" --force
 fi
 
 php artisan config:cache

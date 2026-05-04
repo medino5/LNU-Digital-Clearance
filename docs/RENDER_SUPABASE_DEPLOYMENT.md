@@ -90,6 +90,7 @@ SESSION_LIFETIME=120
 CLEARANCE_CURRENT_SEMESTER=1st
 CLEARANCE_CURRENT_ACADEMIC_YEAR=2025-2026
 RUN_DATABASE_SEEDER=true
+RUN_DATABASE_SEEDER_CLASS=Database\\Seeders\\UatDatabaseSeeder
 ```
 
 Generate the Laravel app key locally if needed:
@@ -113,7 +114,13 @@ password: password
 ```
 
 4. Open Supabase Table Editor and confirm migrated tables exist.
-5. Confirm seeded baseline records exist.
+5. Confirm seeded demo records exist, including:
+
+```text
+mis.admin
+2302314
+the generated 2400001-2402100 UAT roster
+```
 
 Change default passwords before sharing the deployment outside the team.
 
@@ -150,6 +157,7 @@ If a deploy fails, Render keeps the previous successful deploy running.
 - The old production/deployment notes were replaced by this Render + Supabase runbook.
 - `backend/Dockerfile` is now the Render production Dockerfile.
 - `backend/Dockerfile.dev` keeps the old local PHP-FPM container for `docker-compose.yml`.
+- `RUN_DATABASE_SEEDER_CLASS` lets us switch between `DatabaseSeeder` and `UatDatabaseSeeder` without changing code again.
 
 ## Official References
 
