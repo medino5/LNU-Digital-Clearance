@@ -70,7 +70,7 @@ APP_NAME=Digital Clearance
 APP_ENV=production
 APP_KEY=base64:PASTE_GENERATED_APP_KEY
 APP_DEBUG=false
-APP_URL=https://lnu-digital-clearance-backend.onrender.com
+APP_URL=https://lnu-digital-clearance-backend-58la.onrender.com
 
 LOG_CHANNEL=stack
 LOG_DEPRECATIONS_CHANNEL=null
@@ -107,7 +107,7 @@ Use the exact HTTPS Render domain for `APP_URL`. If Render gave you a different 
 
 After Render finishes deploying:
 
-1. Open `https://lnu-digital-clearance-backend.onrender.com/login`.
+1. Open `https://lnu-digital-clearance-backend-58la.onrender.com/login`.
 2. Confirm the login page loads.
 3. Log in with the seeded admin account:
 
@@ -132,7 +132,7 @@ Change default passwords before sharing the deployment outside the team.
 After Render is live, update the GitHub repository variable:
 
 ```text
-MOBILE_API_BASE_URL=https://lnu-digital-clearance-backend.onrender.com/api
+MOBILE_API_BASE_URL=https://lnu-digital-clearance-backend-58la.onrender.com/api
 ```
 
 Then run the existing `Mobile Release` workflow in GitHub Actions.
