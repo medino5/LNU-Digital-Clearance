@@ -1,0 +1,50 @@
+services:
+  - type: web
+    name: lnu-digital-clearance-backend
+    runtime: docker
+    rootDir: backend
+    plan: free
+    region: singapore
+    autoDeploy: true
+    healthCheckPath: /login
+    envVars:
+      - key: APP_NAME
+        value: Digital Clearance
+      - key: APP_ENV
+        value: production
+      - key: APP_KEY
+        sync: false
+      - key: APP_DEBUG
+        value: false
+      - key: APP_URL
+        value: https://lnu-digital-clearance-backend.onrender.com
+      - key: LOG_CHANNEL
+        value: stack
+      - key: LOG_DEPRECATIONS_CHANNEL
+        value: "null"
+      - key: LOG_LEVEL
+        value: warning
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+      - key: CACHE_STORE
+        value: file
+      - key: CACHE_DRIVER
+        value: file
+      - key: FILESYSTEM_DISK
+        value: local
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: SESSION_DRIVER
+        value: file
+      - key: SESSION_LIFETIME
+        value: 120
+      - key: CLEARANCE_CURRENT_SEMESTER
+        value: 1st
+      - key: CLEARANCE_CURRENT_ACADEMIC_YEAR
+        value: 2025-2026
+      - key: RUN_DATABASE_SEEDER
+        value: true
