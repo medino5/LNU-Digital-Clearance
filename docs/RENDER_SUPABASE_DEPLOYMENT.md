@@ -85,6 +85,7 @@ CACHE_DRIVER=file
 FILESYSTEM_DISK=local
 QUEUE_CONNECTION=sync
 SESSION_DRIVER=file
+SESSION_SECURE_COOKIE=true
 SESSION_LIFETIME=120
 
 CLEARANCE_CURRENT_SEMESTER=1st
@@ -99,6 +100,8 @@ Generate the Laravel app key locally if needed:
 cd C:\digital-clearance\backend
 php artisan key:generate --show
 ```
+
+Use the exact HTTPS Render domain for `APP_URL`. If Render gave you a different `.onrender.com` hostname, use that real hostname instead of the example above.
 
 ## 5. First Deploy Verification
 
@@ -133,6 +136,30 @@ MOBILE_API_BASE_URL=https://lnu-digital-clearance-backend.onrender.com/api
 ```
 
 Then run the existing `Mobile Release` workflow in GitHub Actions.
+
+Before the first APK release, add these GitHub repository secrets:
+
+```text
+ANDROID_KEYSTORE_BASE64
+ANDROID_KEYSTORE_PASSWORD
+ANDROID_KEY_ALIAS
+ANDROID_KEY_PASSWORD
+```
+
+And add this GitHub repository variable:
+
+```text
+MOBILE_API_BASE_URL=https://your-real-render-domain.onrender.com/api
+```
+
+Then trigger the mobile release:
+
+1. Open the GitHub repo.
+2. Open `Actions`.
+3. Open `Mobile Release`.
+4. Click `Run workflow`.
+5. Choose branch `main`.
+6. Wait for the `latest-testing` release asset to appear.
 
 Tester APK link stays:
 

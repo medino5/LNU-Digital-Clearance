@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Render terminates HTTPS before forwarding requests to the container.
+        // Trust proxy headers so Laravel keeps secure URLs and sessions.
+        $middleware->trustProxies(at: '*');
 
         // Give our middleware a short, easy-to-use nickname
         $middleware->alias([
