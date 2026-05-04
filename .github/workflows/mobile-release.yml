@@ -23,6 +23,7 @@ jobs:
 
     env:
       APK_NAME: digital-clearance-latest.apk
+      MOBILE_API_BASE_URL: ${{ vars.MOBILE_API_BASE_URL || 'https://lnu-digital-clearance-backend.onrender.com/api' }}
 
     steps:
       - name: Check out repository
@@ -40,34 +41,23 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Validate required release settings
+      - name: Resolve release signing mode
+        id: signing
         run: |
-          if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
-            echo "::error::Missing GitHub secret ANDROID_KEYSTORE_BASE64."
-            exit 1
-          fi
-
-          if [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ]; then
-            echo "::error::Missing GitHub secret ANDROID_KEYSTORE_PASSWORD."
-            exit 1
-          fi
-
-          if [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ]; then
-            echo "::error::Missing GitHub secret ANDROID_KEY_ALIAS."
-            exit 1
-          fi
-
-          if [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ]; then
-            echo "::error::Missing GitHub secret ANDROID_KEY_PASSWORD."
-            exit 1
-          fi
-
-          if [ -z "${{ vars.MOBILE_API_BASE_URL }}" ]; then
-            echo "::error::Missing GitHub repository variable MOBILE_API_BASE_URL."
-            exit 1
+          if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ] && \
+             [ -n "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ] && \
+             [ -n "${{ secrets.ANDROID_KEY_ALIAS }}" ] && \
+             [ -n "${{ secrets.ANDROID_KEY_PASSWORD }}" ]; then
+            echo "mode=release" >> "$GITHUB_OUTPUT"
+            echo "apk_source=build/app/outputs/flutter-apk/app-release.apk" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Android signing secrets are incomplete. Building a debug tester APK for GitHub Releases."
+            echo "mode=debug" >> "$GITHUB_OUTPUT"
+            echo "apk_source=build/app/outputs/flutter-apk/app-debug.apk" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Create Android signing files
+        if: steps.signing.outputs.mode == 'release'
         working-directory: mobile/android
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > upload-keystore.jks
@@ -93,17 +83,17 @@ jobs:
           echo "build_name=${BUILD_NAME}" >> "$GITHUB_OUTPUT"
           echo "build_label=${BUILD_LABEL}" >> "$GITHUB_OUTPUT"
 
-      - name: Build signed Android APK
+      - name: Build Android APK
         run: |
-          flutter build apk --release \
+          flutter build apk --${{ steps.signing.outputs.mode }} \
             --build-name="${{ steps.release_meta.outputs.build_name }}" \
             --build-number="${{ steps.release_meta.outputs.build_number }}" \
-            --dart-define=APP_API_BASE_URL=${{ vars.MOBILE_API_BASE_URL }} \
+            --dart-define=APP_API_BASE_URL=${MOBILE_API_BASE_URL} \
             --dart-define=BUILD_LABEL=${{ steps.release_meta.outputs.build_label }}
 
       - name: Rename release APK
         run: |
-          cp build/app/outputs/flutter-apk/app-release.apk "build/app/outputs/flutter-apk/${APK_NAME}"
+          cp "${{ steps.signing.outputs.apk_source }}" "build/app/outputs/flutter-apk/${APK_NAME}"
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
@@ -122,7 +112,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          RELEASE_NOTES="Latest tester APK from ${GITHUB_SHA::7} (run #${GITHUB_RUN_NUMBER})."
+          RELEASE_NOTES="Latest ${{ steps.signing.outputs.mode }} tester APK from ${GITHUB_SHA::7} (run #${GITHUB_RUN_NUMBER})."
 
           if gh release view latest-testing >/dev/null 2>&1; then
             gh release edit latest-testing --title "latest-testing" --notes "${RELEASE_NOTES}" --prerelease
