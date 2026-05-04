@@ -41,13 +41,13 @@ class UatDatabaseSeederTest extends TestCase
         ]);
     }
 
-    public function test_uat_database_seeder_adds_a_balanced_2100_student_roster(): void
+    public function test_uat_database_seeder_adds_a_balanced_1400_student_roster(): void
     {
         // This protects the manual-testing dataset: UAT should always reseed
-        // with 300 deterministic student accounts per program plus the demo student.
+        // with 200 deterministic student accounts per program plus the demo student.
         $this->seed(UatDatabaseSeeder::class);
 
-        $this->assertSame(2101, Student::query()->count());
+        $this->assertSame(1401, Student::query()->count());
         $this->assertNotNull(Student::query()->where('student_id_number', '2302314')->first());
 
         $generatedStudents = Student::query()
@@ -55,9 +55,9 @@ class UatDatabaseSeederTest extends TestCase
             ->with(['program', 'user'])
             ->get();
 
-        $this->assertSame(2100, $generatedStudents->count());
+        $this->assertSame(1400, $generatedStudents->count());
         $this->assertSame(
-            2100,
+            1400,
             $generatedStudents
                 ->pluck('student_id_number')
                 ->filter(fn (string $studentId) => str_starts_with($studentId, '2') && strlen($studentId) === 7)
@@ -74,17 +74,17 @@ class UatDatabaseSeederTest extends TestCase
             $programId = Program::where('code', $programCode)->value('id');
 
             $this->assertSame(
-                300,
+                200,
                 $generatedStudents->where('program_id', $programId)->count(),
-                "Expected 300 generated students for {$programCode}."
+                "Expected 200 generated students for {$programCode}."
             );
         }
 
         foreach ([1, 2, 3, 4] as $yearLevel) {
             $this->assertSame(
-                525,
+                350,
                 $generatedStudents->where('year_level', $yearLevel)->count(),
-                "Expected 525 generated students for year level {$yearLevel}."
+                "Expected 350 generated students for year level {$yearLevel}."
             );
         }
 
@@ -98,12 +98,12 @@ class UatDatabaseSeederTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('students', [
-            'student_id_number' => '2402100',
+            'student_id_number' => '2401400',
             'year_level' => 4,
         ]);
 
         $this->assertDatabaseHas('students', [
-            'student_id_number' => '2401201',
+            'student_id_number' => '2400801',
             'year_level' => 1,
             'program_id' => Program::where('code', 'AS')->value('id'),
         ]);

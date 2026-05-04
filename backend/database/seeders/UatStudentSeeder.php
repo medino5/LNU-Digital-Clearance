@@ -31,7 +31,7 @@ class UatStudentSeeder extends Seeder
             }
 
             foreach ([1, 2, 3, 4] as $yearLevel) {
-                for ($studentInYear = 1; $studentInYear <= 75; $studentInYear++) {
+                for ($studentInYear = 1; $studentInYear <= 50; $studentInYear++) {
                     $studentId = sprintf('24%05d', $studentNumber);
                     $nameParts = $this->studentNameParts($studentNumber, $programCode, $yearLevel);
                     $displayName = StudentNameFormatter::compose(

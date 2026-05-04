@@ -122,7 +122,7 @@ password: password
 ```text
 mis.admin
 2302314
-the generated 2400001-2402100 UAT roster
+the generated 2400001-2401400 UAT roster
 ```
 
 Change default passwords before sharing the deployment outside the team.
