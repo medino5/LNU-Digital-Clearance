@@ -598,10 +598,20 @@
             top: 50%;
             right: 16px;
             transform: translateY(-50%);
-            font-size: 13px;
-            font-weight: 800;
+            width: 18px;
+            height: 18px;
             color: rgba(255, 255, 255, 0.72);
             pointer-events: none;
+        }
+
+        .admin-action-search-mark svg {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         .admin-action-search-results {
@@ -881,13 +891,6 @@
 
         <main class="admin-main">
             <header class="admin-header">
-                <div class="admin-current-page">
-                    <span>Super Admin</span>
-                    <strong>{{ $title ?? 'Dashboard' }}</strong>
-                    @isset($subtitle)
-                        <p>{{ $subtitle }}</p>
-                    @endisset
-                </div>
 
                 <div class="admin-header-tools">
                     <div class="admin-action-search" data-admin-action-search>
@@ -900,7 +903,13 @@
                             autocomplete="off"
                             placeholder="Search admin actions"
                         >
-                        <span class="admin-action-search-mark">/</span>
+                        <span class="admin-action-search-mark" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M10.5 18a7.5 7.5 0 1 1 5.3-12.8A7.5 7.5 0 0 1 10.5 18Z"/>
+                                <path d="M16 16l5 5"/>
+                            </svg>
+                        </span>
+
                         <div
                             id="admin-action-search-results"
                             class="admin-action-search-results"

@@ -16,23 +16,59 @@
 
                 <div class="quick-action-grid">
                     <a href="{{ route('admin.students.index') }}" class="quick-action-card">
-                        <span class="quick-action-label">Create Student</span>
-                        <span class="quick-action-copy">Open the students page to add and manage student accounts.</span>
+                        <span class="quick-action-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z"/>
+                                <path d="M4 21a8 8 0 0 1 16 0"/>
+                            </svg>
+                        </span>
+                        <span class="quick-action-content">
+                            <span class="quick-action-label">Create Student</span>
+                            <span class="quick-action-copy">Open the students page to add and manage student accounts.</span>
+                        </span>
                     </a>
 
                     <a href="{{ route('admin.office-accounts.index') }}" class="quick-action-card">
-                        <span class="quick-action-label">Create Office Account</span>
-                        <span class="quick-action-copy">Open the office accounts page for staff account setup.</span>
+                        <span class="quick-action-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M4 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/>
+                                <path d="M8 7h2M8 11h2M8 15h2M14 7h2M14 11h2M14 15h2"/>
+                                <path d="M3 21h18"/>
+                            </svg>
+                        </span>
+                        <span class="quick-action-content">
+                            <span class="quick-action-label">Create Office Account</span>
+                            <span class="quick-action-copy">Open the office accounts page for staff account setup.</span>
+                        </span>
                     </a>
 
                     <a href="{{ route('admin.routing.index') }}" class="quick-action-card">
-                        <span class="quick-action-label">Assign Holders</span>
-                        <span class="quick-action-copy">Open routing to review eligible users and update designation holders.</span>
+                        <span class="quick-action-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M6 4v16"/>
+                                <path d="M18 4v16"/>
+                                <path d="M6 7h8a4 4 0 0 1 0 8H6"/>
+                                <path d="M14 15l4 4"/>
+                            </svg>
+                        </span>
+                        <span class="quick-action-content">
+                            <span class="quick-action-label">Assign Holders</span>
+                            <span class="quick-action-copy">Open routing to review eligible users and update designation holders.</span>
+                        </span>
                     </a>
 
                     <a href="{{ route('admin.clearance-history.index') }}" class="quick-action-card quick-action-card--accent">
-                        <span class="quick-action-label">Download Report</span>
-                        <span class="quick-action-copy">Open completed clearance records for review, filtering, and export.</span>
+                        <span class="quick-action-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 3v12"/>
+                                <path d="M7 10l5 5 5-5"/>
+                                <path d="M5 21h14"/>
+                            </svg>
+                        </span>
+                        <span class="quick-action-content">
+                            <span class="quick-action-label">Download Report</span>
+                            <span class="quick-action-copy">Open completed clearance records for review, filtering, and export.</span>
+                        </span>
                     </a>
                 </div>
             </div>
@@ -532,6 +568,80 @@
                 width: 96px;
                 height: 96px;
             }
+        }
+
+        .quick-action-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 17px 16px;
+            border-radius: 14px;
+            text-decoration: none;
+            color: #19324d;
+            background: #ffffff;
+            border: 1px solid #e3d9c9;
+            box-shadow: 0 6px 16px rgba(24, 58, 99, 0.05);
+            transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+        }
+
+        .quick-action-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 26px rgba(24, 58, 99, 0.1);
+            border-color: #d4c0a6;
+        }
+
+        .quick-action-icon {
+            width: 42px;
+            height: 42px;
+            flex: 0 0 42px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            background: rgba(210, 168, 61, 0.16);
+            color: #173c66;
+            box-shadow: inset 0 0 0 1px rgba(210, 168, 61, 0.2);
+        }
+
+        .quick-action-icon svg {
+            width: 22px;
+            height: 22px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.9;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .quick-action-content {
+            display: grid;
+            gap: 7px;
+        }
+
+        .quick-action-card--accent {
+            background: linear-gradient(135deg, #173c66 0%, #27588f 100%);
+            color: #f8f4ea;
+            border-color: #173c66;
+        }
+
+        .quick-action-card--accent .quick-action-icon {
+            background: rgba(255, 255, 255, 0.16);
+            color: #ffffff;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+        }
+
+        .quick-action-card--accent .quick-action-copy {
+            color: rgba(248, 244, 234, 0.88);
+        }
+
+        .quick-action-label {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .quick-action-copy {
+            font-size: 0.92rem;
+            line-height: 1.45;
+            color: #59657a;
         }
     </style>
     @endpush
