@@ -1,9 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
 
 import '../core/api_client.dart';
 import '../core/session_expired_exception.dart';
 import 'auth_token_store.dart';
+import 'clearance_pdf_download.dart';
 
 class ClearanceService {
   ClearanceService({ApiClient? apiClient, AuthTokenStore? tokenStore})
@@ -90,13 +90,7 @@ class ClearanceService {
         ? '$referenceNumber.pdf'
         : 'student-clearance.pdf';
     final safeName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
-    final file = File(
-      '${Directory.systemTemp.path}${Platform.pathSeparator}$safeName',
-    );
-
-    await file.writeAsBytes(response.bodyBytes, flush: true);
-
-    return file.path;
+    return saveClearancePdfBytes(response.bodyBytes, safeName);
   }
 
   Future<Map<String, String>> _authHeaders({bool contentType = false}) async {

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -66,6 +67,65 @@ void main() {
         expect(
           () => clearanceService.getCurrentClearance(),
           throwsA(isA<SessionExpiredException>()),
+        );
+      },
+    );
+
+    test('downloadCurrentClearancePdf saves PDF bytes with a safe file name', () async {
+      final tokenStore = FakeTokenStore(token: 'active-token');
+      final clearanceService = ClearanceService(
+        tokenStore: tokenStore,
+        apiClient: ApiClient(
+          client: MockClient((request) async {
+            expect(request.url.path, '/api/clearance/current/pdf');
+            expect(request.headers['Authorization'], 'Bearer active-token');
+
+            return http.Response.bytes(
+              [37, 80, 68, 70, 45, 49, 46, 52],
+              200,
+              headers: {'content-type': 'application/pdf'},
+            );
+          }),
+        ),
+      );
+
+      final path = await clearanceService.downloadCurrentClearancePdf(
+        referenceNumber: 'CLR 1/ABC?',
+      );
+      final file = File(path);
+
+      expect(path, contains('CLR_1_ABC_.pdf'));
+      expect(await file.exists(), isTrue);
+      expect(await file.readAsBytes(), [37, 80, 68, 70, 45, 49, 46, 52]);
+
+      await file.delete();
+    });
+
+    test(
+      'downloadCurrentClearancePdf surfaces backend message when not completed',
+      () async {
+        final clearanceService = ClearanceService(
+          tokenStore: FakeTokenStore(token: 'active-token'),
+          apiClient: ApiClient(
+            client: MockClient((request) async {
+              return http.Response(
+                jsonEncode({'message': 'Your clearance is not completed yet.'}),
+                422,
+                headers: {'content-type': 'application/json'},
+              );
+            }),
+          ),
+        );
+
+        expect(
+          () => clearanceService.downloadCurrentClearancePdf(),
+          throwsA(
+            isA<Exception>().having(
+              (error) => error.toString(),
+              'message',
+              contains('Your clearance is not completed yet.'),
+            ),
+          ),
         );
       },
     );

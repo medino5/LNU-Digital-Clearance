@@ -89,6 +89,38 @@ class ClearanceWorkflowTest extends TestCase
         $this->assertSame(3, $clearance->year_level);
     }
 
+    public function test_completed_student_can_download_clearance_pdf_after_all_signatories_approve(): void
+    {
+        // This is the student-app PDF handoff: before completion the API must
+        // block downloads, and after every routed office approves it must
+        // return a real PDF response for the mobile Download PDF button.
+        Storage::disk('local')->deleteDirectory('clearances');
+
+        $clearance = $this->startClearanceForSeededStudent();
+
+        Sanctum::actingAs($this->seededStudentUser());
+        $this->getJson('/api/clearance/current/pdf')
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Your clearance is not completed yet.');
+
+        $clearance = $this->approveAllClearanceSteps($clearance);
+        Sanctum::actingAs($this->seededStudentUser());
+
+        $this->assertSame(Clearance::STATUS_COMPLETED, $clearance->status);
+        $this->assertNotNull($clearance->pdf_path);
+        $this->assertTrue(Storage::disk('local')->exists($clearance->pdf_path));
+
+        $response = $this->get('/api/clearance/current/pdf')
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf')
+            ->assertDownload($clearance->reference_number . '.pdf');
+
+        $this->assertStringStartsWith(
+            '%PDF',
+            file_get_contents($response->baseResponse->getFile()->getPathname())
+        );
+    }
+
     public function test_flagged_step_can_be_resubmitted_without_resetting_other_approved_steps(): void
     {
         // This verifies the most important branch in the new workflow: one
