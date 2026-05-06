@@ -43,7 +43,7 @@ class OfficeDashboardController extends Controller
 
             $pendingSteps = (clone $baseQuery)
                 ->where('status', ClearanceStep::STATUS_AWAITING_ACTION)
-                ->simplePaginate(40, ['*'], 'pending_page')
+                ->simplePaginate(20, ['*'], 'pending_page')
                 ->withQueryString();
 
             $processedSteps = (clone $baseQuery)
@@ -51,7 +51,7 @@ class OfficeDashboardController extends Controller
                     ClearanceStep::STATUS_APPROVED,
                     ClearanceStep::STATUS_FLAGGED,
                 ])
-                ->simplePaginate(40, ['*'], 'processed_page')
+                ->simplePaginate(20, ['*'], 'processed_page')
                 ->withQueryString();
         }
 

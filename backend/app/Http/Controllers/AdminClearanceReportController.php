@@ -35,7 +35,7 @@ class AdminClearanceReportController extends Controller
         }
 
         $historyPaginator = $historyQuery
-            ->paginate(50)
+            ->paginate(25)
             ->withQueryString();
         $semesters = Semester::orderByDesc('is_active')->orderByDesc('created_at')->get();
 
