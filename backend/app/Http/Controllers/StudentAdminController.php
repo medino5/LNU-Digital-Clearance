@@ -52,7 +52,7 @@ class StudentAdminController extends Controller
             ->orderBy('users.last_name')
             ->orderBy('users.first_name')
             ->orderBy('users.middle_initial')
-            ->paginate(50)
+            ->paginate(25)
             ->withQueryString();
 
         return view('admin.students', [

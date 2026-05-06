@@ -437,9 +437,9 @@ class AdminControllerValidationTest extends TestCase
         $bsit = Program::factory()->create(['code' => 'BSIT', 'org_name' => 'DIGITS']);
         $bael = Program::factory()->create(['code' => 'BAEL', 'org_name' => 'ELITES']);
 
-        OfficeDesignation::factory()->academicOrgTreasurer($bsit)->create();
-        OfficeDesignation::factory()->yearLevelTreasurer(4)->create();
-        OfficeDesignation::factory()->librarian()->create();
+        $programDesignation = OfficeDesignation::factory()->academicOrgTreasurer($bsit)->create();
+        $yearDesignation = OfficeDesignation::factory()->yearLevelTreasurer(4)->create();
+        $staffDesignation = OfficeDesignation::factory()->librarian()->create();
 
         Student::factory()
             ->for(User::factory()->namedStudent('Paolo', null, 'Programmatch'), 'user')
@@ -460,10 +460,26 @@ class AdminControllerValidationTest extends TestCase
         $this->actingAs($this->admin)
             ->get(route('admin.routing.index'))
             ->assertOk()
-            ->assertSee('Programmatch')
-            ->assertSee('Yearmatch')
-            ->assertSee('Library Staff Holder')
+            ->assertSee('Candidate list loads only when needed to keep this page fast.')
             ->assertDontSee('Noteligible');
+
+        $this->actingAs($this->admin)
+            ->getJson(route('admin.office-designations.eligible-users', $programDesignation))
+            ->assertOk()
+            ->assertJsonFragment(['label' => 'Student - Paolo Programmatch'])
+            ->assertJsonMissing(['label' => 'Student - Rico Noteligible']);
+
+        $this->actingAs($this->admin)
+            ->getJson(route('admin.office-designations.eligible-users', $yearDesignation))
+            ->assertOk()
+            ->assertJsonFragment(['label' => 'Student - Mika Yearmatch'])
+            ->assertJsonMissing(['label' => 'Student - Rico Noteligible']);
+
+        $this->actingAs($this->admin)
+            ->getJson(route('admin.office-designations.eligible-users', $staffDesignation))
+            ->assertOk()
+            ->assertJsonFragment(['label' => 'Staff - Library Staff Holder'])
+            ->assertJsonMissing(['label' => 'Student - Paolo Programmatch']);
     }
 
     public function test_admin_cannot_create_office_account_with_duplicate_username(): void

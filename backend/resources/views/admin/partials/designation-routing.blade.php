@@ -60,7 +60,6 @@
                         @php
                             $designationFormKey = 'designation-assignment-' . $designation->id;
                             $currentAssignment = $designation->getRelation('current_assignment');
-                            $eligibleUsers = $designation->getRelation('eligible_users');
                             $currentUser = $currentAssignment?->user;
                             $currentOfficeAccount = $currentUser?->officeAccount;
                             $currentStudentProfile = $currentUser?->studentProfile;
@@ -143,68 +142,18 @@
                             </td>
 
                             <td>
-                                <form
-                                    method="POST"
-                                    action="{{ route('admin.office-designations.assignment.update', $designation) }}"
-                                    data-loading-form
-                                    class="routing-assignment-form"
+                                <button
+                                    type="button"
+                                    class="button secondary routing-assign-trigger"
+                                    data-designation-name="{{ $designation->display_name }}"
+                                    data-designation-scope="{{ $scopeLabel }}"
+                                    data-form-key="{{ $designationFormKey }}"
+                                    data-current-user-id="{{ $currentUser?->id }}"
+                                    data-assignment-action="{{ route('admin.office-designations.assignment.update', $designation) }}"
+                                    data-eligible-url="{{ route('admin.office-designations.eligible-users', $designation) }}"
                                 >
-                                    @csrf
-                                    @method('PUT')
-
-                                    <input type="hidden" name="_form_key" value="{{ $designationFormKey }}">
-
-                                    <select name="user_id" required>
-                                        <option value="">Select eligible holder</option>
-
-                                        @foreach($eligibleUsers as $eligibleUser)
-                                            @php
-                                                $eligibleOfficeAccount = $eligibleUser->officeAccount;
-                                                $eligibleStudentProfile = $eligibleUser->studentProfile;
-                                                $isSelected = $currentUser && $currentUser->id === $eligibleUser->id;
-
-                                                $eligibleName = $eligibleOfficeAccount?->display_name ?? $eligibleUser->formattedName();
-
-                                                $eligibleType = $eligibleOfficeAccount
-                                                    ? 'Staff'
-                                                    : ($eligibleStudentProfile ? 'Student' : 'User');
-
-                                                $eligibleMeta = collect([
-                                                    $eligibleOfficeAccount?->officeTypeLabel(),
-                                                    $eligibleOfficeAccount?->scopeSummaryLabel(),
-                                                    $eligibleStudentProfile?->program?->code,
-                                                    $eligibleStudentProfile?->year_level ? 'Year ' . $eligibleStudentProfile->year_level : null,
-                                                ])->filter()->implode(' / ');
-                                            @endphp
-
-                                            <option
-                                                value="{{ $eligibleUser->id }}"
-                                                {{ ($activeFormKey === $designationFormKey ? (string) old('user_id') === (string) $eligibleUser->id : $isSelected) ? 'selected' : '' }}
-                                            >
-                                                {{ $eligibleType }} - {{ $eligibleName }}{{ $eligibleMeta ? ' - ' . $eligibleMeta : '' }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-
-                                    @if($activeFormKey === $designationFormKey)
-                                        <x-field-error field="user_id" bag="designationAssignment" />
-                                    @endif
-
-                                    @if($eligibleUsers->isEmpty())
-                                        <p class="mini routing-no-eligible">
-                                            No eligible holders found.
-                                        </p>
-                                    @endif
-
-                                    <button
-                                        type="submit"
-                                        data-loading-button
-                                        data-loading-text="Saving..."
-                                        {{ $eligibleUsers->isEmpty() ? 'disabled' : '' }}
-                                    >
-                                        {{ $currentAssignment ? 'Change Holder' : 'Assign Holder' }}
-                                    </button>
-                                </form>
+                                    {{ $currentAssignment ? 'Change Holder' : 'Assign Holder' }}
+                                </button>
                             </td>
                         </tr>
                     @empty
@@ -216,6 +165,45 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <div class="routing-modal-backdrop" id="routingAssignmentModal" hidden>
+        <div class="routing-modal" role="dialog" aria-modal="true" aria-labelledby="routingAssignmentTitle">
+            <div class="routing-modal-header">
+                <div>
+                    <div class="eyebrow">Holder Assignment</div>
+                    <h2 id="routingAssignmentTitle">Assign Holder</h2>
+                    <p id="routingAssignmentScope">Loading scope...</p>
+                </div>
+                <button type="button" class="modal-close-button" data-routing-assignment-close>&times;</button>
+            </div>
+
+            <form method="POST" id="routingAssignmentForm" class="routing-assignment-form">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="_form_key" id="routingAssignmentFormKey">
+
+                <label>
+                    Eligible Holder
+                    <select name="user_id" id="routingAssignmentUserSelect" required disabled>
+                        <option value="">Loading eligible holders...</option>
+                    </select>
+                </label>
+
+                <p class="mini routing-no-eligible" id="routingAssignmentHelp">
+                    Candidate list loads only when needed to keep this page fast.
+                </p>
+
+                <x-field-error field="user_id" bag="designationAssignment" />
+
+                <div class="routing-modal-actions">
+                    <button type="button" class="secondary" data-routing-assignment-close>Cancel</button>
+                    <button type="submit" data-loading-button data-loading-text="Saving...">
+                        Save Holder
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </section>
@@ -473,6 +461,60 @@
         display: none;
     }
 
+    .routing-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1300;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 22px;
+        background: rgba(8, 26, 43, 0.48);
+    }
+
+    .routing-modal-backdrop[hidden] {
+        display: none !important;
+    }
+
+    .routing-modal {
+        width: min(680px, 100%);
+        display: grid;
+        gap: 18px;
+        padding: 24px;
+        border-radius: 24px;
+        background: #fffdf8;
+        border: 1px solid #e4dacd;
+        box-shadow: 0 24px 70px rgba(14, 39, 66, 0.24);
+    }
+
+    .routing-modal-header,
+    .routing-modal-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .routing-modal-header {
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e4dacd;
+    }
+
+    .routing-modal-header h2,
+    .routing-modal-header p {
+        margin: 0;
+    }
+
+    .routing-modal-header p {
+        margin-top: 6px;
+        color: #667085;
+    }
+
+    .routing-modal-actions {
+        justify-content: flex-end;
+        align-items: center;
+    }
+
     @media (max-width: 1200px) {
         .routing-filter-bar {
             grid-template-columns: 1fr 1fr;
@@ -500,6 +542,15 @@
         .routing-filter-bar {
             grid-template-columns: 1fr;
         }
+
+        .routing-modal-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .routing-modal-actions button {
+            width: 100%;
+        }
     }
 </style>
 @endpush
@@ -520,6 +571,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const resetButton = routingSection.querySelector('[data-routing-reset]');
     const emptyState = routingSection.querySelector('[data-routing-empty]');
     const rows = Array.from(routingSection.querySelectorAll('[data-routing-row]'));
+    const assignmentModal = document.getElementById('routingAssignmentModal');
+    const assignmentForm = document.getElementById('routingAssignmentForm');
+    const assignmentTitle = document.getElementById('routingAssignmentTitle');
+    const assignmentScope = document.getElementById('routingAssignmentScope');
+    const assignmentFormKey = document.getElementById('routingAssignmentFormKey');
+    const assignmentUserSelect = document.getElementById('routingAssignmentUserSelect');
+    const assignmentHelp = document.getElementById('routingAssignmentHelp');
 
     const normalize = function (value) {
         return String(value || '').toLowerCase().trim();
@@ -572,6 +630,94 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     applyRoutingFilters();
+
+    const closeAssignmentModal = function () {
+        if (!assignmentModal) {
+            return;
+        }
+
+        assignmentModal.hidden = true;
+        document.body.style.overflow = '';
+    };
+
+    const setAssignmentOptions = function (users, currentUserId) {
+        assignmentUserSelect.innerHTML = '';
+
+        if (!users.length) {
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.textContent = 'No eligible holders found';
+            assignmentUserSelect.appendChild(emptyOption);
+            assignmentUserSelect.disabled = true;
+            assignmentHelp.textContent = 'No eligible holders found for this designation.';
+            return;
+        }
+
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Select eligible holder';
+        assignmentUserSelect.appendChild(placeholder);
+
+        users.forEach(function (user) {
+            const option = document.createElement('option');
+            option.value = user.id;
+            option.textContent = user.label + (user.meta ? ' - ' + user.meta : '');
+            option.selected = String(user.id) === String(currentUserId || '');
+            assignmentUserSelect.appendChild(option);
+        });
+
+        assignmentUserSelect.disabled = false;
+        assignmentHelp.textContent = users.length + ' eligible holder' + (users.length === 1 ? '' : 's') + ' loaded.';
+    };
+
+    const openAssignmentModal = async function (button) {
+        if (!assignmentModal || !assignmentForm || !assignmentUserSelect) {
+            return;
+        }
+
+        assignmentTitle.textContent = button.dataset.designationName || 'Assign Holder';
+        assignmentScope.textContent = button.dataset.designationScope || 'Whole school';
+        assignmentForm.action = button.dataset.assignmentAction;
+        assignmentFormKey.value = button.dataset.formKey || '';
+        assignmentUserSelect.innerHTML = '<option value="">Loading eligible holders...</option>';
+        assignmentUserSelect.disabled = true;
+        assignmentHelp.textContent = 'Loading eligible holders...';
+        assignmentModal.hidden = false;
+        document.body.style.overflow = 'hidden';
+
+        try {
+            const response = await fetch(button.dataset.eligibleUrl, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+            });
+
+            if (!response.ok) {
+                throw new Error('Unable to load eligible holders.');
+            }
+
+            const payload = await response.json();
+            setAssignmentOptions(payload.users || [], payload.current_user_id || button.dataset.currentUserId);
+        } catch (error) {
+            assignmentUserSelect.innerHTML = '<option value="">Unable to load eligible holders</option>';
+            assignmentUserSelect.disabled = true;
+            assignmentHelp.textContent = 'Refresh the page and try again.';
+        }
+    };
+
+    routingSection.querySelectorAll('.routing-assign-trigger').forEach(function (button) {
+        button.addEventListener('click', function () {
+            openAssignmentModal(button);
+        });
+    });
+
+    document.querySelectorAll('[data-routing-assignment-close]').forEach(function (button) {
+        button.addEventListener('click', closeAssignmentModal);
+    });
+
+    assignmentModal?.addEventListener('click', function (event) {
+        if (event.target === assignmentModal) {
+            closeAssignmentModal();
+        }
+    });
 });
 </script>
 @endpush

@@ -24,20 +24,9 @@ class AdminOfficeDesignationController extends Controller
             ->orderBy('display_name')
             ->get();
 
-        $staffUsers = $this->staffCandidatePool();
-        [$studentsByProgram, $studentsByYear] = $this->studentCandidatePools($designations);
-
-        $designations = $designations->map(function (OfficeDesignation $designation) use ($staffUsers, $studentsByProgram, $studentsByYear) {
-            $eligibleUsers = $this->eligibleUsersForDesignation(
-                $designation,
-                $staffUsers,
-                $studentsByProgram,
-                $studentsByYear,
-            );
-
+        $designations = $designations->map(function (OfficeDesignation $designation) {
             $currentAssignment = $designation->activeAssignments->first();
 
-            $designation->setRelation('eligible_users', $eligibleUsers);
             $designation->setRelation('current_assignment', $currentAssignment);
 
             return $designation;
@@ -48,93 +37,27 @@ class AdminOfficeDesignationController extends Controller
         ]);
     }
 
-    /**
-     * @return Collection<int, User>
-     */
-    private function staffCandidatePool(): Collection
+    public function eligibleUsers(OfficeDesignation $officeDesignation)
     {
-        return $this->sortUsers(
-            User::with(['officeAccount.program', 'studentProfile.program'])
-                ->where('role', '!=', User::ROLE_ADMIN)
-                ->whereHas('officeAccount')
-                ->get()
-        );
-    }
+        $officeDesignation->loadMissing('program');
 
-    /**
-     * @param  Collection<int, OfficeDesignation>  $designations
-     * @return array{0: Collection<string, Collection<int, User>>, 1: Collection<string, Collection<int, User>>}
-     */
-    private function studentCandidatePools(Collection $designations): array
-    {
-        $programIds = $designations
-            ->where('office_type', OfficeDesignation::TYPE_ACAD_ORG_TREASURER)
-            ->pluck('program_id')
-            ->filter()
-            ->unique()
-            ->values();
+        $users = $this->candidateQueryForDesignation($officeDesignation)
+            ->get()
+            ->filter(fn (User $user) => $officeDesignation->matchesUser($user));
 
-        $yearLevels = $designations
-            ->where('office_type', OfficeDesignation::TYPE_YEAR_LEVEL_TREASURER)
-            ->pluck('year_level')
-            ->filter()
-            ->unique()
-            ->values();
+        $currentUserId = $officeDesignation->activeAssignments()->value('user_id');
 
-        if ($programIds->isEmpty() && $yearLevels->isEmpty()) {
-            return [collect(), collect()];
-        }
-
-        $studentUsers = User::with(['studentProfile.program'])
-            ->where('role', User::ROLE_STUDENT)
-            ->whereHas('studentProfile', function ($query) use ($programIds, $yearLevels) {
-                $query->where(function ($studentQuery) use ($programIds, $yearLevels) {
-                    if ($programIds->isNotEmpty()) {
-                        $studentQuery->whereIn('program_id', $programIds);
-                    }
-
-                    if ($yearLevels->isNotEmpty()) {
-                        $method = $programIds->isNotEmpty() ? 'orWhereIn' : 'whereIn';
-                        $studentQuery->{$method}('year_level', $yearLevels);
-                    }
-                });
-            })
-            ->get();
-
-        $studentsByProgram = $studentUsers
-            ->filter(fn (User $user) => $user->studentProfile?->program_id)
-            ->groupBy(fn (User $user) => (string) $user->studentProfile->program_id)
-            ->map(fn (Collection $users) => $this->sortUsers($users));
-
-        $studentsByYear = $studentUsers
-            ->filter(fn (User $user) => $user->studentProfile?->year_level)
-            ->groupBy(fn (User $user) => (string) $user->studentProfile->year_level)
-            ->map(fn (Collection $users) => $this->sortUsers($users));
-
-        return [$studentsByProgram, $studentsByYear];
-    }
-
-    /**
-     * @param  Collection<int, User>  $staffUsers
-     * @param  Collection<string, Collection<int, User>>  $studentsByProgram
-     * @param  Collection<string, Collection<int, User>>  $studentsByYear
-     * @return Collection<int, User>
-     */
-    private function eligibleUsersForDesignation(
-        OfficeDesignation $designation,
-        Collection $staffUsers,
-        Collection $studentsByProgram,
-        Collection $studentsByYear,
-    ): Collection {
-        if (! $designation->isStudentLed()) {
-            return $staffUsers;
-        }
-
-        return match ($designation->office_type) {
-            OfficeDesignation::TYPE_ACAD_ORG_TREASURER => $studentsByProgram->get((string) $designation->program_id, collect()),
-            OfficeDesignation::TYPE_YEAR_LEVEL_TREASURER => $studentsByYear->get((string) $designation->year_level, collect()),
-            default => collect(),
-        };
+        return response()->json([
+            'designation' => [
+                'id' => $officeDesignation->id,
+                'name' => $officeDesignation->display_name,
+                'scope' => $officeDesignation->scopeLabel() ?? 'Whole school',
+            ],
+            'current_user_id' => $currentUserId,
+            'users' => $this->sortUsers($users)
+                ->map(fn (User $user) => $this->formatEligibleUser($user))
+                ->values(),
+        ]);
     }
 
     /**
@@ -146,6 +69,54 @@ class AdminOfficeDesignationController extends Controller
         return $users
             ->sortBy(fn (User $user) => strtolower($user->officeAccount->display_name ?? $user->formattedName()))
             ->values();
+    }
+
+    private function candidateQueryForDesignation(OfficeDesignation $designation)
+    {
+        if (! $designation->isStudentLed()) {
+            return User::with(['officeAccount.program', 'studentProfile.program'])
+                ->where('role', '!=', User::ROLE_ADMIN)
+                ->whereHas('officeAccount');
+        }
+
+        return User::with(['studentProfile.program'])
+            ->where('role', User::ROLE_STUDENT)
+            ->whereHas('studentProfile', function ($query) use ($designation) {
+                if ($designation->office_type === OfficeDesignation::TYPE_ACAD_ORG_TREASURER) {
+                    $query->where('program_id', $designation->program_id);
+
+                    return;
+                }
+
+                if ($designation->office_type === OfficeDesignation::TYPE_YEAR_LEVEL_TREASURER) {
+                    $query->where('year_level', $designation->year_level);
+                }
+            });
+    }
+
+    /**
+     * @return array{id:int,label:string,meta:string,type:string}
+     */
+    private function formatEligibleUser(User $user): array
+    {
+        $officeAccount = $user->officeAccount;
+        $studentProfile = $user->studentProfile;
+
+        $type = $officeAccount ? 'Staff' : ($studentProfile ? 'Student' : 'User');
+        $name = $officeAccount?->display_name ?? $user->formattedName();
+        $meta = collect([
+            $officeAccount?->officeTypeLabel(),
+            $officeAccount?->scopeSummaryLabel(),
+            $studentProfile?->program?->code,
+            $studentProfile?->year_level ? 'Year ' . $studentProfile->year_level : null,
+        ])->filter()->implode(' / ');
+
+        return [
+            'id' => $user->id,
+            'label' => $type . ' - ' . $name,
+            'meta' => $meta,
+            'type' => $type,
+        ];
     }
 
     public function updateAssignment(Request $request, OfficeDesignation $officeDesignation): RedirectResponse

@@ -59,6 +59,8 @@ Route::prefix('admin')
         Route::put('/office-accounts/{officeAccount}', [OfficeAccountAdminController::class, 'update'])
             ->name('admin.office-accounts.update');
 
+        Route::get('/office-designations/{officeDesignation}/eligible-users', [AdminOfficeDesignationController::class, 'eligibleUsers'])
+            ->name('admin.office-designations.eligible-users');
         Route::put('/office-designations/{officeDesignation}/assignment', [AdminOfficeDesignationController::class, 'updateAssignment'])
             ->name('admin.office-designations.assignment.update');
     });

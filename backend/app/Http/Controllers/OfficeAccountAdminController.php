@@ -73,7 +73,7 @@ class OfficeAccountAdminController extends Controller
 
         $officeAccounts = $officeAccountsQuery
             ->orderBy('display_name')
-            ->paginate(50)
+            ->paginate(25)
             ->withQueryString();
 
         return view('admin.office-accounts', [
