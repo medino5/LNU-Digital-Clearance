@@ -34,12 +34,15 @@ class AdminClearanceReportController extends Controller
             });
         }
 
-        $historyCollection = $historyQuery->get();
+        $historyPaginator = $historyQuery
+            ->paginate(50)
+            ->withQueryString();
         $semesters = Semester::orderByDesc('is_active')->orderByDesc('created_at')->get();
 
         return view('admin.clearance-history', [
-            'history' => $historyCollection->groupBy('semester_label'),
-            'historyHasRecords' => $historyCollection->isNotEmpty(),
+            'history' => collect($historyPaginator->items())->groupBy('semester_label'),
+            'historyHasRecords' => $historyPaginator->total() > 0,
+            'historyPaginator' => $historyPaginator,
             'semesters' => $semesters,
             'selectedSemesterId' => $selectedSemesterId,
             'selectedAcademicYear' => $selectedAcademicYear,

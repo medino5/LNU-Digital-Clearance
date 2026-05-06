@@ -10,6 +10,7 @@ use App\Http\Controllers\PortalAuthController;
 use App\Http\Controllers\ProgramAdminController;
 use App\Http\Controllers\SemesterAdminController;
 use App\Http\Controllers\StudentAdminController;
+use App\Http\Controllers\StudentProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PortalAuthController::class, 'landing'])->name('portal.landing');
@@ -37,6 +38,7 @@ Route::prefix('admin')
         Route::get('/students', [StudentAdminController::class, 'index'])->name('admin.students.index');
         Route::get('/office-accounts', [OfficeAccountAdminController::class, 'index'])->name('admin.office-accounts.index');
         Route::get('/clearance-history', [AdminClearanceReportController::class, 'index'])->name('admin.clearance-history.index');
+        Route::get('/students/{student}', [StudentProfileController::class, 'adminShow'])->name('admin.students.show');
         Route::get('/clearances/{clearance}', [AdminClearanceDetailController::class, 'show'])
             ->name('admin.clearances.show');
         Route::post('/clearance-reports/completed', [AdminClearanceReportController::class, 'export'])
@@ -44,12 +46,14 @@ Route::prefix('admin')
 
         Route::post('/programs', [ProgramAdminController::class, 'store'])->name('admin.programs.store');
         Route::put('/programs/{program}', [ProgramAdminController::class, 'update'])->name('admin.programs.update');
+        Route::delete('/programs/{program}', [ProgramAdminController::class, 'destroy'])->name('admin.programs.destroy');
 
         Route::post('/semesters', [SemesterAdminController::class, 'store'])->name('admin.semesters.store');
         Route::put('/semesters/{semester}', [SemesterAdminController::class, 'update'])->name('admin.semesters.update');
 
         Route::post('/students', [StudentAdminController::class, 'store'])->name('admin.students.store');
         Route::put('/students/{student}', [StudentAdminController::class, 'update'])->name('admin.students.update');
+        Route::delete('/students/{student}', [StudentAdminController::class, 'destroy'])->name('admin.students.destroy');
 
         Route::post('/office-accounts', [OfficeAccountAdminController::class, 'store'])->name('admin.office-accounts.store');
         Route::put('/office-accounts/{officeAccount}', [OfficeAccountAdminController::class, 'update'])
@@ -63,5 +67,6 @@ Route::prefix('office')
     ->middleware(['auth'])
     ->group(function () {
         Route::get('/', [OfficeDashboardController::class, 'index'])->name('office.dashboard');
+        Route::get('/students/{student}', [StudentProfileController::class, 'officeShow'])->name('office.students.show');
         Route::post('/steps/{step}/process', [OfficeDashboardController::class, 'process'])->name('office.steps.process');
     });

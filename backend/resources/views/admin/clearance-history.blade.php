@@ -135,6 +135,10 @@
                         </div>
                     </article>
                 @endforeach
+
+                <div class="pagination-wrapper">
+                    {{ $historyPaginator->links('pagination::bootstrap-5') }}
+                </div>
             @else
                 <div class="empty-state history-empty-state">
                     <strong>No completed clearances found.</strong>

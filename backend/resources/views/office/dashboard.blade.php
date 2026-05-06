@@ -92,6 +92,13 @@
                                                 View
                                             </button>
 
+                                            <a
+                                                href="{{ route('office.students.show', $student) }}"
+                                                class="button ghost"
+                                            >
+                                                Profile
+                                            </a>
+
                                             <button
                                                 type="button"
                                                 class="button approve-trigger"
@@ -138,6 +145,12 @@
                             </div>
                         @endforelse
                     </div>
+
+                    @if(method_exists($pendingSteps, 'hasPages') && $pendingSteps->hasPages())
+                        <div class="pagination-wrapper">
+                            {{ $pendingSteps->links('pagination::bootstrap-5') }}
+                        </div>
+                    @endif
                 </section>
 
                 <section class="office-column">
@@ -178,6 +191,13 @@
                                             >
                                                 View
                                             </button>
+
+                                            <a
+                                                href="{{ route('office.students.show', $student) }}"
+                                                class="button ghost"
+                                            >
+                                                Profile
+                                            </a>
 
                                             @if($step->status === 'approved')
                                                 <button
@@ -232,6 +252,12 @@
                             </div>
                         @endforelse
                     </div>
+
+                    @if(method_exists($processedSteps, 'hasPages') && $processedSteps->hasPages())
+                        <div class="pagination-wrapper">
+                            {{ $processedSteps->links('pagination::bootstrap-5') }}
+                        </div>
+                    @endif
                 </section>
             </div>
         @endif

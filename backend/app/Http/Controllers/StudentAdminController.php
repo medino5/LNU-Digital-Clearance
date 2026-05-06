@@ -76,9 +76,9 @@ class StudentAdminController extends Controller
             'studentCreate',
             [
                 'student_id_number' => $this->studentIdRules(),
-                'first_name' => ['required', 'string', 'max:60', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
-                'middle_initial' => ['nullable', 'string', 'size:1', 'alpha'],
-                'last_name' => ['required', 'string', 'max:60', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
+                'first_name' => $this->studentNameRules('First name'),
+                'middle_initial' => ['nullable', 'string', 'size:1', 'regex:/^\pL$/u'],
+                'last_name' => $this->studentNameRules('Last name'),
                 'name_extension' => ['nullable', Rule::in(User::studentNameExtensionOptions())],
                 'program_id' => ['required', 'exists:programs,id'],
                 'year_level' => ['required', 'integer', 'between:1,4'],
@@ -134,9 +134,9 @@ class StudentAdminController extends Controller
             'studentUpdate',
             [
                 'student_id_number' => $this->studentIdRules($student),
-                'first_name' => ['required', 'string', 'max:60', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
-                'middle_initial' => ['nullable', 'string', 'size:1', 'alpha'],
-                'last_name' => ['required', 'string', 'max:60', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
+                'first_name' => $this->studentNameRules('First name'),
+                'middle_initial' => ['nullable', 'string', 'size:1', 'regex:/^\pL$/u'],
+                'last_name' => $this->studentNameRules('Last name'),
                 'name_extension' => ['nullable', Rule::in(User::studentNameExtensionOptions())],
                 'program_id' => ['required', 'exists:programs,id'],
                 'year_level' => ['required', 'integer', 'between:1,4'],
@@ -180,6 +180,32 @@ class StudentAdminController extends Controller
             $redirectTo,
             'success',
             'Student account updated successfully.',
+        );
+    }
+
+    public function destroy(Request $request, Student $student)
+    {
+        $redirectTo = route('admin.students.index');
+        $expected = 'DELETE ' . $student->student_id_number;
+        $confirmation = trim((string) $request->input('delete_confirmation', ''));
+
+        if ($confirmation !== $expected) {
+            throw $this->formValidationException(
+                ['delete_confirmation' => 'Type "' . $expected . '" to confirm student account deletion.'],
+                'studentDelete',
+                $redirectTo,
+            );
+        }
+
+        DB::transaction(function () use ($student) {
+            $student->load('user');
+            $student->user?->delete();
+        });
+
+        return $this->redirectWithMessage(
+            $redirectTo,
+            'success',
+            'Student account deleted successfully.',
         );
     }
 
@@ -242,7 +268,27 @@ class StudentAdminController extends Controller
             'student_id_number.size' => 'Student ID must be exactly 7 digits.',
             'first_name.max' => 'First name must be 60 characters or fewer.',
             'last_name.max' => 'Last name must be 60 characters or fewer.',
+            'middle_initial.regex' => 'Middle initial must be one letter.',
             'password.max' => 'Password must be 72 characters or fewer.',
+        ];
+    }
+
+    /**
+     * @return array<int, mixed>
+     */
+    protected function studentNameRules(string $label): array
+    {
+        return [
+            'required',
+            'string',
+            'max:60',
+            function (string $attribute, mixed $value, \Closure $fail) use ($label): void {
+                $value = (string) $value;
+
+                if (! preg_match("/^\pL[\pL'\\- ]*$/u", $value)) {
+                    $fail($label . ' may only contain letters, spaces, apostrophes, and hyphens.');
+                }
+            },
         ];
     }
 

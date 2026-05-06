@@ -26,29 +26,28 @@ class AdminDashboardController extends Controller
 
         $semesterChartMax = max($clearancesPerSemester->max('count') ?? 0, 1);
 
+        $statusCounts = Clearance::query()
+            ->selectRaw('status, count(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+
         $statusChart = collect([
             [
                 'label' => 'In Progress',
                 'status' => Clearance::STATUS_IN_PROGRESS,
-                'count' => Clearance::query()
-                    ->where('status', Clearance::STATUS_IN_PROGRESS)
-                    ->count(),
+                'count' => (int) ($statusCounts[Clearance::STATUS_IN_PROGRESS] ?? 0),
                 'color' => '#3f6ea8',
             ],
             [
                 'label' => 'Flagged',
                 'status' => Clearance::STATUS_FLAGGED,
-                'count' => Clearance::query()
-                    ->where('status', Clearance::STATUS_FLAGGED)
-                    ->count(),
+                'count' => (int) ($statusCounts[Clearance::STATUS_FLAGGED] ?? 0),
                 'color' => '#d2a83d',
             ],
             [
                 'label' => 'Completed',
                 'status' => Clearance::STATUS_COMPLETED,
-                'count' => Clearance::query()
-                    ->where('status', Clearance::STATUS_COMPLETED)
-                    ->count(),
+                'count' => (int) ($statusCounts[Clearance::STATUS_COMPLETED] ?? 0),
                 'color' => '#2f8f63',
             ],
         ]);
