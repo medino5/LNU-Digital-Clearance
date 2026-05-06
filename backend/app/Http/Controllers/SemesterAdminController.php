@@ -20,16 +20,22 @@ class SemesterAdminController extends Controller
     {
         $redirectTo = route('admin.semesters.index');
 
+        $request->merge([
+            'label' => preg_replace('/\s+/u', ' ', trim((string) $request->input('label', ''))) ?? '',
+            'academic_year' => trim((string) $request->input('academic_year', '')),
+        ]);
+
         $data = $this->validateForm(
             $request,
             'semesterCreate',
             [
-            'label' => ['required', 'string', 'max:255', 'unique:semesters,label'],
+            'label' => ['required', 'string', 'max:80', 'unique:semesters,label'],
             'academic_year' => ['required', 'regex:/^\d{4}-\d{4}$/'],
             'is_active' => ['nullable', 'boolean'],
             ],
             $redirectTo,
             [
+                'label.max' => 'Semester label must be 80 characters or fewer.',
                 'academic_year.regex' => 'Academic year must use the YYYY-YYYY format.',
             ],
         );
@@ -57,16 +63,22 @@ class SemesterAdminController extends Controller
     {
         $redirectTo = route('admin.semesters.index');
 
+        $request->merge([
+            'label' => preg_replace('/\s+/u', ' ', trim((string) $request->input('label', ''))) ?? '',
+            'academic_year' => trim((string) $request->input('academic_year', '')),
+        ]);
+
         $data = $this->validateForm(
             $request,
             'semesterUpdate',
             [
-            'label' => ['required', 'string', 'max:255', Rule::unique('semesters', 'label')->ignore($semester->id)],
+            'label' => ['required', 'string', 'max:80', Rule::unique('semesters', 'label')->ignore($semester->id)],
             'academic_year' => ['required', 'regex:/^\d{4}-\d{4}$/'],
             'is_active' => ['nullable', 'boolean'],
             ],
             $redirectTo,
             [
+                'label.max' => 'Semester label must be 80 characters or fewer.',
                 'academic_year.regex' => 'Academic year must use the YYYY-YYYY format.',
             ],
         );

@@ -111,6 +111,7 @@
                                 name="code"
                                 placeholder="BSIT"
                                 value="{{ $shouldOpenCreate ? old('code') : '' }}"
+                                maxlength="15"
                                 required
                             >
                             @if($shouldOpenCreate)
@@ -125,6 +126,7 @@
                                 name="org_name"
                                 placeholder="DIGITS"
                                 value="{{ $shouldOpenCreate ? old('org_name') : '' }}"
+                                maxlength="120"
                                 required
                             >
                             @if($shouldOpenCreate)
@@ -142,6 +144,7 @@
                             name="name"
                             placeholder="Bachelor of Science in Information Technology"
                             value="{{ $shouldOpenCreate ? old('name') : '' }}"
+                            maxlength="120"
                             required
                         >
                         @if($shouldOpenCreate)
@@ -197,6 +200,7 @@
                                     type="text"
                                     name="code"
                                     value="{{ $shouldOpenEdit ? old('code', $program->code) : $program->code }}"
+                                    maxlength="15"
                                     required
                                 >
                                 @if($shouldOpenEdit)
@@ -210,6 +214,7 @@
                                     type="text"
                                     name="org_name"
                                     value="{{ $shouldOpenEdit ? old('org_name', $program->org_name) : $program->org_name }}"
+                                    maxlength="120"
                                     required
                                 >
                                 @if($shouldOpenEdit)
@@ -223,11 +228,12 @@
                         <label>
                             Program Name
                             <input
-                                type="text"
-                                name="name"
-                                value="{{ $shouldOpenEdit ? old('name', $program->name) : $program->name }}"
-                                required
-                            >
+                            type="text"
+                            name="name"
+                            value="{{ $shouldOpenEdit ? old('name', $program->name) : $program->name }}"
+                            maxlength="120"
+                            required
+                        >
                             @if($shouldOpenEdit)
                                 <x-field-error field="name" bag="programUpdate" />
                             @endif

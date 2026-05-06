@@ -76,7 +76,7 @@
                                 $currentOfficeAccount?->scopeSummaryLabel(),
                                 $currentStudentProfile?->program?->code,
                                 $currentStudentProfile?->year_level ? 'Year ' . $currentStudentProfile->year_level : null,
-                            ])->filter()->implode(' • ');
+                            ])->filter()->implode(' / ');
 
                             $scopeLabel = $designation->scopeLabel() ?? 'Whole school';
                             $statusValue = $currentAssignment ? 'assigned' : 'unassigned';
@@ -121,7 +121,7 @@
                                     <div class="routing-muted">
                                         {{ $currentHolderType }}
                                         @if($currentHolderMeta)
-                                            • {{ $currentHolderMeta }}
+                                            / {{ $currentHolderMeta }}
                                         @endif
                                     </div>
                                 @else
@@ -174,14 +174,14 @@
                                                     $eligibleOfficeAccount?->scopeSummaryLabel(),
                                                     $eligibleStudentProfile?->program?->code,
                                                     $eligibleStudentProfile?->year_level ? 'Year ' . $eligibleStudentProfile->year_level : null,
-                                                ])->filter()->implode(' • ');
+                                                ])->filter()->implode(' / ');
                                             @endphp
 
                                             <option
                                                 value="{{ $eligibleUser->id }}"
                                                 {{ ($activeFormKey === $designationFormKey ? (string) old('user_id') === (string) $eligibleUser->id : $isSelected) ? 'selected' : '' }}
                                             >
-                                                {{ $eligibleType }} — {{ $eligibleName }}{{ $eligibleMeta ? ' — ' . $eligibleMeta : '' }}
+                                                {{ $eligibleType }} - {{ $eligibleName }}{{ $eligibleMeta ? ' - ' . $eligibleMeta : '' }}
                                             </option>
                                         @endforeach
                                     </select>

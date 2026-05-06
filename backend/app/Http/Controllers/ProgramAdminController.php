@@ -67,25 +67,28 @@ class ProgramAdminController extends Controller
                 'code' => [
                     'required',
                     'string',
-                    'max:20',
+                    'max:15',
                     'regex:/^[A-Z0-9-]+$/',
                     Rule::unique('programs', 'code')->ignore($program?->id),
                 ],
                 'name' => [
                     'required',
                     'string',
-                    'max:255',
+                    'max:120',
                     $this->plainTextRule('Program name'),
                 ],
                 'org_name' => [
                     'required',
                     'string',
-                    'max:255',
+                    'max:120',
                     $this->plainTextRule('Organization name'),
                 ],
             ],
             [
                 'code.regex' => 'Program code may only contain letters, numbers, and hyphens.',
+                'code.max' => 'Program code must be 15 characters or fewer.',
+                'name.max' => 'Program name must be 120 characters or fewer.',
+                'org_name.max' => 'Organization name must be 120 characters or fewer.',
             ],
         );
 

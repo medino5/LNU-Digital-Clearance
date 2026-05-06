@@ -52,6 +52,19 @@ class AdminControllerValidationTest extends TestCase
         $this->assertDatabaseMissing('programs', ['code' => 'BSBIO']);
     }
 
+    public function test_program_create_rejects_overlong_code_name_and_organization(): void
+    {
+        $this->actingAs($this->admin)
+            ->from(route('admin.programs.index'))
+            ->post(route('admin.programs.store'), [
+                'code' => str_repeat('A', 16),
+                'name' => str_repeat('B', 121),
+                'org_name' => str_repeat('C', 121),
+            ])
+            ->assertRedirect(route('admin.programs.index'))
+            ->assertSessionHasErrors(['code', 'name', 'org_name'], null, 'programCreate');
+    }
+
     public function test_semester_create_rejects_invalid_academic_year_format(): void
     {
         $this->actingAs($this->admin)
@@ -61,6 +74,17 @@ class AdminControllerValidationTest extends TestCase
             ])
             ->assertRedirect(route('admin.semesters.index'))
             ->assertSessionHasErrors(['academic_year'], null, 'semesterCreate');
+    }
+
+    public function test_semester_create_rejects_overlong_labels(): void
+    {
+        $this->actingAs($this->admin)
+            ->post(route('admin.semesters.store'), [
+                'label' => str_repeat('A', 81),
+                'academic_year' => '2026-2027',
+            ])
+            ->assertRedirect(route('admin.semesters.index'))
+            ->assertSessionHasErrors(['label'], null, 'semesterCreate');
     }
 
     public function test_semester_update_activation_deactivates_other_semesters(): void
@@ -156,6 +180,24 @@ class AdminControllerValidationTest extends TestCase
             ->assertSessionHasErrors(['first_name'], null, 'studentCreate');
     }
 
+    public function test_student_create_rejects_overlong_names_and_passwords(): void
+    {
+        $program = Program::factory()->create();
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.students.store'), [
+                'student_id_number' => '2400888',
+                'first_name' => str_repeat('A', 61),
+                'middle_initial' => 'C',
+                'last_name' => str_repeat('B', 61),
+                'program_id' => $program->id,
+                'year_level' => 1,
+                'password' => str_repeat('p', 73),
+            ])
+            ->assertRedirect(route('admin.students.index'))
+            ->assertSessionHasErrors(['first_name', 'last_name', 'password'], null, 'studentCreate');
+    }
+
     public function test_student_update_without_password_preserves_existing_password(): void
     {
         $program = Program::factory()->create();
@@ -229,6 +271,21 @@ class AdminControllerValidationTest extends TestCase
         ]);
     }
 
+    public function test_office_account_create_rejects_overlong_identity_fields(): void
+    {
+        $this->actingAs($this->admin)
+            ->post(route('admin.office-accounts.store'), [
+                'display_name' => str_repeat('A', 101),
+                'office_type' => OfficeAccount::TYPE_LIBRARIAN,
+                'program_id' => '',
+                'year_level' => '',
+                'username' => str_repeat('u', 61),
+                'password' => str_repeat('p', 73),
+            ])
+            ->assertRedirect(route('admin.office-accounts.index'))
+            ->assertSessionHasErrors(['display_name', 'username', 'password'], null, 'officeAccountCreate');
+    }
+
     public function test_office_account_update_without_password_preserves_existing_password(): void
     {
         $officeAccount = OfficeAccount::factory()->librarian()->create();
@@ -276,6 +333,40 @@ class AdminControllerValidationTest extends TestCase
             ->assertSessionHas('info', 'Designation assignment is already up to date.');
 
         $this->assertDatabaseCount('office_designation_assignments', 1);
+    }
+
+    public function test_routing_page_scopes_candidate_dropdowns_to_matching_holder_types(): void
+    {
+        $bsit = Program::factory()->create(['code' => 'BSIT', 'org_name' => 'DIGITS']);
+        $bael = Program::factory()->create(['code' => 'BAEL', 'org_name' => 'ELITES']);
+
+        OfficeDesignation::factory()->academicOrgTreasurer($bsit)->create();
+        OfficeDesignation::factory()->yearLevelTreasurer(4)->create();
+        OfficeDesignation::factory()->librarian()->create();
+
+        Student::factory()
+            ->for(User::factory()->namedStudent('Paolo', null, 'Programmatch'), 'user')
+            ->create(['program_id' => $bsit->id, 'year_level' => 1]);
+
+        Student::factory()
+            ->for(User::factory()->namedStudent('Mika', null, 'Yearmatch'), 'user')
+            ->create(['program_id' => $bael->id, 'year_level' => 4]);
+
+        Student::factory()
+            ->for(User::factory()->namedStudent('Rico', null, 'Noteligible'), 'user')
+            ->create(['program_id' => $bael->id, 'year_level' => 2]);
+
+        OfficeAccount::factory()
+            ->librarian()
+            ->create(['display_name' => 'Library Staff Holder']);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.routing.index'))
+            ->assertOk()
+            ->assertSee('Programmatch')
+            ->assertSee('Yearmatch')
+            ->assertSee('Library Staff Holder')
+            ->assertDontSee('Noteligible');
     }
 
     public function test_admin_cannot_create_office_account_with_duplicate_username(): void

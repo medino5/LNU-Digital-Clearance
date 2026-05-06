@@ -7,39 +7,33 @@ use App\Models\OfficeDesignationAssignment;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class AdminOfficeDesignationController extends Controller
 {
     public function index()
     {
-        $designationQuery = OfficeDesignation::with([
+        $designations = OfficeDesignation::with([
             'program',
             'activeAssignments.user.officeAccount.program',
             'activeAssignments.user.studentProfile.program',
         ])
             ->where('is_active', true)
             ->orderBy('office_type')
-            ->orderBy('display_name');
-
-        $designationCandidates = User::with([
-            'officeAccount.program',
-            'studentProfile.program',
-        ])
-            ->where('role', '!=', User::ROLE_ADMIN)
-            ->where(function ($query) {
-                $query->whereHas('officeAccount')
-                    ->orWhereHas('studentProfile');
-            })
+            ->orderBy('display_name')
             ->get();
 
-        $designations = $designationQuery->get()->map(function (OfficeDesignation $designation) use ($designationCandidates) {
-            $eligibleUsers = $designationCandidates
-                ->filter(fn (User $user) => $designation->matchesUser($user))
-                ->sortBy(function (User $user) {
-                    return strtolower($user->officeAccount->display_name ?? $user->formattedName());
-                })
-                ->values();
+        $staffUsers = $this->staffCandidatePool();
+        [$studentsByProgram, $studentsByYear] = $this->studentCandidatePools($designations);
+
+        $designations = $designations->map(function (OfficeDesignation $designation) use ($staffUsers, $studentsByProgram, $studentsByYear) {
+            $eligibleUsers = $this->eligibleUsersForDesignation(
+                $designation,
+                $staffUsers,
+                $studentsByProgram,
+                $studentsByYear,
+            );
 
             $currentAssignment = $designation->activeAssignments->first();
 
@@ -52,6 +46,106 @@ class AdminOfficeDesignationController extends Controller
         return view('admin.routing', [
             'designations' => $designations,
         ]);
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    private function staffCandidatePool(): Collection
+    {
+        return $this->sortUsers(
+            User::with(['officeAccount.program', 'studentProfile.program'])
+                ->where('role', '!=', User::ROLE_ADMIN)
+                ->whereHas('officeAccount')
+                ->get()
+        );
+    }
+
+    /**
+     * @param  Collection<int, OfficeDesignation>  $designations
+     * @return array{0: Collection<string, Collection<int, User>>, 1: Collection<string, Collection<int, User>>}
+     */
+    private function studentCandidatePools(Collection $designations): array
+    {
+        $programIds = $designations
+            ->where('office_type', OfficeDesignation::TYPE_ACAD_ORG_TREASURER)
+            ->pluck('program_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $yearLevels = $designations
+            ->where('office_type', OfficeDesignation::TYPE_YEAR_LEVEL_TREASURER)
+            ->pluck('year_level')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($programIds->isEmpty() && $yearLevels->isEmpty()) {
+            return [collect(), collect()];
+        }
+
+        $studentUsers = User::with(['studentProfile.program'])
+            ->where('role', User::ROLE_STUDENT)
+            ->whereHas('studentProfile', function ($query) use ($programIds, $yearLevels) {
+                $query->where(function ($studentQuery) use ($programIds, $yearLevels) {
+                    if ($programIds->isNotEmpty()) {
+                        $studentQuery->whereIn('program_id', $programIds);
+                    }
+
+                    if ($yearLevels->isNotEmpty()) {
+                        $method = $programIds->isNotEmpty() ? 'orWhereIn' : 'whereIn';
+                        $studentQuery->{$method}('year_level', $yearLevels);
+                    }
+                });
+            })
+            ->get();
+
+        $studentsByProgram = $studentUsers
+            ->filter(fn (User $user) => $user->studentProfile?->program_id)
+            ->groupBy(fn (User $user) => (string) $user->studentProfile->program_id)
+            ->map(fn (Collection $users) => $this->sortUsers($users));
+
+        $studentsByYear = $studentUsers
+            ->filter(fn (User $user) => $user->studentProfile?->year_level)
+            ->groupBy(fn (User $user) => (string) $user->studentProfile->year_level)
+            ->map(fn (Collection $users) => $this->sortUsers($users));
+
+        return [$studentsByProgram, $studentsByYear];
+    }
+
+    /**
+     * @param  Collection<int, User>  $staffUsers
+     * @param  Collection<string, Collection<int, User>>  $studentsByProgram
+     * @param  Collection<string, Collection<int, User>>  $studentsByYear
+     * @return Collection<int, User>
+     */
+    private function eligibleUsersForDesignation(
+        OfficeDesignation $designation,
+        Collection $staffUsers,
+        Collection $studentsByProgram,
+        Collection $studentsByYear,
+    ): Collection {
+        if (! $designation->isStudentLed()) {
+            return $staffUsers;
+        }
+
+        return match ($designation->office_type) {
+            OfficeDesignation::TYPE_ACAD_ORG_TREASURER => $studentsByProgram->get((string) $designation->program_id, collect()),
+            OfficeDesignation::TYPE_YEAR_LEVEL_TREASURER => $studentsByYear->get((string) $designation->year_level, collect()),
+            default => collect(),
+        };
+    }
+
+    /**
+     * @param  Collection<int, User>  $users
+     * @return Collection<int, User>
+     */
+    private function sortUsers(Collection $users): Collection
+    {
+        return $users
+            ->sortBy(fn (User $user) => strtolower($user->officeAccount->display_name ?? $user->formattedName()))
+            ->values();
     }
 
     public function updateAssignment(Request $request, OfficeDesignation $officeDesignation): RedirectResponse
