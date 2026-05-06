@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Str;
+
 class StudentNameFormatter
 {
     /**
@@ -121,10 +123,10 @@ class StudentNameFormatter
             return null;
         }
 
-        $normalized = strtoupper(trim($value));
+        $normalized = Str::upper(trim($value));
         $normalized = rtrim($normalized, '.');
 
-        return preg_match('/^[A-Z]$/', $normalized) === 1 ? $normalized : null;
+        return preg_match('/^\pL$/u', $normalized) === 1 ? $normalized : null;
     }
 
     public static function normalizeExtension(?string $value): ?string

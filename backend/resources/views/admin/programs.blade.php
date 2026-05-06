@@ -42,6 +42,7 @@
                             <th>Code</th>
                             <th>Program Name</th>
                             <th>Organization</th>
+                            <th>Students</th>
                             <th class="management-action-col">Action</th>
                         </tr>
                     </thead>
@@ -61,19 +62,34 @@
                                 <td>
                                     <span class="org-pill">{{ $program->org_name }}</span>
                                 </td>
+                                <td>{{ number_format($program->students_count) }}</td>
                                 <td>
-                                    <button
-                                        type="button"
-                                        class="button secondary table-action-button"
-                                        data-modal-open="program-edit-{{ $program->id }}"
-                                    >
-                                        Edit
-                                    </button>
+                                    <div class="table-action-stack">
+                                        <button
+                                            type="button"
+                                            class="button secondary table-action-button"
+                                            data-modal-open="program-edit-{{ $program->id }}"
+                                        >
+                                            Edit
+                                        </button>
+
+                                        @if($program->students_count === 0)
+                                            <button
+                                                type="button"
+                                                class="button warn table-action-button"
+                                                data-modal-open="program-delete-{{ $program->id }}"
+                                            >
+                                                Delete
+                                            </button>
+                                        @else
+                                            <span class="mini">Delete locked while students are assigned.</span>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4">
+                                <td colspan="5">
                                     <div class="empty-state">No programs added yet.</div>
                                 </td>
                             </tr>
@@ -252,6 +268,51 @@
                     </form>
                 </div>
             </div>
+
+            @if($program->students_count === 0)
+                <div
+                    class="management-modal"
+                    id="program-delete-{{ $program->id }}"
+                    data-modal
+                >
+                    <div class="management-modal-panel">
+                        <div class="management-modal-header">
+                            <div>
+                                <div class="eyebrow">Delete Program</div>
+                                <h2>{{ $program->code }}</h2>
+                            </div>
+
+                            <button type="button" class="modal-close-button" data-modal-close>&times;</button>
+                        </div>
+
+                        <form method="POST" action="{{ route('admin.programs.destroy', $program) }}">
+                            @csrf
+                            @method('DELETE')
+
+                            <p class="callout error">
+                                This permanently deletes the program record. Type
+                                <strong>DELETE {{ $program->code }}</strong> to confirm.
+                            </p>
+
+                            <label>
+                                Confirmation
+                                <input
+                                    type="text"
+                                    name="delete_confirmation"
+                                    autocomplete="off"
+                                    required
+                                >
+                                <x-field-error field="delete_confirmation" bag="programDelete" />
+                            </label>
+
+                            <div class="form-actions modal-actions">
+                                <button type="button" class="secondary" data-modal-close>Cancel</button>
+                                <button type="submit" class="warn">Delete Program</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            @endif
         @endforeach
     </div>
 

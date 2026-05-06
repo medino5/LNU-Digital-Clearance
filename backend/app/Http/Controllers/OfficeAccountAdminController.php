@@ -187,7 +187,16 @@ class OfficeAccountAdminController extends Controller
             $request,
             $errorBag,
             [
-            'display_name' => ['required', 'string', 'max:100'],
+            'display_name' => [
+                'required',
+                'string',
+                'max:100',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (! preg_match("/^\pL[\pL.'\\- ]*$/u", (string) $value)) {
+                        $fail('Office account name may only contain letters, spaces, apostrophes, periods, and hyphens.');
+                    }
+                },
+            ],
             'office_type' => ['required', Rule::in($officeTypes)],
             'program_id' => ['nullable', 'exists:programs,id'],
             'year_level' => ['nullable', 'integer', 'between:1,4'],

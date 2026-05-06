@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Program;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -14,7 +15,7 @@ class ProgramAdminController extends Controller
     public function index()
     {
         return view('admin.programs', [
-            'programs' => Program::orderBy('code')->get(),
+            'programs' => Program::withCount('students')->orderBy('code')->get(),
         ]);
     }
 
@@ -50,6 +51,39 @@ class ProgramAdminController extends Controller
             route('admin.programs.index'),
             'success',
             'Program updated successfully.',
+        );
+    }
+
+    public function destroy(Request $request, Program $program)
+    {
+        $redirectTo = route('admin.programs.index');
+        $program->loadCount('students');
+
+        if ($program->students_count > 0) {
+            return $this->redirectWithMessage(
+                $redirectTo,
+                'error',
+                'Program cannot be deleted while students are assigned to it.',
+            );
+        }
+
+        $confirmation = trim((string) $request->input('delete_confirmation', ''));
+        $expected = 'DELETE ' . $program->code;
+
+        if ($confirmation !== $expected) {
+            throw $this->formValidationException(
+                ['delete_confirmation' => 'Type "' . $expected . '" to confirm program deletion.'],
+                'programDelete',
+                $redirectTo,
+            );
+        }
+
+        DB::transaction(fn () => $program->delete());
+
+        return $this->redirectWithMessage(
+            $redirectTo,
+            'success',
+            'Program deleted successfully.',
         );
     }
 

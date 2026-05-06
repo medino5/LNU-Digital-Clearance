@@ -180,6 +180,27 @@ class AdminControllerValidationTest extends TestCase
             ->assertSessionHasErrors(['first_name'], null, 'studentCreate');
     }
 
+    public function test_student_create_accepts_lowercase_and_enye_names(): void
+    {
+        $program = Program::factory()->create();
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.students.store'), [
+                'student_id_number' => '2400777',
+                'first_name' => 'niña',
+                'middle_initial' => 'ñ',
+                'last_name' => 'dela cruz',
+                'program_id' => $program->id,
+                'year_level' => 2,
+                'password' => 'password',
+            ])
+            ->assertRedirect(route('admin.students.index'));
+
+        $student = Student::where('student_id_number', '2400777')->firstOrFail();
+
+        $this->assertSame('niña Ñ. dela cruz', $student->user->formattedName());
+    }
+
     public function test_student_create_rejects_overlong_names_and_passwords(): void
     {
         $program = Program::factory()->create();
@@ -221,6 +242,82 @@ class AdminControllerValidationTest extends TestCase
 
         $this->assertSame($oldHash, $student->user->fresh()->password);
         $this->assertSame('Updated A. Student', $student->user->fresh()->formattedName());
+    }
+
+    public function test_admin_can_view_student_profile_with_clearance_progress(): void
+    {
+        $student = Student::factory()
+            ->for(User::factory()->namedStudent('Niña', 'Ñ', 'Santos'), 'user')
+            ->create();
+
+        \App\Models\Clearance::factory()
+            ->forStudentAndSemester($student, Semester::factory()->create())
+            ->create(['status' => \App\Models\Clearance::STATUS_IN_PROGRESS]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.students.show', $student))
+            ->assertOk()
+            ->assertSee('STUDENT PROFILE')
+            ->assertSee('Niña Ñ. Santos')
+            ->assertSee('Current Progress');
+    }
+
+    public function test_office_user_can_open_profile_for_routed_student_only(): void
+    {
+        $student = Student::factory()->create();
+        $otherStudent = Student::factory()->create();
+        $officeAccount = OfficeAccount::factory()->librarian()->create();
+        $designation = OfficeDesignation::factory()->librarian()->create();
+        OfficeDesignationAssignment::factory()->create([
+            'office_designation_id' => $designation->id,
+            'user_id' => $officeAccount->user_id,
+        ]);
+
+        $clearance = \App\Models\Clearance::factory()->create(['student_id' => $student->id]);
+        \App\Models\ClearanceStep::factory()->create([
+            'clearance_id' => $clearance->id,
+            'office_designation_id' => $designation->id,
+            'office_label' => $designation->display_name,
+        ]);
+
+        $this->actingAs($officeAccount->user)
+            ->get(route('office.students.show', $student))
+            ->assertOk()
+            ->assertSee($student->student_id_number);
+
+        $this->actingAs($officeAccount->user)
+            ->get(route('office.students.show', $otherStudent))
+            ->assertForbidden();
+    }
+
+    public function test_admin_can_delete_student_account_with_hard_confirmation(): void
+    {
+        $student = Student::factory()->create(['student_id_number' => '2400666']);
+        $userId = $student->user_id;
+
+        $this->actingAs($this->admin)
+            ->delete(route('admin.students.destroy', $student), [
+                'delete_confirmation' => 'DELETE 2400666',
+            ])
+            ->assertRedirect(route('admin.students.index'))
+            ->assertSessionHas('success', 'Student account deleted successfully.');
+
+        $this->assertDatabaseMissing('students', ['student_id_number' => '2400666']);
+        $this->assertDatabaseMissing('users', ['id' => $userId]);
+    }
+
+    public function test_student_delete_rejects_missing_hard_confirmation(): void
+    {
+        $student = Student::factory()->create(['student_id_number' => '2400667']);
+
+        $this->actingAs($this->admin)
+            ->delete(route('admin.students.destroy', $student), [
+                'delete_confirmation' => 'delete 2400667',
+            ])
+            ->assertRedirect(route('admin.students.index'))
+            ->assertSessionHasErrors(['delete_confirmation'], null, 'studentDelete');
+
+        $this->assertDatabaseHas('students', ['student_id_number' => '2400667']);
     }
 
     public function test_office_accounts_page_filters_by_office_type(): void
@@ -382,5 +479,34 @@ class AdminControllerValidationTest extends TestCase
             ])
             ->assertRedirect(route('admin.office-accounts.index'))
             ->assertSessionHasErrors(['username'], null, 'officeAccountCreate');
+    }
+
+    public function test_admin_can_delete_program_only_when_no_students_are_assigned(): void
+    {
+        $program = Program::factory()->create(['code' => 'BSSW']);
+
+        $this->actingAs($this->admin)
+            ->delete(route('admin.programs.destroy', $program), [
+                'delete_confirmation' => 'DELETE BSSW',
+            ])
+            ->assertRedirect(route('admin.programs.index'))
+            ->assertSessionHas('success', 'Program deleted successfully.');
+
+        $this->assertDatabaseMissing('programs', ['code' => 'BSSW']);
+    }
+
+    public function test_program_delete_is_not_allowed_while_students_are_assigned(): void
+    {
+        $program = Program::factory()->create(['code' => 'BSEC']);
+        Student::factory()->create(['program_id' => $program->id]);
+
+        $this->actingAs($this->admin)
+            ->delete(route('admin.programs.destroy', $program), [
+                'delete_confirmation' => 'DELETE BSEC',
+            ])
+            ->assertRedirect(route('admin.programs.index'))
+            ->assertSessionHas('error', 'Program cannot be deleted while students are assigned to it.');
+
+        $this->assertDatabaseHas('programs', ['code' => 'BSEC']);
     }
 }

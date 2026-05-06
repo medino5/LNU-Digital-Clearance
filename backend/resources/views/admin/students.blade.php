@@ -66,7 +66,7 @@
                 </div>
             @else
                 <div class="mini">
-                    Showing {{ $students->firstItem() }} – {{ $students->lastItem() }} of {{ $students->total() }} students
+                    Showing {{ $students->firstItem() }} - {{ $students->lastItem() }} of {{ $students->total() }} students
                 </div>
 
                 <div class="management-table-wrap">
@@ -88,18 +88,44 @@
                                         <strong class="student-id-pill">{{ $student->student_id_number }}</strong>
                                     </td>
                                     <td>
-                                        <div class="table-main-text">{{ $student->displayName() }}</div>
+                                        <a
+                                            href="{{ route('admin.students.show', $student) }}"
+                                            class="table-main-text student-profile-link"
+                                            data-student-profile-url="{{ route('admin.students.show', [$student, 'partial' => 1]) }}"
+                                            data-student-profile-full-url="{{ route('admin.students.show', $student) }}"
+                                        >
+                                            {{ $student->displayName() }}
+                                        </a>
                                     </td>
                                     <td>{{ $student->program->code }}</td>
                                     <td>{{ $student->yearLevelLabel() }}</td>
                                     <td>
-                                        <button
-                                            type="button"
-                                            class="button secondary table-action-button"
-                                            data-modal-open="student-edit-{{ $student->id }}"
-                                        >
-                                            Edit
-                                        </button>
+                                        <div class="table-action-stack">
+                                            <a
+                                                href="{{ route('admin.students.show', $student) }}"
+                                                class="button secondary table-action-button student-profile-link"
+                                                data-student-profile-url="{{ route('admin.students.show', [$student, 'partial' => 1]) }}"
+                                                data-student-profile-full-url="{{ route('admin.students.show', $student) }}"
+                                            >
+                                                View
+                                            </a>
+
+                                            <button
+                                                type="button"
+                                                class="button secondary table-action-button"
+                                                data-modal-open="student-edit-{{ $student->id }}"
+                                            >
+                                                Edit
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                class="button warn table-action-button"
+                                                data-modal-open="student-delete-{{ $student->id }}"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -446,10 +472,66 @@
                     </form>
                 </div>
             </div>
+
+            <div
+                class="management-modal"
+                id="student-delete-{{ $student->id }}"
+                data-modal
+            >
+                <div class="management-modal-panel">
+                    <div class="management-modal-header">
+                        <div>
+                            <div class="eyebrow">Delete Student Account</div>
+                            <h2>{{ $student->displayName() }}</h2>
+                        </div>
+
+                        <button type="button" class="modal-close-button" data-modal-close>&times;</button>
+                    </div>
+
+                    <form method="POST" action="{{ route('admin.students.destroy', $student) }}">
+                        @csrf
+                        @method('DELETE')
+
+                        <p class="callout error">
+                            This permanently deletes the student account and linked clearance records. Type
+                            <strong>DELETE {{ $student->student_id_number }}</strong> to confirm.
+                        </p>
+
+                        <label>
+                            Confirmation
+                            <input
+                                type="text"
+                                name="delete_confirmation"
+                                autocomplete="off"
+                                required
+                            >
+                            <x-field-error field="delete_confirmation" bag="studentDelete" />
+                        </label>
+
+                        <div class="form-actions modal-actions">
+                            <button type="button" class="secondary" data-modal-close>Cancel</button>
+                            <button type="submit" class="warn">Delete Student Account</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         @endforeach
+
+        <div class="student-profile-drawer" id="studentProfileDrawer" hidden>
+            <div class="student-profile-drawer-panel">
+                <div class="student-profile-drawer-header">
+                    <button type="button" class="secondary" id="closeStudentProfileDrawer">Close</button>
+                    <a href="#" class="button secondary" id="openStudentProfilePage">Open Full Page</a>
+                </div>
+                <div id="studentProfileDrawerBody">
+                    <div class="empty-state">Loading student profile...</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     @include('admin.partials.management-page-styles')
+    @include('students.partials.profile-styles')
 
     @push('styles')
     <style>
@@ -489,6 +571,51 @@
             background: #dde8f7;
             color: #16385f;
             font-size: 13px;
+        }
+
+        .student-profile-link {
+            text-decoration: none;
+        }
+
+        .student-profile-link:hover,
+        .student-profile-link:focus-visible {
+            color: #0e2742;
+            text-decoration: underline;
+        }
+
+        .student-profile-drawer {
+            position: fixed;
+            inset: 0;
+            z-index: 1300;
+            display: flex;
+            justify-content: flex-end;
+            background: rgba(8, 26, 43, 0.42);
+        }
+
+        .student-profile-drawer[hidden] {
+            display: none !important;
+        }
+
+        .student-profile-drawer-panel {
+            width: min(920px, 100%);
+            height: 100%;
+            overflow-y: auto;
+            padding: 22px;
+            background: #f8f4ea;
+            box-shadow: -18px 0 44px rgba(14, 39, 66, 0.2);
+        }
+
+        .student-profile-drawer-header {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin: -22px -22px 18px;
+            padding: 16px 22px;
+            background: rgba(248, 244, 234, 0.96);
+            border-bottom: 1px solid #e4dacd;
         }
 
         .pagination-wrapper {
@@ -672,6 +799,55 @@
                     input.value.slice(selectionEnd)
                 );
             });
+        });
+
+        const drawer = document.getElementById('studentProfileDrawer');
+        const drawerBody = document.getElementById('studentProfileDrawerBody');
+        const closeDrawerButton = document.getElementById('closeStudentProfileDrawer');
+        const openFullPageLink = document.getElementById('openStudentProfilePage');
+        const studentListUrl = window.location.href;
+
+        const closeDrawer = () => {
+            if (!drawer) return;
+
+            drawer.hidden = true;
+            document.body.style.overflow = '';
+
+            if (window.location.href !== studentListUrl) {
+                window.history.pushState({}, '', studentListUrl);
+            }
+        };
+
+        document.querySelectorAll('.student-profile-link').forEach((link) => {
+            link.addEventListener('click', async (event) => {
+                if (!drawer || !drawerBody || !openFullPageLink) return;
+
+                event.preventDefault();
+                drawer.hidden = false;
+                document.body.style.overflow = 'hidden';
+                drawerBody.innerHTML = '<div class="empty-state">Loading student profile...</div>';
+                openFullPageLink.href = link.dataset.studentProfileFullUrl || link.href;
+
+                try {
+                    const response = await fetch(link.dataset.studentProfileUrl, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Unable to load the student profile.');
+                    }
+
+                    drawerBody.innerHTML = await response.text();
+                    window.history.pushState({}, '', link.dataset.studentProfileFullUrl || link.href);
+                } catch (error) {
+                    drawerBody.innerHTML = '<div class="empty-state">Unable to load the student profile. Open the full page instead.</div>';
+                }
+            });
+        });
+
+        closeDrawerButton?.addEventListener('click', closeDrawer);
+        drawer?.addEventListener('click', (event) => {
+            if (event.target === drawer) closeDrawer();
         });
     });
     </script>

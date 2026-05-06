@@ -43,14 +43,16 @@ class OfficeDashboardController extends Controller
 
             $pendingSteps = (clone $baseQuery)
                 ->where('status', ClearanceStep::STATUS_AWAITING_ACTION)
-                ->get();
+                ->simplePaginate(40, ['*'], 'pending_page')
+                ->withQueryString();
 
             $processedSteps = (clone $baseQuery)
                 ->whereIn('status', [
                     ClearanceStep::STATUS_APPROVED,
                     ClearanceStep::STATUS_FLAGGED,
                 ])
-                ->get();
+                ->simplePaginate(40, ['*'], 'processed_page')
+                ->withQueryString();
         }
 
         return view('office.dashboard', [

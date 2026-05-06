@@ -184,6 +184,14 @@
         font-size: 13px;
     }
 
+    .table-action-stack {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
     .program-code {
         display: inline-flex;
         align-items: center;
