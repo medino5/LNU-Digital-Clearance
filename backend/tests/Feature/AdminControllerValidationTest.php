@@ -1,0 +1,295 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\OfficeAccount;
+use App\Models\OfficeDesignation;
+use App\Models\OfficeDesignationAssignment;
+use App\Models\Program;
+use App\Models\Semester;
+use App\Models\Student;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Tests\TestCase;
+
+class AdminControllerValidationTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private User $admin;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->admin = User::factory()->admin()->create();
+    }
+
+    public function test_program_index_lists_programs_ordered_by_code(): void
+    {
+        Program::factory()->create(['code' => 'BSTM', 'name' => 'Tourism', 'org_name' => 'Tourism Org']);
+        Program::factory()->create(['code' => 'BAEL', 'name' => 'English', 'org_name' => 'English Org']);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.programs.index'))
+            ->assertOk()
+            ->assertSeeInOrder(['BAEL', 'BSTM']);
+    }
+
+    public function test_program_create_rejects_missing_organization_name(): void
+    {
+        $this->actingAs($this->admin)
+            ->from(route('admin.programs.index'))
+            ->post(route('admin.programs.store'), [
+                'code' => 'BSBIO',
+                'name' => 'Bachelor of Science in Biology',
+                'org_name' => '',
+            ])
+            ->assertRedirect(route('admin.programs.index'))
+            ->assertSessionHasErrors(['org_name'], null, 'programCreate');
+
+        $this->assertDatabaseMissing('programs', ['code' => 'BSBIO']);
+    }
+
+    public function test_semester_create_rejects_invalid_academic_year_format(): void
+    {
+        $this->actingAs($this->admin)
+            ->post(route('admin.semesters.store'), [
+                'label' => '1st Semester 2026',
+                'academic_year' => '2026',
+            ])
+            ->assertRedirect(route('admin.semesters.index'))
+            ->assertSessionHasErrors(['academic_year'], null, 'semesterCreate');
+    }
+
+    public function test_semester_update_activation_deactivates_other_semesters(): void
+    {
+        $old = Semester::factory()->active()->create(['label' => '1st Semester 2025-2026']);
+        $new = Semester::factory()->create(['label' => '2nd Semester 2025-2026']);
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.semesters.update', $new), [
+                'label' => '2nd Semester 2025-2026',
+                'academic_year' => '2025-2026',
+                'is_active' => '1',
+            ])
+            ->assertRedirect(route('admin.semesters.index'));
+
+        $this->assertFalse($old->fresh()->is_active);
+        $this->assertTrue($new->fresh()->is_active);
+    }
+
+    public function test_students_page_searches_by_first_name(): void
+    {
+        Student::factory()
+            ->for(User::factory()->namedStudent('Althea', null, 'Santos'), 'user')
+            ->create();
+        Student::factory()
+            ->for(User::factory()->namedStudent('Bryan', null, 'Reyes'), 'user')
+            ->create();
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.students.index', ['student_search' => 'Althea']))
+            ->assertOk()
+            ->assertSee('Althea')
+            ->assertDontSee('Bryan');
+    }
+
+    public function test_students_page_searches_by_last_name(): void
+    {
+        Student::factory()
+            ->for(User::factory()->namedStudent('Nico', null, 'Villanueva'), 'user')
+            ->create();
+        Student::factory()
+            ->for(User::factory()->namedStudent('Mara', null, 'Lopez'), 'user')
+            ->create();
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.students.index', ['student_search' => 'Villanueva']))
+            ->assertOk()
+            ->assertSee('Villanueva')
+            ->assertDontSee('Lopez');
+    }
+
+    public function test_students_page_filters_by_program(): void
+    {
+        $bsit = Program::factory()->create(['code' => 'BSIT']);
+        $bael = Program::factory()->create(['code' => 'BAEL']);
+        Student::factory()->create(['program_id' => $bsit->id, 'student_id_number' => '2400001']);
+        Student::factory()->create(['program_id' => $bael->id, 'student_id_number' => '2400002']);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.students.index', ['student_program' => $bsit->id]))
+            ->assertOk()
+            ->assertSee('2400001')
+            ->assertDontSee('2400002');
+    }
+
+    public function test_students_page_filters_by_year_level(): void
+    {
+        Student::factory()->create(['year_level' => 1, 'student_id_number' => '2400101']);
+        Student::factory()->create(['year_level' => 4, 'student_id_number' => '2400401']);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.students.index', ['student_year_level' => 4]))
+            ->assertOk()
+            ->assertSee('2400401')
+            ->assertDontSee('2400101');
+    }
+
+    public function test_student_create_rejects_emoji_in_name_fields(): void
+    {
+        $program = Program::factory()->create();
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.students.store'), [
+                'student_id_number' => '2400999',
+                'first_name' => 'Ana😀',
+                'middle_initial' => 'C',
+                'last_name' => 'Santos',
+                'program_id' => $program->id,
+                'year_level' => 1,
+                'password' => 'password',
+            ])
+            ->assertRedirect(route('admin.students.index'))
+            ->assertSessionHasErrors(['first_name'], null, 'studentCreate');
+    }
+
+    public function test_student_update_without_password_preserves_existing_password(): void
+    {
+        $program = Program::factory()->create();
+        $student = Student::factory()->create([
+            'program_id' => $program->id,
+            'student_id_number' => '2401234',
+        ]);
+        $oldHash = $student->user->password;
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.students.update', $student), [
+                'student_id_number' => $student->student_id_number,
+                'first_name' => 'Updated',
+                'middle_initial' => 'A',
+                'last_name' => 'Student',
+                'program_id' => $program->id,
+                'year_level' => 2,
+                'password' => '',
+            ])
+            ->assertRedirect(route('admin.students.index'));
+
+        $this->assertSame($oldHash, $student->user->fresh()->password);
+        $this->assertSame('Updated A. Student', $student->user->fresh()->formattedName());
+    }
+
+    public function test_office_accounts_page_filters_by_office_type(): void
+    {
+        OfficeAccount::factory()->vpsd()->create(['display_name' => 'VPSD Office']);
+        OfficeAccount::factory()->librarian()->create(['display_name' => 'Library Office']);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.office-accounts.index', ['office_type' => OfficeAccount::TYPE_VPSD]))
+            ->assertOk()
+            ->assertSee('VPSD Office')
+            ->assertDontSee('Library Office');
+    }
+
+    public function test_office_accounts_page_filters_university_wide_accounts(): void
+    {
+        $program = Program::factory()->create(['code' => 'BSIT']);
+        OfficeAccount::factory()->vpsd()->create(['display_name' => 'Global VPSD']);
+        OfficeAccount::factory()->academicOrgAdviser($program)->create(['display_name' => 'Program Adviser']);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.office-accounts.index', ['office_program' => 'university']))
+            ->assertOk()
+            ->assertSee('Global VPSD')
+            ->assertDontSee('Program Adviser');
+    }
+
+    public function test_office_account_create_trims_name_and_clears_global_scope_fields(): void
+    {
+        $program = Program::factory()->create();
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.office-accounts.store'), [
+                'display_name' => '  VPSD Staff  ',
+                'office_type' => OfficeAccount::TYPE_VPSD,
+                'program_id' => $program->id,
+                'year_level' => 3,
+                'username' => 'vpsd.staff',
+                'password' => 'password',
+            ])
+            ->assertRedirect(route('admin.office-accounts.index'));
+
+        $this->assertDatabaseHas('office_accounts', [
+            'display_name' => 'VPSD Staff',
+            'office_type' => OfficeAccount::TYPE_VPSD,
+            'program_id' => null,
+            'year_level' => null,
+        ]);
+    }
+
+    public function test_office_account_update_without_password_preserves_existing_password(): void
+    {
+        $officeAccount = OfficeAccount::factory()->librarian()->create();
+        $oldHash = $officeAccount->user->password;
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.office-accounts.update', $officeAccount), [
+                'display_name' => 'Updated Library Staff',
+                'office_type' => OfficeAccount::TYPE_LIBRARIAN,
+                'username' => $officeAccount->user->username,
+                'password' => '',
+            ])
+            ->assertRedirect(route('admin.office-accounts.index'));
+
+        $this->assertSame($oldHash, $officeAccount->user->fresh()->password);
+        $this->assertSame('Updated Library Staff', $officeAccount->fresh()->display_name);
+    }
+
+    public function test_designation_assignment_requires_a_user_selection(): void
+    {
+        $designation = OfficeDesignation::factory()->librarian()->create();
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.office-designations.assignment.update', $designation), [
+                'user_id' => '',
+            ])
+            ->assertRedirect(route('admin.routing.index'))
+            ->assertSessionHasErrors(['user_id'], null, 'designationAssignment');
+    }
+
+    public function test_designation_assignment_to_same_user_does_not_duplicate_history(): void
+    {
+        $designation = OfficeDesignation::factory()->librarian()->create();
+        $officeAccount = OfficeAccount::factory()->librarian()->create();
+        OfficeDesignationAssignment::factory()->create([
+            'office_designation_id' => $designation->id,
+            'user_id' => $officeAccount->user_id,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.office-designations.assignment.update', $designation), [
+                'user_id' => $officeAccount->user_id,
+            ])
+            ->assertRedirect(route('admin.routing.index'))
+            ->assertSessionHas('info', 'Designation assignment is already up to date.');
+
+        $this->assertDatabaseCount('office_designation_assignments', 1);
+    }
+
+    public function test_admin_cannot_create_office_account_with_duplicate_username(): void
+    {
+        $existing = User::factory()->office()->create(['username' => 'duplicate.office']);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.office-accounts.store'), [
+                'display_name' => 'Duplicate Office',
+                'office_type' => OfficeAccount::TYPE_LIBRARIAN,
+                'username' => $existing->username,
+                'password' => 'password',
+            ])
+            ->assertRedirect(route('admin.office-accounts.index'))
+            ->assertSessionHasErrors(['username'], null, 'officeAccountCreate');
+    }
+}

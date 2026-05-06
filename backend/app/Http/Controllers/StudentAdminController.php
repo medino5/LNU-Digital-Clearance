@@ -26,23 +26,17 @@ class StudentAdminController extends Controller
         if ($studentSearch !== '') {
             $studentSearchLike = '%' . $studentSearch . '%';
 
-            $studentsQuery->where(function ($query) use ($studentSearchLike) {
+            $fullNameExpressions = $this->studentSearchNameExpressions();
+
+            $studentsQuery->where(function ($query) use ($studentSearchLike, $fullNameExpressions) {
                 $query->where('students.student_id_number', 'like', $studentSearchLike)
                     ->orWhere('users.first_name', 'like', $studentSearchLike)
                     ->orWhere('users.last_name', 'like', $studentSearchLike)
-                    ->orWhere('users.middle_initial', 'like', $studentSearchLike)
-                    ->orWhereRaw(
-                        "TRIM(CONCAT(users.first_name, ' ', COALESCE(CONCAT(users.middle_initial, ' '), ''), users.last_name)) like ?",
-                        [$studentSearchLike]
-                    )
-                    ->orWhereRaw(
-                        "TRIM(CONCAT(users.last_name, ', ', users.first_name, ' ', COALESCE(users.middle_initial, ''))) like ?",
-                        [$studentSearchLike]
-                    )
-                    ->orWhereRaw(
-                        "TRIM(CONCAT(users.first_name, ' ', users.last_name)) like ?",
-                        [$studentSearchLike]
-                    );
+                    ->orWhere('users.middle_initial', 'like', $studentSearchLike);
+
+                foreach ($fullNameExpressions as $expression) {
+                    $query->orWhereRaw($expression . ' like ?', [$studentSearchLike]);
+                }
             });
         }
 
@@ -246,6 +240,26 @@ class StudentAdminController extends Controller
         return [
             'student_id_number.regex' => 'Student ID cannot contain letters or special characters.',
             'student_id_number.size' => 'Student ID must be exactly 7 digits.',
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function studentSearchNameExpressions(): array
+    {
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            return [
+                "TRIM(users.first_name || ' ' || COALESCE(users.middle_initial || ' ', '') || users.last_name)",
+                "TRIM(users.last_name || ', ' || users.first_name || ' ' || COALESCE(users.middle_initial, ''))",
+                "TRIM(users.first_name || ' ' || users.last_name)",
+            ];
+        }
+
+        return [
+            "TRIM(CONCAT(users.first_name, ' ', COALESCE(CONCAT(users.middle_initial, ' '), ''), users.last_name))",
+            "TRIM(CONCAT(users.last_name, ', ', users.first_name, ' ', COALESCE(users.middle_initial, '')))",
+            "TRIM(CONCAT(users.first_name, ' ', users.last_name))",
         ];
     }
 }
