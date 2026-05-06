@@ -136,7 +136,7 @@
                     <div class="field-grid">
                         <label>
                             First Name
-                            <input type="text" name="first_name" value="{{ $shouldOpenCreate ? old('first_name') : '' }}" required>
+                            <input type="text" name="first_name" value="{{ $shouldOpenCreate ? old('first_name') : '' }}" maxlength="60" required>
                             @if($shouldOpenCreate)
                                 <x-field-error field="first_name" bag="studentCreate" />
                             @endif
@@ -144,7 +144,7 @@
 
                         <label>
                             Last Name
-                            <input type="text" name="last_name" value="{{ $shouldOpenCreate ? old('last_name') : '' }}" required>
+                            <input type="text" name="last_name" value="{{ $shouldOpenCreate ? old('last_name') : '' }}" maxlength="60" required>
                             @if($shouldOpenCreate)
                                 <x-field-error field="last_name" bag="studentCreate" />
                             @endif
@@ -235,6 +235,7 @@
                                     type="password"
                                     name="password"
                                     id="student-create-password"
+                                    maxlength="72"
                                     required
                                 >
 
@@ -306,7 +307,7 @@
                         <div class="field-grid">
                             <label>
                                 First Name
-                                <input type="text" name="first_name" value="{{ $shouldOpenEdit ? old('first_name', $studentNameParts['first_name']) : $studentNameParts['first_name'] }}" required>
+                                <input type="text" name="first_name" value="{{ $shouldOpenEdit ? old('first_name', $studentNameParts['first_name']) : $studentNameParts['first_name'] }}" maxlength="60" required>
                                 @if($shouldOpenEdit)
                                     <x-field-error field="first_name" bag="studentUpdate" />
                                 @endif
@@ -314,7 +315,7 @@
 
                             <label>
                                 Last Name
-                                <input type="text" name="last_name" value="{{ $shouldOpenEdit ? old('last_name', $studentNameParts['last_name']) : $studentNameParts['last_name'] }}" required>
+                                <input type="text" name="last_name" value="{{ $shouldOpenEdit ? old('last_name', $studentNameParts['last_name']) : $studentNameParts['last_name'] }}" maxlength="60" required>
                                 @if($shouldOpenEdit)
                                     <x-field-error field="last_name" bag="studentUpdate" />
                                 @endif
@@ -406,6 +407,7 @@
                                         name="password"
                                         id="student-update-password-{{ $student->id }}"
                                         placeholder="Leave blank to keep the current password"
+                                        maxlength="72"
                                     >
 
                                     <button

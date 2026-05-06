@@ -108,6 +108,7 @@
                             name="label"
                             placeholder="2nd Semester 2024-2025"
                             value="{{ $shouldOpenCreate ? old('label') : '' }}"
+                            maxlength="80"
                             required
                         >
                         @if($shouldOpenCreate)
@@ -122,6 +123,7 @@
                             name="academic_year"
                             placeholder="2024-2025"
                             value="{{ $shouldOpenCreate ? old('academic_year') : '' }}"
+                            maxlength="9"
                             required
                         >
                         @if($shouldOpenCreate)
@@ -186,6 +188,7 @@
                                 type="text"
                                 name="label"
                                 value="{{ $shouldOpenEdit ? old('label', $semester->label) : $semester->label }}"
+                                maxlength="80"
                                 required
                             >
                             @if($shouldOpenEdit)
@@ -199,6 +202,7 @@
                                 type="text"
                                 name="academic_year"
                                 value="{{ $shouldOpenEdit ? old('academic_year', $semester->displayAcademicYear()) : $semester->displayAcademicYear() }}"
+                                maxlength="9"
                                 required
                             >
                             @if($shouldOpenEdit)

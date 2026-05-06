@@ -217,7 +217,7 @@ class _MetaPill extends StatelessWidget {
       ),
       child: RichText(
         text: TextSpan(
-          style: const TextStyle(fontFamily: 'serif'),
+          style: DefaultTextStyle.of(context).style,
           children: [
             TextSpan(
               text: '$label\n',

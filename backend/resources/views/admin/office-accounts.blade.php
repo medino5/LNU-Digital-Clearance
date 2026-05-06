@@ -155,6 +155,7 @@
                                 type="text"
                                 name="display_name"
                                 value="{{ $shouldOpenCreate ? old('display_name') : '' }}"
+                                maxlength="100"
                                 required
                             >
                             @if($shouldOpenCreate)
@@ -168,6 +169,7 @@
                                 type="text"
                                 name="username"
                                 value="{{ $shouldOpenCreate ? old('username') : '' }}"
+                                maxlength="60"
                                 required
                             >
                             @if($shouldOpenCreate)
@@ -199,6 +201,7 @@
                                     type="password"
                                     name="password"
                                     id="office-create-password"
+                                    maxlength="72"
                                     required
                                 >
 
@@ -322,6 +325,7 @@
                                     type="text"
                                     name="display_name"
                                     value="{{ $shouldOpenEdit ? old('display_name', $officeAccount->display_name) : $officeAccount->display_name }}"
+                                    maxlength="100"
                                     required
                                 >
                                 @if($shouldOpenEdit)
@@ -335,6 +339,7 @@
                                     type="text"
                                     name="username"
                                     value="{{ $shouldOpenEdit ? old('username', $officeAccount->user->username) : $officeAccount->user->username }}"
+                                    maxlength="60"
                                     required
                                 >
                                 @if($shouldOpenEdit)
@@ -367,6 +372,7 @@
                                         name="password"
                                         id="office-update-password-{{ $officeAccount->id }}"
                                         placeholder="Leave blank to keep the current password"
+                                        maxlength="72"
                                     >
 
                                     <button

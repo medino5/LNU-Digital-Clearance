@@ -76,13 +76,13 @@ class StudentAdminController extends Controller
             'studentCreate',
             [
                 'student_id_number' => $this->studentIdRules(),
-                'first_name' => ['required', 'string', 'max:100', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
+                'first_name' => ['required', 'string', 'max:60', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
                 'middle_initial' => ['nullable', 'string', 'size:1', 'alpha'],
-                'last_name' => ['required', 'string', 'max:100', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
+                'last_name' => ['required', 'string', 'max:60', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
                 'name_extension' => ['nullable', Rule::in(User::studentNameExtensionOptions())],
                 'program_id' => ['required', 'exists:programs,id'],
                 'year_level' => ['required', 'integer', 'between:1,4'],
-                'password' => ['required', 'string', 'min:8'],
+                'password' => ['required', 'string', 'min:8', 'max:72'],
             ],
             $redirectTo,
             $this->studentValidationMessages(),
@@ -134,13 +134,13 @@ class StudentAdminController extends Controller
             'studentUpdate',
             [
                 'student_id_number' => $this->studentIdRules($student),
-                'first_name' => ['required', 'string', 'max:100', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
+                'first_name' => ['required', 'string', 'max:60', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
                 'middle_initial' => ['nullable', 'string', 'size:1', 'alpha'],
-                'last_name' => ['required', 'string', 'max:100', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
+                'last_name' => ['required', 'string', 'max:60', "regex:/^[A-Za-z][A-Za-z'\\-\\s]*$/"],
                 'name_extension' => ['nullable', Rule::in(User::studentNameExtensionOptions())],
                 'program_id' => ['required', 'exists:programs,id'],
                 'year_level' => ['required', 'integer', 'between:1,4'],
-                'password' => ['nullable', 'string', 'min:8'],
+                'password' => ['nullable', 'string', 'min:8', 'max:72'],
             ],
             $redirectTo,
             $this->studentValidationMessages(),
@@ -240,6 +240,9 @@ class StudentAdminController extends Controller
         return [
             'student_id_number.regex' => 'Student ID cannot contain letters or special characters.',
             'student_id_number.size' => 'Student ID must be exactly 7 digits.',
+            'first_name.max' => 'First name must be 60 characters or fewer.',
+            'last_name.max' => 'Last name must be 60 characters or fewer.',
+            'password.max' => 'Password must be 72 characters or fewer.',
         ];
     }
 

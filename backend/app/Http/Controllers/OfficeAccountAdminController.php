@@ -178,26 +178,34 @@ class OfficeAccountAdminController extends Controller
     {
         $officeTypes = array_keys(OfficeAccount::formTypeOptions($officeAccount));
 
+        $request->merge([
+            'display_name' => trim((string) $request->input('display_name', '')),
+            'username' => trim((string) $request->input('username', '')),
+        ]);
+
         $data = $this->validateForm(
             $request,
             $errorBag,
             [
-            'display_name' => ['required', 'string', 'max:255'],
+            'display_name' => ['required', 'string', 'max:100'],
             'office_type' => ['required', Rule::in($officeTypes)],
             'program_id' => ['nullable', 'exists:programs,id'],
             'year_level' => ['nullable', 'integer', 'between:1,4'],
             'username' => [
                 'required',
                 'string',
-                'max:100',
+                'max:60',
                 Rule::unique('users', 'username')->ignore($officeAccount?->user_id),
             ],
-            'password' => [$officeAccount ? 'nullable' : 'required', 'string', 'min:8'],
+            'password' => [$officeAccount ? 'nullable' : 'required', 'string', 'min:8', 'max:72'],
             ],
             $redirectTo,
+            [
+                'display_name.max' => 'Office account name must be 100 characters or fewer.',
+                'username.max' => 'Username must be 60 characters or fewer.',
+                'password.max' => 'Password must be 72 characters or fewer.',
+            ],
         );
-
-        $data['display_name'] = trim($data['display_name']);
 
         $data['program_id'] = OfficeAccount::requiresProgramScopeForType($data['office_type'])
             ? $data['program_id']
