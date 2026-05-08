@@ -2,9 +2,14 @@
 
 use App\Http\Controllers\Api\StudentAuthController;
 use App\Http\Controllers\Api\StudentClearanceController;
+use App\Http\Controllers\Api\StudentRegistrationController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [StudentAuthController::class, 'login'])->name('api.login');
+Route::get('/registration/options', [StudentRegistrationController::class, 'options'])
+    ->name('api.registration.options');
+Route::post('/register', [StudentRegistrationController::class, 'store'])
+    ->name('api.register');
 
 Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
     Route::post('/logout', [StudentAuthController::class, 'logout'])->name('api.logout');
