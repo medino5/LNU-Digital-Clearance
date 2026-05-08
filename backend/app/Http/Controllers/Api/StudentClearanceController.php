@@ -99,17 +99,52 @@ class StudentClearanceController extends Controller
             ], 422);
         }
 
-        if (!$clearance->pdf_path) {
+        $path = $this->resolvePdf($clearance);
+
+        return response()->download(
+            Storage::disk('local')->path($path),
+            ($clearance->reference_number ?: 'clearance-' . $clearance->id) . '.pdf',
+            ['Content-Type' => 'application/pdf']
+        );
+    }
+
+    public function downloadHistory(Request $request, Clearance $clearance)
+    {
+        $student = $this->studentFromRequest($request);
+
+        if ($clearance->student_id !== $student->id) {
+            abort(403, 'You are not allowed to download this clearance.');
+        }
+
+        if ($clearance->status !== Clearance::STATUS_COMPLETED) {
+            abort_if(
+                $clearance->status !== Clearance::STATUS_COMPLETED,
+                403,
+                'Only completed clearances can be downloaded.'
+            );
+        }
+
+        $path = $this->resolvePdf($clearance);
+
+        return response()->download(
+            Storage::disk('local')->path($path),
+            ($clearance->reference_number ?: 'clearance-' . $clearance->id) . '.pdf',
+            ['Content-Type' => 'application/pdf']
+        );
+    }
+
+    private function resolvePdf(Clearance $clearance): string
+    {
+        if (
+            !$clearance->pdf_path ||
+            !Storage::disk('local')->exists($clearance->pdf_path)
+        ) {
             $clearance->update([
                 'pdf_path' => $this->pdfService->generate($clearance),
             ]);
         }
 
-        return response()->download(
-            Storage::disk('local')->path($clearance->pdf_path),
-            ($clearance->reference_number ?: 'clearance') . '.pdf',
-            ['Content-Type' => 'application/pdf']
-        );
+        return $clearance->pdf_path;
     }
 
     protected function studentFromRequest(Request $request)
