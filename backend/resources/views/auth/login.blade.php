@@ -15,26 +15,6 @@
 
 <div class="content login-container">
 
-    {{-- Already logged in --}}
-    @if($currentUser)
-        <div class="callout success mb-20">
-            <strong>You are signed in as:</strong>
-            {{ $currentUser->formattedName() ?: ($currentUser->name ?? $currentUser->username) }}
-            ({{ $currentUser->portalRoleLabel() }})
-            <div class="mini mt-10">
-                Signing in will switch your session.
-            </div>
-
-            <div class="actions-inline mt-10">
-                @if($currentDashboardRoute)
-                    <a class="button secondary" href="{{ $currentDashboardRoute }}">
-                        Return to Current Dashboard
-                    </a>
-                @endif
-            </div>
-        </div>
-    @endif
-
     {{-- Session message --}}
     @if(session('info'))
         <div class="callout success mb-20">

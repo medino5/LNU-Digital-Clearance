@@ -144,7 +144,8 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted || created != true) return;
 
     setState(() {
-      _notice = 'Account created successfully. Please sign in.';
+      _notice =
+          'Registration submitted. Please wait for admin approval before signing in.';
     });
   }
 

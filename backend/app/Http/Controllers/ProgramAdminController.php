@@ -57,13 +57,21 @@ class ProgramAdminController extends Controller
     public function destroy(Request $request, Program $program)
     {
         $redirectTo = route('admin.programs.index');
-        $program->loadCount('students');
+        $program->loadCount(['students', 'registrationRequests']);
 
         if ($program->students_count > 0) {
             return $this->redirectWithMessage(
                 $redirectTo,
                 'error',
                 'Program cannot be deleted while students are assigned to it.',
+            );
+        }
+
+        if ($program->registration_requests_count > 0) {
+            return $this->redirectWithMessage(
+                $redirectTo,
+                'error',
+                'Program cannot be deleted while mobile registration requests are using it.',
             );
         }
 

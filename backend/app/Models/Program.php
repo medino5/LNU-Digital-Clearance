@@ -21,6 +21,11 @@ class Program extends Model
         return $this->hasMany(Student::class);
     }
 
+    public function registrationRequests()
+    {
+        return $this->hasMany(StudentRegistrationRequest::class);
+    }
+
     public function officeAccounts()
     {
         return $this->hasMany(OfficeAccount::class);

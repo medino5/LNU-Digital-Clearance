@@ -2,8 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\Program;
+use App\Models\Student;
+use App\Models\StudentRegistrationRequest;
+use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -59,9 +64,9 @@ class StudentAuthApiTest extends TestCase
             ->assertJsonPath('name_extensions.0', 'Jr');
     }
 
-    public function test_student_can_register_from_mobile_app(): void
+    public function test_student_can_submit_registration_request_from_mobile_app(): void
     {
-        $program = \App\Models\Program::where('code', 'BSIT')->firstOrFail();
+        $program = Program::where('code', 'BSIT')->firstOrFail();
 
         $this->postJson('/api/register', [
             'student_id_number' => '2407777',
@@ -75,31 +80,131 @@ class StudentAuthApiTest extends TestCase
             'password' => 'password',
             'password_confirmation' => 'password',
         ])
-            ->assertCreated()
-            ->assertJsonPath('message', 'Account created successfully. Please sign in.')
-            ->assertJsonPath('student.student_id_number', '2407777')
-            ->assertJsonPath('student.program.code', 'BSIT');
+            ->assertAccepted()
+            ->assertJsonPath('message', 'Registration submitted. Please wait for admin approval before signing in.')
+            ->assertJsonPath('registration_request.student_id_number', '2407777')
+            ->assertJsonPath('registration_request.program.code', 'BSIT');
 
-        $this->assertDatabaseHas('students', [
+        $this->assertDatabaseHas('student_registration_requests', [
             'student_id_number' => '2407777',
             'program_id' => $program->id,
             'year_level' => 2,
-        ]);
-
-        $this->assertDatabaseHas('users', [
-            'username' => '2407777',
             'first_name' => 'niña',
             'middle_initial' => 'Ñ',
             'last_name' => 'dela cruz',
             'name_extension' => 'Jr',
             'email' => 'nina.delacruz@lnu.edu.ph',
-            'role' => \App\Models\User::ROLE_STUDENT,
+            'status' => StudentRegistrationRequest::STATUS_PENDING,
         ]);
+
+        $this->assertDatabaseMissing('students', [
+            'student_id_number' => '2407777',
+        ]);
+
+        $this->assertDatabaseMissing('users', [
+            'username' => '2407777',
+        ]);
+
+        $registrationRequest = StudentRegistrationRequest::where('student_id_number', '2407777')->firstOrFail();
+        $this->assertTrue(Hash::check('password', $registrationRequest->password));
+    }
+
+    public function test_admin_can_approve_mobile_registration_request_and_create_student_account(): void
+    {
+        $program = Program::where('code', 'BSIT')->firstOrFail();
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+
+        $registrationRequest = StudentRegistrationRequest::factory()->create([
+            'student_id_number' => '2408888',
+            'first_name' => 'Ana',
+            'middle_initial' => 'M',
+            'last_name' => 'Santos',
+            'email' => 'ana.santos@lnu.edu.ph',
+            'program_id' => $program->id,
+            'year_level' => 3,
+            'password' => Hash::make('password'),
+            'status' => StudentRegistrationRequest::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.registration-requests.approve', $registrationRequest))
+            ->assertRedirect(route('admin.registration-requests.index'));
+
+        $this->assertDatabaseHas('student_registration_requests', [
+            'id' => $registrationRequest->id,
+            'status' => StudentRegistrationRequest::STATUS_APPROVED,
+            'reviewed_by' => $admin->id,
+        ]);
+
+        $this->assertDatabaseHas('students', [
+            'student_id_number' => '2408888',
+            'program_id' => $program->id,
+            'year_level' => 3,
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'username' => '2408888',
+            'first_name' => 'Ana',
+            'middle_initial' => 'M',
+            'last_name' => 'Santos',
+            'email' => 'ana.santos@lnu.edu.ph',
+            'role' => User::ROLE_STUDENT,
+        ]);
+    }
+
+    public function test_admin_can_reject_mobile_registration_request_with_reason(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+        $registrationRequest = StudentRegistrationRequest::factory()->create([
+            'student_id_number' => '2409999',
+            'status' => StudentRegistrationRequest::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.registration-requests.reject', $registrationRequest), [
+                'review_note' => 'Student ID does not match submitted records.',
+            ])
+            ->assertRedirect(route('admin.registration-requests.index'));
+
+        $this->assertDatabaseHas('student_registration_requests', [
+            'id' => $registrationRequest->id,
+            'status' => StudentRegistrationRequest::STATUS_REJECTED,
+            'reviewed_by' => $admin->id,
+            'review_note' => 'Student ID does not match submitted records.',
+        ]);
+
+        $this->assertDatabaseMissing('students', [
+            'student_id_number' => '2409999',
+        ]);
+    }
+
+    public function test_mobile_registration_rejects_duplicate_pending_student_id(): void
+    {
+        $program = Program::where('code', 'BSIT')->firstOrFail();
+
+        StudentRegistrationRequest::factory()->create([
+            'student_id_number' => '2405555',
+            'program_id' => $program->id,
+            'status' => StudentRegistrationRequest::STATUS_PENDING,
+        ]);
+
+        $this->postJson('/api/register', [
+            'student_id_number' => '2405555',
+            'first_name' => 'Juan',
+            'last_name' => 'Reyes',
+            'email' => 'juan.reyes@lnu.edu.ph',
+            'program_id' => $program->id,
+            'year_level' => 1,
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['student_id_number']);
     }
 
     public function test_mobile_registration_rejects_admin_student_rule_violations(): void
     {
-        $program = \App\Models\Program::where('code', 'BSIT')->firstOrFail();
+        $program = Program::where('code', 'BSIT')->firstOrFail();
         $futureStudentId = now()->addYear()->format('y') . '00001';
 
         $this->postJson('/api/register', [
@@ -165,7 +270,7 @@ class StudentAuthApiTest extends TestCase
     {
         // This verifies the token-authenticated profile endpoint used by the
         // mobile app during session restore and profile refresh.
-        $student = \App\Models\Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
         Sanctum::actingAs($student->user);
 
         $this->getJson('/api/me')

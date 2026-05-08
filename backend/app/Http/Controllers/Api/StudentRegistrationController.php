@@ -4,11 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Program;
-use App\Models\Student;
+use App\Models\StudentRegistrationRequest;
 use App\Models\User;
 use App\Support\StudentNameFormatter;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
@@ -64,6 +63,8 @@ class StudentRegistrationController extends Controller
                     'email',
                     'ends_with:@lnu.edu.ph',
                     Rule::unique('users', 'email'),
+                    Rule::unique('student_registration_requests', 'email')
+                        ->where('status', StudentRegistrationRequest::STATUS_PENDING),
                 ],
                 'program_id' => ['required', 'integer', 'exists:programs,id'],
                 'year_level' => ['required', 'integer', 'between:1,4'],
@@ -85,49 +86,36 @@ class StudentRegistrationController extends Controller
             'name_extension' => StudentNameFormatter::normalizeExtension($data['name_extension'] ?? null),
         ];
 
-        $student = DB::transaction(function () use ($data, $nameParts) {
-            $user = User::create([
-                'name' => StudentNameFormatter::compose(
-                    $nameParts['first_name'],
-                    $nameParts['middle_initial'],
-                    $nameParts['last_name'],
-                    $nameParts['name_extension'],
-                ),
-                'first_name' => $nameParts['first_name'],
-                'middle_initial' => $nameParts['middle_initial'],
-                'last_name' => $nameParts['last_name'],
-                'name_extension' => $nameParts['name_extension'],
-                'username' => $data['student_id_number'],
-                'email' => filled($data['email'] ?? null) ? strtolower($data['email']) : null,
-                'password' => Hash::make($data['password']),
-                'role' => User::ROLE_STUDENT,
-                'is_student' => true,
-                'is_staff' => false,
-            ]);
-
-            return Student::create([
-                'user_id' => $user->id,
-                'student_id_number' => $data['student_id_number'],
-                'program_id' => $data['program_id'],
-                'year_level' => $data['year_level'],
-            ])->load(['user', 'program']);
-        });
+        $registrationRequest = StudentRegistrationRequest::create([
+            'student_id_number' => $data['student_id_number'],
+            'first_name' => $nameParts['first_name'],
+            'middle_initial' => $nameParts['middle_initial'],
+            'last_name' => $nameParts['last_name'],
+            'name_extension' => $nameParts['name_extension'],
+            'email' => filled($data['email'] ?? null) ? strtolower($data['email']) : null,
+            'program_id' => $data['program_id'],
+            'year_level' => $data['year_level'],
+            'password' => Hash::make($data['password']),
+            'status' => StudentRegistrationRequest::STATUS_PENDING,
+        ])->load('program');
 
         return response()->json([
-            'message' => 'Account created successfully. Please sign in.',
-            'student' => [
-                'name' => $student->displayName(),
-                'student_id_number' => $student->student_id_number,
+            'message' => 'Registration submitted. Please wait for admin approval before signing in.',
+            'registration_request' => [
+                'id' => $registrationRequest->id,
+                'status' => $registrationRequest->status,
+                'name' => $registrationRequest->displayName(),
+                'student_id_number' => $registrationRequest->student_id_number,
                 'program' => [
-                    'id' => $student->program->id,
-                    'code' => $student->program->code,
-                    'name' => $student->program->name,
-                    'org_name' => $student->program->org_name,
+                    'id' => $registrationRequest->program->id,
+                    'code' => $registrationRequest->program->code,
+                    'name' => $registrationRequest->program->name,
+                    'org_name' => $registrationRequest->program->org_name,
                 ],
-                'year_level' => $student->year_level,
-                'year_level_label' => $student->yearLevelLabel(),
+                'year_level' => $registrationRequest->year_level,
+                'year_level_label' => $registrationRequest->yearLevelLabel(),
             ],
-        ], 201);
+        ], 202);
     }
 
     /**
@@ -151,6 +139,16 @@ class StudentRegistrationController extends Controller
             },
             Rule::unique('students', 'student_id_number'),
             Rule::unique('users', 'username'),
+            function (string $attribute, mixed $value, \Closure $fail): void {
+                $hasPendingRequest = StudentRegistrationRequest::query()
+                    ->where('student_id_number', (string) $value)
+                    ->where('status', StudentRegistrationRequest::STATUS_PENDING)
+                    ->exists();
+
+                if ($hasPendingRequest) {
+                    $fail('A registration request for this student ID is already pending admin approval.');
+                }
+            },
         ];
     }
 

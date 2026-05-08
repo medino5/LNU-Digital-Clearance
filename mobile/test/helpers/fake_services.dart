@@ -147,7 +147,8 @@ class FakeRegistrationService extends RegistrationService {
     RegistrationOptions? options,
     this.loadError,
     this.registerError,
-    this.registerMessage = 'Account created successfully. Please sign in.',
+    this.registerMessage =
+        'Registration submitted. Please wait for admin approval before signing in.',
   }) : options =
            options ??
            const RegistrationOptions(

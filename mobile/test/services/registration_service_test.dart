@@ -68,9 +68,10 @@ void main() {
 
               return http.Response(
                 jsonEncode({
-                  'message': 'Account created successfully. Please sign in.',
+                  'message':
+                      'Registration submitted. Please wait for admin approval before signing in.',
                 }),
-                201,
+                202,
                 headers: {'content-type': 'application/json'},
               );
             }),
@@ -92,7 +93,10 @@ void main() {
           ),
         );
 
-        expect(message, 'Account created successfully. Please sign in.');
+        expect(
+          message,
+          'Registration submitted. Please wait for admin approval before signing in.',
+        );
       },
     );
 

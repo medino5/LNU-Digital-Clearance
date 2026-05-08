@@ -18,7 +18,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Create Account'), findsNWidgets(2));
+      expect(find.text('Create Account'), findsOneWidget);
+      expect(find.text('Submit for Approval'), findsOneWidget);
       expect(find.text('First Name'), findsOneWidget);
       expect(find.text('Student ID'), findsOneWidget);
       expect(find.text('Academic Profile'), findsOneWidget);
