@@ -204,16 +204,31 @@ class _AppShellState extends State<AppShell> {
   }
 
   Future<void> _downloadPdf() async {
+    if (_isDownloadingPdf) {
+      return;
+    }
+
     final clearance = _payload?['clearance'] as Map<String, dynamic>?;
+    final status = clearance?['status'] as String?;
     final referenceNumber = clearance?['reference_number'] as String?;
 
+    if (status != 'completed') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Your clearance PDF is locked until all required signatories approve.',
+          ),
+        ),
+      );
+      return;
+    }
+
     setState(() {
-      // Ticket polish: isolate PDF download loading
       _isDownloadingPdf = true;
     });
 
     try {
-      final path = await _clearanceService.downloadCurrentClearancePdf(
+      final result = await _clearanceService.downloadCurrentClearancePdf(
         referenceNumber: referenceNumber,
       );
 
@@ -221,9 +236,15 @@ class _AppShellState extends State<AppShell> {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('PDF saved to $path')));
+      final isWebDownload = result.toLowerCase().contains('downloaded as');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isWebDownload ? result : 'PDF saved successfully: $result',
+          ),
+        ),
+      );
     } catch (error) {
       if (await _handleSessionExpired(error)) {
         return;

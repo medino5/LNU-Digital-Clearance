@@ -188,11 +188,11 @@ class PdfScreen extends StatelessWidget {
               child: const Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.folder_zip_outlined, color: Color(0xFF1F7A45)),
+                  Icon(Icons.picture_as_pdf_outlined, color: Color(0xFF1F7A45)),
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'The PDF is saved to the device temporary storage path reported after download. You can download again anytime if needed.',
+                      'Your clearance PDF will download automatically. On Android, it will be saved using the app-safe file path. On Chrome/web, your browser will handle the download.',
                       style: TextStyle(
                         color: _navy,
                         fontWeight: FontWeight.w600,
