@@ -23,4 +23,6 @@ Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
         ->name('api.clearance.steps.resubmit');
     Route::get('/clearance/current/pdf', [StudentClearanceController::class, 'downloadCurrent'])
         ->name('api.clearance.current.pdf');
+    Route::get('/clearance/history/{clearance}/pdf', [StudentClearanceController::class, 'downloadHistory'])
+        ->name('api.clearance.history.pdf');
 });
