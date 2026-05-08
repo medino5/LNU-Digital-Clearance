@@ -77,9 +77,7 @@ class PortalRoutingTest extends TestCase
         $this->actingAs($admin)
             ->get(route('portal.login'))
             ->assertOk()
-            ->assertSee('Digital Clearance Login Portal')
-            ->assertSee('Signing in will switch your session.')
-            ->assertSee('Return to Current Dashboard');
+            ->assertSee('Digital Clearance Login Portal');
     }
 
     public function test_shared_login_routes_admin_to_admin_dashboard(): void

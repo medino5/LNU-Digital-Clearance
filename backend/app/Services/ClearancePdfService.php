@@ -21,19 +21,27 @@ class ClearancePdfService
         $y -= 26;
 
         $pdf->text(48, $y, 'Student Name:', 10, true);
-        $pdf->text(142, $y, $clearance->student_name, 10);
-        $pdf->text(330, $y, 'Student ID:', 10, true);
-        $pdf->text(405, $y, $clearance->student_id_number, 10);
+        $pdf->text(140, $y, $clearance->student_name, 10);
+
+        $pdf->text(365, $y, 'Student ID:', 10, true);
+        $pdf->text(445, $y, $clearance->student_id_number, 10);
+
         $y -= 18;
+
         $pdf->text(48, $y, 'Program:', 10, true);
-        $pdf->text(100, $y, $clearance->program_code . ' - ' . $clearance->program_name, 10);
-        $pdf->text(330, $y, 'Year Level:', 10, true);
-        $pdf->text(410, $y, $this->yearLevelLabel($clearance->year_level), 10);
-        $y -= 18;
+        $programText = $clearance->program_code . ' - ' . $clearance->program_name;
+        $programEndY = $pdf->wrappedText(110, $y, 210, $programText, 10);
+        $pdf->text(365, $y, 'Year Level:', 10, true);
+        $pdf->text(445, $y, $this->yearLevelLabel($clearance->year_level), 10);
+        $y = min($programEndY, $y - 18);
+        $y -= 4;
+
         $pdf->text(48, $y, 'Semester:', 10, true);
-        $pdf->text(112, $y, $clearance->semester_label, 10);
-        $pdf->text(330, $y, 'Reference No.:', 10, true);
-        $pdf->text(425, $y, $clearance->reference_number ?? 'Pending', 10);
+        $pdf->text(140, $y, $clearance->semester_label, 10);
+
+        $pdf->text(365, $y, 'Reference No.:', 10, true);
+        $pdf->text(445, $y, $clearance->reference_number ?? 'Pending', 10);
+
         $y -= 28;
 
         $statement = 'This certifies that the student named above has completed all required clearance approvals for the indicated semester.';
@@ -55,7 +63,7 @@ class ClearancePdfService
                 365,
                 $y,
                 190,
-                optional($step->signed_at)->format('M d, Y h:i A') ?? 'Pending',
+                $this->formatDateTime($step->signed_at),
                 10
             );
 
@@ -84,5 +92,17 @@ class ClearancePdfService
             4 => '4th Year',
             default => $yearLevel . 'th Year',
         };
+    }
+
+    protected function formatDateTime($value): string
+    {
+        if ($value === null) {
+            return 'Pending';
+        }
+
+        return $value
+            ->copy()
+            ->timezone('Asia/Manila')
+            ->format('M d, Y h:i A');
     }
 }
