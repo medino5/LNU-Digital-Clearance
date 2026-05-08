@@ -21,6 +21,20 @@ class OfficeDashboardController extends Controller
             abort(403, 'Unauthorized.');
         }
 
+        $tab = $request->query('tab') === 'archive' ? 'archive' : 'active';
+        $archiveSearch = trim((string) $request->query('archive_search', ''));
+        $archiveStatus = in_array($request->query('archive_status'), [
+            ClearanceStep::STATUS_APPROVED,
+            ClearanceStep::STATUS_FLAGGED,
+        ], true) ? $request->query('archive_status') : '';
+        $archiveSort = in_array($request->query('archive_sort'), [
+            'processed_desc',
+            'processed_asc',
+            'student_asc',
+            'student_id_asc',
+            'program_asc',
+        ], true) ? $request->query('archive_sort') : 'processed_desc';
+
         $officeDesignations = $request->user()
             ->loadMissing('activeOfficeDesignations.program')
             ->activeOfficeDesignations
@@ -30,44 +44,68 @@ class OfficeDashboardController extends Controller
         $hasActiveDesignation = $officeDesignations->isNotEmpty();
 
         $pendingSteps = collect();
-        $processedSteps = collect();
+        $archiveSteps = collect();
+        $pendingCount = 0;
+        $archiveCount = 0;
 
         if ($hasActiveDesignation) {
-            $baseQuery = ClearanceStep::with([
+            $baseQuery = ClearanceStep::query()
+                ->select('clearance_steps.*')
+                ->with([
                     'clearance.student.user',
                     'clearance.student.program',
                     'officeDesignation.program',
                 ])
-                ->whereIn('office_designation_id', $officeDesignations->pluck('id'))
-                ->orderByDesc('updated_at');
+                ->whereIn('clearance_steps.office_designation_id', $officeDesignations->pluck('id'));
 
-            $pendingSteps = (clone $baseQuery)
-                ->where('status', ClearanceStep::STATUS_AWAITING_ACTION)
-                ->simplePaginate(20, ['*'], 'pending_page')
-                ->withQueryString();
+            $pendingCount = (clone $baseQuery)
+                ->where('clearance_steps.status', ClearanceStep::STATUS_AWAITING_ACTION)
+                ->count();
 
-            $processedSteps = (clone $baseQuery)
-                ->whereIn('status', [
+            $archiveBaseQuery = (clone $baseQuery)
+                ->whereIn('clearance_steps.status', [
                     ClearanceStep::STATUS_APPROVED,
                     ClearanceStep::STATUS_FLAGGED,
-                ])
-                ->simplePaginate(20, ['*'], 'processed_page')
-                ->withQueryString();
+                ]);
+
+            $archiveCount = (clone $archiveBaseQuery)->count();
+
+            if ($tab === 'active') {
+                $pendingSteps = (clone $baseQuery)
+                    ->where('clearance_steps.status', ClearanceStep::STATUS_AWAITING_ACTION)
+                    ->orderByDesc('clearance_steps.updated_at')
+                    ->simplePaginate(20, ['*'], 'pending_page')
+                    ->withQueryString();
+            } else {
+                $archiveQuery = $this->applyArchiveFilters(
+                    $archiveBaseQuery,
+                    $archiveSearch,
+                    $archiveStatus,
+                );
+
+                $archiveSteps = $this->applyArchiveSort($archiveQuery, $archiveSort)
+                    ->simplePaginate(20, ['*'], 'archive_page')
+                    ->withQueryString();
+            }
         }
 
         return view('office.dashboard', [
             'dashboardTitle' => 'Office Dashboard',
             'hasActiveDesignation' => $hasActiveDesignation,
             'officeDesignations' => $officeDesignations,
+            'tab' => $tab,
             'pendingSteps' => $pendingSteps,
-            'processedSteps' => $processedSteps,
+            'archiveSteps' => $archiveSteps,
+            'pendingCount' => $pendingCount,
+            'archiveCount' => $archiveCount,
+            'archiveSearch' => $archiveSearch,
+            'archiveStatus' => $archiveStatus,
+            'archiveSort' => $archiveSort,
         ]);
     }
 
     public function process(Request $request, ClearanceStep $step)
     {
-        $redirectTo = $this->officeDashboardUrl();
-
         if (! $request->user()->canAccessOfficePortal()) {
             abort(403, 'Unauthorized.');
         }
@@ -89,12 +127,17 @@ class OfficeDashboardController extends Controller
                 'confirm_action' => ['nullable','string'],
                 'remarks' => ['nullable', 'string', 'required_if:action,flag'],
                 'step_id' => ['nullable', 'integer'],
+                'return_tab' => ['nullable', 'in:active,archive'],
             ],
-            $redirectTo,
+            $this->officeDashboardUrl(),
             [
-                'remarks.required_if' => 'Flag reason is required before marking this clearance step as flagged.',
+                'remarks.required_if' => 'Reject reason is required before rejecting this clearance step.',
             ],
         );
+
+        $redirectTo = route('office.dashboard', [
+            'tab' => ($data['return_tab'] ?? null) === 'archive' ? 'archive' : 'active',
+        ]);
 
         try {
             if ($data['action'] === 'approve') {
@@ -119,7 +162,7 @@ class OfficeDashboardController extends Controller
             } elseif ($data['action'] === 'undo_flag') {
 
                 if (($data['confirm_action'] ?? null) !== 'undo_flag') {
-                    throw new RuntimeException('Undo flag not confirmed.');
+                    throw new RuntimeException('Undo rejection not confirmed.');
                 }
 
                 $this->workflow->undoFlag($step, $request->user());
@@ -147,5 +190,74 @@ class OfficeDashboardController extends Controller
             'success',
             'Clearance step updated successfully.',
         );
+    }
+
+    private function applyArchiveFilters($query, string $search, string $status)
+    {
+        if ($status !== '') {
+            $query->where('clearance_steps.status', $status);
+        }
+
+        if ($search !== '') {
+            $searchLike = '%' . $search . '%';
+
+            $query->where(function ($query) use ($searchLike) {
+                $query->where('clearance_steps.office_label', 'like', $searchLike)
+                    ->orWhere('clearance_steps.remarks', 'like', $searchLike)
+                    ->orWhereHas('clearance', function ($clearanceQuery) use ($searchLike) {
+                        $clearanceQuery
+                            ->where('reference_number', 'like', $searchLike)
+                            ->orWhereHas('student', function ($studentQuery) use ($searchLike) {
+                                $studentQuery
+                                    ->where('student_id_number', 'like', $searchLike)
+                                    ->orWhereHas('program', function ($programQuery) use ($searchLike) {
+                                        $programQuery
+                                            ->where('code', 'like', $searchLike)
+                                            ->orWhere('name', 'like', $searchLike);
+                                    })
+                                    ->orWhereHas('user', function ($userQuery) use ($searchLike) {
+                                        $userQuery
+                                            ->where('name', 'like', $searchLike)
+                                            ->orWhere('first_name', 'like', $searchLike)
+                                            ->orWhere('last_name', 'like', $searchLike);
+                                    });
+                            });
+                    });
+            });
+        }
+
+        return $query;
+    }
+
+    private function applyArchiveSort($query, string $sort)
+    {
+        if (in_array($sort, ['student_asc', 'student_id_asc', 'program_asc'], true)) {
+            $query
+                ->join('clearances', 'clearance_steps.clearance_id', '=', 'clearances.id')
+                ->join('students', 'clearances.student_id', '=', 'students.id')
+                ->join('users', 'students.user_id', '=', 'users.id')
+                ->leftJoin('programs', 'students.program_id', '=', 'programs.id');
+        }
+
+        return match ($sort) {
+            'processed_asc' => $query
+                ->orderBy('clearance_steps.signed_at')
+                ->orderBy('clearance_steps.updated_at'),
+            'student_asc' => $query
+                ->orderBy('users.last_name')
+                ->orderBy('users.first_name')
+                ->orderBy('users.name')
+                ->orderByDesc('clearance_steps.signed_at'),
+            'student_id_asc' => $query
+                ->orderBy('students.student_id_number')
+                ->orderByDesc('clearance_steps.signed_at'),
+            'program_asc' => $query
+                ->orderBy('programs.code')
+                ->orderBy('users.last_name')
+                ->orderByDesc('clearance_steps.signed_at'),
+            default => $query
+                ->orderByDesc('clearance_steps.signed_at')
+                ->orderByDesc('clearance_steps.updated_at'),
+        };
     }
 }
