@@ -5,18 +5,22 @@ import '../core/network_config.dart';
 import '../core/session_expired_exception.dart';
 import '../features/shell/app_shell.dart';
 import '../services/auth_service.dart';
+import '../services/registration_service.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({
     super.key,
     this.initialMessage,
     this.authService,
+    this.registrationService,
     this.shellBuilder,
     this.connectionTestBuilder,
   });
 
   final String? initialMessage;
   final AuthService? authService;
+  final RegistrationService? registrationService;
   final WidgetBuilder? shellBuilder;
   final WidgetBuilder? connectionTestBuilder;
 
@@ -127,6 +131,21 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     }
+  }
+
+  Future<void> _openRegistration() async {
+    final created = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) =>
+            RegisterScreen(registrationService: widget.registrationService),
+      ),
+    );
+
+    if (!mounted || created != true) return;
+
+    setState(() {
+      _notice = 'Account created successfully. Please sign in.';
+    });
   }
 
   @override
@@ -246,7 +265,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       decoration: InputDecoration(
                         labelText: 'Password',
                         suffixIcon: IconButton(
-                          tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                          tooltip: _obscurePassword
+                              ? 'Show password'
+                              : 'Hide password',
                           icon: Icon(
                             _obscurePassword
                                 ? Icons.visibility_off
@@ -312,6 +333,24 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ],
+                    const SizedBox(height: 14),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          'Need an account?',
+                          style: TextStyle(color: Colors.grey.shade700),
+                        ),
+                        TextButton(
+                          onPressed: _isLoading ? null : _openRegistration,
+                          child: const Text(
+                            'Create Account',
+                            style: TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),

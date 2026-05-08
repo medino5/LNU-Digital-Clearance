@@ -1,6 +1,7 @@
 import 'package:mobile/core/session_expired_exception.dart';
 import 'package:mobile/services/auth_service.dart';
 import 'package:mobile/services/clearance_service.dart';
+import 'package:mobile/services/registration_service.dart';
 
 import 'fake_token_store.dart';
 
@@ -138,6 +139,57 @@ class FakeClearanceService extends ClearanceService {
     }
 
     return resubmitPayload ?? currentPayload ?? const <String, dynamic>{};
+  }
+}
+
+class FakeRegistrationService extends RegistrationService {
+  FakeRegistrationService({
+    RegistrationOptions? options,
+    this.loadError,
+    this.registerError,
+    this.registerMessage = 'Account created successfully. Please sign in.',
+  }) : options =
+           options ??
+           const RegistrationOptions(
+             programs: [
+               RegistrationProgram(
+                 id: 1,
+                 code: 'BSIT',
+                 name: 'Bachelor of Science in Information Technology',
+                 organizationName: 'Information Technology Students Society',
+               ),
+             ],
+             yearLevels: [
+               RegistrationYearLevel(value: 1, label: '1st Year'),
+               RegistrationYearLevel(value: 2, label: '2nd Year'),
+             ],
+             nameExtensions: ['Jr', 'Sr'],
+           );
+
+  RegistrationOptions options;
+  Object? loadError;
+  Object? registerError;
+  String registerMessage;
+  RegistrationRequest? lastRequest;
+
+  @override
+  Future<RegistrationOptions> loadOptions() async {
+    if (loadError != null) {
+      throw loadError!;
+    }
+
+    return options;
+  }
+
+  @override
+  Future<String> register(RegistrationRequest request) async {
+    lastRequest = request;
+
+    if (registerError != null) {
+      throw registerError!;
+    }
+
+    return registerMessage;
   }
 }
 
