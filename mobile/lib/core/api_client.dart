@@ -41,13 +41,13 @@ class ApiClient {
           .timeout(const Duration(seconds: 10));
       return response;
     } on SocketException {
-      throw Exception(_deviceReachabilityMessage());
-    } on TimeoutException {
-      throw Exception(_timeoutMessage());
-    } on HandshakeException {
-      throw Exception(_tlsHandshakeMessage());
+        throw Exception('Check your internet or backend connection.');
+      } on TimeoutException {
+        throw Exception('Request timed out. Please try again.');
+      } on HandshakeException {
+        throw Exception('Secure connection failed. Please try again.');
+      }
     }
-  }
 
   Future<http.Response> delete(
     String path, {

@@ -24,5 +24,5 @@ Future<String> saveClearancePdfBytes(
 
   html.Url.revokeObjectUrl(url);
 
-  return 'Downloaded as $safeFileName';
+  return 'WEB_DOWNLOAD_TRIGGERED';
 }

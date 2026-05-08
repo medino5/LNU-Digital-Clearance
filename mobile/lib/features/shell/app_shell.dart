@@ -98,7 +98,7 @@ class _AppShellState extends State<AppShell> {
       if (!mounted) return;
 
       setState(() {
-        _error = error.toString().replaceFirst('Exception: ', '');
+        _error = _getErrorMessage(error);
         _isInitialLoading = false;
         _isRefreshing = false;
       });
@@ -138,7 +138,7 @@ class _AppShellState extends State<AppShell> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(error.toString().replaceFirst('Exception: ', '')),
+          content: Text(_getErrorMessage(error)),
         ),
       );
     } finally {
@@ -191,7 +191,7 @@ class _AppShellState extends State<AppShell> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(error.toString().replaceFirst('Exception: ', '')),
+          content: Text(_getErrorMessage(error)),
         ),
       );
     } finally {
@@ -225,6 +225,7 @@ class _AppShellState extends State<AppShell> {
 
     setState(() {
       _isDownloadingPdf = true;
+      _error = null;
     });
 
     try {
@@ -236,14 +237,10 @@ class _AppShellState extends State<AppShell> {
         return;
       }
 
-      final isWebDownload = result.toLowerCase().contains('downloaded as');
+      final message = _getPdfMessage(result);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            isWebDownload ? result : 'PDF saved successfully: $result',
-          ),
-        ),
+        SnackBar(content: Text(message)),
       );
     } catch (error) {
       if (await _handleSessionExpired(error)) {
@@ -256,7 +253,7 @@ class _AppShellState extends State<AppShell> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(error.toString().replaceFirst('Exception: ', '')),
+          content: Text(_getErrorMessage(error)),
         ),
       );
     } finally {
@@ -343,6 +340,30 @@ class _AppShellState extends State<AppShell> {
       default:
         return '';
     }
+  }
+
+  String _getPdfMessage(String result) {
+    if (result == 'WEB_DOWNLOAD_TRIGGERED') {
+      return 'PDF download started. Check your browser downloads.';
+    }
+
+    return 'PDF downloaded successfully.';
+  }
+
+  String _getErrorMessage(Object error) {
+    final message = error.toString().replaceFirst('Exception: ', '');
+
+    if (message.contains('internet') ||
+        message.contains('reach') ||
+        message.contains('SocketException')) {
+      return 'Check your internet or backend connection.';
+    }
+
+    if (message.contains('timeout')) {
+      return 'Request timed out. Please try again.';
+    }
+
+    return message;
   }
 
   Widget _buildTopBar() {
