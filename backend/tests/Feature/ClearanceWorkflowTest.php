@@ -344,7 +344,7 @@ class ClearanceWorkflowTest extends TestCase
                 'step_id' => $step->id,
             ])
             ->assertOk()
-            ->assertSee('Flag reason is required before marking this clearance step as flagged.');
+            ->assertSee('Reject reason is required before rejecting this clearance step.');
     }
 
     public function test_processed_approved_step_keeps_view_and_undo_actions_on_office_dashboard(): void
@@ -367,7 +367,13 @@ class ClearanceWorkflowTest extends TestCase
             ->assertRedirect();
 
         $this->actingAs($officeUser)
-            ->get('/office')
+            ->get(route('office.dashboard'))
+            ->assertOk()
+            ->assertSee('Completed Clearance Archive')
+            ->assertDontSee('Approved by office dashboard test.');
+
+        $this->actingAs($officeUser)
+            ->get(route('office.dashboard', ['tab' => 'archive']))
             ->assertOk()
             ->assertSee('Undo Approval')
             ->assertSee('Approved by office dashboard test.')
@@ -476,12 +482,23 @@ class ClearanceWorkflowTest extends TestCase
             ->assertRedirect();
 
         $this->actingAs($officeUser)
-            ->get('/office')
+            ->get(route('office.dashboard', ['tab' => 'archive']))
             ->assertOk()
-            ->assertSee('Flag Reason')
+            ->assertSee('Reject Reason')
             ->assertSee('Missing supporting document.')
             ->assertSee('View')
-            ->assertSee('Undo Flag');
+            ->assertSee('Undo Rejection');
+
+        $this->actingAs($officeUser)
+            ->get(route('office.dashboard', [
+                'tab' => 'archive',
+                'archive_search' => 'Missing supporting',
+                'archive_status' => ClearanceStep::STATUS_FLAGGED,
+                'archive_sort' => 'student_asc',
+            ]))
+            ->assertOk()
+            ->assertSee('Missing supporting document.')
+            ->assertSee('Rejected');
     }
 
     public function test_office_user_can_undo_a_flagged_step_and_reopen_the_clearance(): void

@@ -54,12 +54,28 @@
                 </div>
             </section>
         @else
-            <div class="office-columns">
-                <section class="office-column">
-                    <div class="eyebrow">Pending</div>
-                    <h2>Clearance steps awaiting your action</h2>
+            <nav class="office-tabs" aria-label="Office dashboard sections">
+                <a href="{{ route('office.dashboard', ['tab' => 'active']) }}" class="office-tab {{ $tab === 'active' ? 'active' : '' }}">
+                    Active Queue
+                    <span>{{ $pendingCount }}</span>
+                </a>
+                <a href="{{ route('office.dashboard', ['tab' => 'archive']) }}" class="office-tab {{ $tab === 'archive' ? 'active' : '' }}">
+                    Completed Clearance Archive
+                    <span>{{ $archiveCount }}</span>
+                </a>
+            </nav>
 
-                    <div class="list">
+            @if($tab === 'active')
+                <section class="office-panel">
+                    <div class="office-section-header">
+                        <div>
+                            <div class="eyebrow">Active Queue</div>
+                            <h2>Clearance steps awaiting your action</h2>
+                            <p class="muted">Only students routed to your current designation appear here.</p>
+                        </div>
+                    </div>
+
+                    <div class="list office-list">
                         @forelse($pendingSteps as $step)
                             @php($student = $step->clearance->student)
 
@@ -94,9 +110,9 @@
 
                                             <a
                                                 href="{{ route('office.students.show', $student) }}"
-                                                class="button ghost"
+                                                class="button profile-link"
                                             >
-                                                Profile
+                                                View Profile
                                             </a>
 
                                             <button
@@ -116,7 +132,7 @@
                                                 data-student-name="{{ $student->displayName() }}"
                                                 data-step-action="{{ route('office.steps.process', $step) }}"
                                             >
-                                                Flag
+                                                Reject
                                             </button>
                                         </div>
                                     </div>
@@ -152,13 +168,55 @@
                         </div>
                     @endif
                 </section>
+            @else
+                <section class="office-panel">
+                    <div class="office-section-header archive-header">
+                        <div>
+                            <div class="eyebrow">Archive</div>
+                            <h2>Completed clearance signs</h2>
+                            <p class="muted">Approved and rejected signs are separated from active work so the queue stays focused.</p>
+                        </div>
+                    </div>
 
-                <section class="office-column">
-                    <div class="eyebrow">Processed</div>
-                    <h2>Recently completed</h2>
+                    <form method="GET" action="{{ route('office.dashboard') }}" class="office-archive-filter">
+                        <input type="hidden" name="tab" value="archive">
 
-                    <div class="list">
-                        @forelse($processedSteps as $step)
+                        <label>
+                            <span>Find</span>
+                            <input
+                                type="search"
+                                name="archive_search"
+                                value="{{ $archiveSearch }}"
+                                placeholder="Name, student ID, program, note, reference"
+                            >
+                        </label>
+
+                        <label>
+                            <span>Status</span>
+                            <select name="archive_status">
+                                <option value="">All</option>
+                                <option value="approved" @selected($archiveStatus === 'approved')>Approved</option>
+                                <option value="flagged" @selected($archiveStatus === 'flagged')>Rejected</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            <span>Sort</span>
+                            <select name="archive_sort">
+                                <option value="processed_desc" @selected($archiveSort === 'processed_desc')>Newest processed</option>
+                                <option value="processed_asc" @selected($archiveSort === 'processed_asc')>Oldest processed</option>
+                                <option value="student_asc" @selected($archiveSort === 'student_asc')>Student name</option>
+                                <option value="student_id_asc" @selected($archiveSort === 'student_id_asc')>Student ID</option>
+                                <option value="program_asc" @selected($archiveSort === 'program_asc')>Program</option>
+                            </select>
+                        </label>
+
+                        <button type="submit">Apply</button>
+                        <a href="{{ route('office.dashboard', ['tab' => 'archive']) }}" class="button ghost">Reset</a>
+                    </form>
+
+                    <div class="list office-list">
+                        @forelse($archiveSteps as $step)
                             @php($student = $step->clearance->student)
 
                             <div class="record office-record processed-record">
@@ -172,7 +230,7 @@
 
                                     <div class="record-actions">
                                         <span class="badge {{ $step->status }}">
-                                            {{ ucwords(str_replace('_', ' ', $step->status)) }}
+                                            {{ $step->status === 'flagged' ? 'Rejected' : 'Approved' }}
                                         </span>
 
                                         <div class="office-action-buttons">
@@ -182,11 +240,11 @@
                                                 data-modal-step-id="{{ $step->id }}"
                                                 data-modal-student-name="{{ $student->displayName() }}"
                                                 data-modal-student-meta="{{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}"
-                                                data-modal-step-status="{{ ucwords(str_replace('_', ' ', $step->status)) }}"
+                                                data-modal-step-status="{{ $step->status === 'flagged' ? 'Rejected' : 'Approved' }}"
                                                 data-modal-clearance-status="{{ ucwords(str_replace('_', ' ', $step->clearance->status)) }}"
                                                 data-modal-last-processed="{{ optional($step->signed_at)->format('M d, Y h:i A') ?? '-' }}"
                                                 data-modal-designation="{{ $step->office_label ?: '-' }}"
-                                                data-modal-note-label="{{ $step->status === 'flagged' ? 'Flag Reason' : 'Processed Note' }}"
+                                                data-modal-note-label="{{ $step->status === 'flagged' ? 'Reject Reason' : 'Processed Note' }}"
                                                 data-modal-previous-note="{{ $step->remarks ?: '-' }}"
                                             >
                                                 View
@@ -194,9 +252,9 @@
 
                                             <a
                                                 href="{{ route('office.students.show', $student) }}"
-                                                class="button ghost"
+                                                class="button profile-link"
                                             >
-                                                Profile
+                                                View Profile
                                             </a>
 
                                             @if($step->status === 'approved')
@@ -217,7 +275,7 @@
                                                     data-student-name="{{ $student->displayName() }}"
                                                     data-step-action="{{ route('office.steps.process', $step) }}"
                                                 >
-                                                    Undo Flag
+                                                    Undo Rejection
                                                 </button>
                                             @endif
                                         </div>
@@ -236,7 +294,7 @@
                                     </p>
 
                                     <p class="mini">
-                                        <strong>{{ $step->status === 'flagged' ? 'Flag Reason' : 'Remarks' }}:</strong>
+                                        <strong>{{ $step->status === 'flagged' ? 'Reject Reason' : 'Remarks' }}:</strong>
                                         {{ $step->remarks ?: '-' }}
                                     </p>
 
@@ -248,18 +306,18 @@
                             </div>
                         @empty
                             <div class="record office-empty-state">
-                                <p class="muted" style="margin: 0;">No processed records yet for your current designation set.</p>
+                                <p class="muted" style="margin: 0;">No archived signs match the selected filters.</p>
                             </div>
                         @endforelse
                     </div>
 
-                    @if(method_exists($processedSteps, 'hasPages') && $processedSteps->hasPages())
+                    @if(method_exists($archiveSteps, 'hasPages') && $archiveSteps->hasPages())
                         <div class="pagination-wrapper">
-                            {{ $processedSteps->links('pagination::bootstrap-5') }}
+                            {{ $archiveSteps->links('pagination::bootstrap-5') }}
                         </div>
                     @endif
                 </section>
-            </div>
+            @endif
         @endif
     </div>
 
@@ -322,6 +380,7 @@
                     @csrf
                     <input type="hidden" name="action" value="approve">
                     <input type="hidden" name="confirm_action" value="approve">
+                    <input type="hidden" name="return_tab" value="active">
 
                     <div class="office-modal-actions">
                         <button type="submit">Confirm Approval</button>
@@ -337,7 +396,7 @@
         <div class="office-modal" role="dialog" aria-modal="true" aria-labelledby="flagModalTitle">
             <div class="office-modal-header">
                 <div>
-                    <h2 id="flagModalTitle">Flag Clearance Step</h2>
+                    <h2 id="flagModalTitle">Reject Clearance Step</h2>
                     <p id="flagModalMeta">Student Name</p>
                 </div>
 
@@ -351,21 +410,22 @@
                     @csrf
                     <input type="hidden" name="action" value="flag">
                     <input type="hidden" name="step_id" id="flagStepId" value="{{ old('step_id') }}">
+                    <input type="hidden" name="return_tab" value="active">
 
-                    <label class="office-label" for="flagRemarks">Flag Reason</label>
+                    <label class="office-label" for="flagRemarks">Reject Reason</label>
                     <p class="mini" style="margin: -8px 0 0;">This field is required.</p>
 
                     <textarea
                         id="flagRemarks"
                         name="remarks"
                         rows="5"
-                        placeholder="Enter the reason for flagging this clearance step"
+                        placeholder="Enter the reason for rejecting this clearance step"
                         required
                     >{{ old('remarks') }}</textarea>
                     <x-field-error field="remarks" bag="officeProcess" />
 
                     <div class="office-modal-actions">
-                        <button type="submit" class="warn">Submit Flag</button>
+                        <button type="submit" class="warn">Submit Rejection</button>
                     </div>
 
                     <button type="button" class="office-cancel-link" id="cancelFlagModal">Cancel</button>
@@ -394,6 +454,7 @@
                     @csrf
                     <input type="hidden" name="action" value="undo_approval">
                     <input type="hidden" name="confirm_action" value="undo_approval">
+                    <input type="hidden" name="return_tab" value="archive">
 
                     <div class="office-modal-actions">
                         <button type="submit" class="warn">Confirm Undo</button>
@@ -409,7 +470,7 @@
         <div class="office-modal" role="dialog" aria-modal="true" aria-labelledby="undoFlagModalTitle">
             <div class="office-modal-header">
                 <div>
-                    <h2 id="undoFlagModalTitle">Undo Flag</h2>
+                    <h2 id="undoFlagModalTitle">Undo Rejection</h2>
                     <p id="undoFlagModalMeta">Student Name</p>
                 </div>
 
@@ -419,15 +480,16 @@
             </div>
 
             <div class="office-modal-body">
-                <p>Are you sure you want to remove this flag and return the step to awaiting action?</p>
+                <p>Are you sure you want to remove this rejection and return the step to awaiting action?</p>
 
                 <form method="POST" id="undoFlagForm">
                     @csrf
                     <input type="hidden" name="action" value="undo_flag">
                     <input type="hidden" name="confirm_action" value="undo_flag">
+                    <input type="hidden" name="return_tab" value="archive">
 
                     <div class="office-modal-actions">
-                        <button type="submit" class="warn">Confirm Undo Flag</button>
+                        <button type="submit" class="warn">Confirm Undo Rejection</button>
                     </div>
 
                     <button type="button" class="office-cancel-link" id="cancelUndoFlagModal">Cancel</button>
@@ -465,42 +527,102 @@
             border-radius: 0;
         }
 
-        .office-columns {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 28px;
-            align-items: start;
-            margin-top: 8px;
+        .office-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 8px;
+            border: 1px solid #ded5c8;
+            border-radius: 22px;
+            background: #f2ece2;
         }
 
-        .office-column {
-            min-height: 100%;
+        .office-tab {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 18px;
+            border-radius: 16px;
+            color: var(--navy);
+            font-weight: 800;
+            text-decoration: none;
+            transition: background 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .office-tab span {
+            min-width: 28px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(22, 56, 95, 0.1);
+            text-align: center;
+            font-size: 0.82rem;
+        }
+
+        .office-tab.active {
+            background: white;
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+        }
+
+        .office-panel {
             padding: 0;
             border: 0;
-            border-radius: 0;
             background: transparent;
-            box-shadow: none;
         }
 
-        .office-column h2 {
-            margin: 4px 0 0;
-            font-size: 1.1rem;
-            line-height: 1.25;
+        .office-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        .office-section-header h2 {
+            margin: 4px 0 6px;
             color: var(--navy-deep);
+            font-size: 1.55rem;
+            line-height: 1.15;
         }
 
-        .office-column .list {
-            margin-top: 18px;
+        .office-list {
             display: grid;
             gap: 14px;
         }
 
-        .office-column .eyebrow {
-            margin-bottom: 8px;
+        .office-archive-filter {
+            display: grid;
+            grid-template-columns: minmax(220px, 1fr) minmax(150px, 180px) minmax(170px, 210px) auto auto;
+            gap: 12px;
+            align-items: end;
+            margin: 0 0 18px;
+            padding: 16px;
+            border: 1px solid #ded5c8;
+            border-radius: 20px;
+            background: #f8f7f3;
         }
 
-        .office-column h2 {
-            margin: 0 0 10px;
+        .office-archive-filter label {
+            display: grid;
+            gap: 6px;
+            font-weight: 700;
+            color: var(--navy-deep);
+        }
+
+        .office-archive-filter span {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .office-archive-filter input,
+        .office-archive-filter select {
+            width: 100%;
+            min-height: 42px;
+            border: 1px solid #d6ccbd;
+            border-radius: 12px;
+            padding: 10px 12px;
+            background: white;
         }
 
         .office-record {
@@ -561,7 +683,8 @@
         }
 
         .button.ghost,
-        .detail-trigger {
+        .detail-trigger,
+        .profile-link {
             background: white;
             border: 1px solid rgba(22, 56, 95, 0.22);
             color: var(--navy);
@@ -574,10 +697,16 @@
         }
 
         .button.ghost:hover,
-        .detail-trigger:hover {
+        .detail-trigger:hover,
+        .profile-link:hover {
             transform: translateY(-1px);
             box-shadow: 0 6px 14px rgba(16, 24, 40, 0.08);
             border-color: rgba(22, 56, 95, 0.35);
+        }
+
+        .profile-link {
+            background: #edf4ff;
+            border-color: rgba(22, 56, 95, 0.18);
         }
 
         .approve-trigger {
@@ -758,12 +887,28 @@
         }
 
         @media (max-width: 980px) {
-            .office-columns {
+            .office-archive-filter {
                 grid-template-columns: 1fr;
+            }
+
+            .office-section-header {
+                flex-direction: column;
             }
         }
 
         @media (max-width: 640px) {
+            .office-dashboard {
+                padding: 22px 18px 32px;
+            }
+
+            .office-tabs {
+                padding: 6px;
+            }
+
+            .office-tab {
+                width: 100%;
+            }
+
             .record-top {
                 flex-direction: column;
             }
