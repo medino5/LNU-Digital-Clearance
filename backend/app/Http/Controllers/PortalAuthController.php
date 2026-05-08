@@ -28,16 +28,15 @@ class PortalAuthController extends Controller
 
     public function showLogin(Request $request)
     {
-        $user = $request->user();
-        $dashboardRoute = $user ? $this->dashboardRouteForUser($user) : null;
+        if ($request->user()) {
+            return $this->landing($request);
+        }
 
         return view('auth.login', [
             'portalTitle' => 'Digital Clearance Login Portal',
             'portalSubtitle' => 'Super admin and active office designation access',
             'submitRoute' => route('portal.login.submit'),
             'usernameLabel' => 'Username',
-            'currentUser' => $user,
-            'currentDashboardRoute' => $dashboardRoute ? route($dashboardRoute) : null,
         ]);
     }
 
@@ -70,9 +69,7 @@ class PortalAuthController extends Controller
         );
 
         if ($request->user()) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+            return $this->landing($request);
         }
 
         if (!Auth::attempt($credentials)) {

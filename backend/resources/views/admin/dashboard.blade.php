@@ -28,6 +28,19 @@
                         </span>
                     </a>
 
+                    <a href="{{ route('admin.registration-requests.index') }}" class="quick-action-card">
+                        <span class="quick-action-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M9 11l2 2 4-5"/>
+                                <path d="M5 4h14v16H5z"/>
+                            </svg>
+                        </span>
+                        <span class="quick-action-content">
+                            <span class="quick-action-label">Review Requests</span>
+                            <span class="quick-action-copy">Approve or reject mobile account registrations before login is allowed.</span>
+                        </span>
+                    </a>
+
                     <a href="{{ route('admin.office-accounts.index') }}" class="quick-action-card">
                         <span class="quick-action-icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -98,6 +111,13 @@
                     <div class="eyebrow">Students</div>
                     <div class="metric-circle">
                         <span>{{ $studentCount }}</span>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-tile">
+                    <div class="eyebrow">Pending Registrations</div>
+                    <div class="metric-circle">
+                        <span>{{ $pendingRegistrationRequestCount }}</span>
                     </div>
                 </div>
 

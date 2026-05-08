@@ -153,9 +153,12 @@ class RegistrationService {
       body: jsonEncode(request.toJson()),
     );
 
-    final message = _extractMessage(response.body, 'Unable to create account.');
+    final message = _extractMessage(
+      response.body,
+      'Unable to submit registration.',
+    );
 
-    if (response.statusCode != 201) {
+    if (response.statusCode != 202) {
       throw Exception(message);
     }
 

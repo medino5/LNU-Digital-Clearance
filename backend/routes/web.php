@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminClearanceDetailController;
 use App\Http\Controllers\AdminClearanceReportController;
+use App\Http\Controllers\AdminStudentRegistrationRequestController;
 use App\Http\Controllers\AdminOfficeDesignationController;
 use App\Http\Controllers\OfficeAccountAdminController;
 use App\Http\Controllers\OfficeDashboardController;
@@ -36,6 +37,8 @@ Route::prefix('admin')
         Route::get('/semesters', [SemesterAdminController::class, 'index'])->name('admin.semesters.index');
         Route::get('/routing', [AdminOfficeDesignationController::class, 'index'])->name('admin.routing.index');
         Route::get('/students', [StudentAdminController::class, 'index'])->name('admin.students.index');
+        Route::get('/registration-requests', [AdminStudentRegistrationRequestController::class, 'index'])
+            ->name('admin.registration-requests.index');
         Route::get('/office-accounts', [OfficeAccountAdminController::class, 'index'])->name('admin.office-accounts.index');
         Route::get('/clearance-history', [AdminClearanceReportController::class, 'index'])->name('admin.clearance-history.index');
         Route::get('/students/{student}', [StudentProfileController::class, 'adminShow'])->name('admin.students.show');
@@ -54,6 +57,10 @@ Route::prefix('admin')
         Route::post('/students', [StudentAdminController::class, 'store'])->name('admin.students.store');
         Route::put('/students/{student}', [StudentAdminController::class, 'update'])->name('admin.students.update');
         Route::delete('/students/{student}', [StudentAdminController::class, 'destroy'])->name('admin.students.destroy');
+        Route::post('/registration-requests/{registrationRequest}/approve', [AdminStudentRegistrationRequestController::class, 'approve'])
+            ->name('admin.registration-requests.approve');
+        Route::post('/registration-requests/{registrationRequest}/reject', [AdminStudentRegistrationRequestController::class, 'reject'])
+            ->name('admin.registration-requests.reject');
 
         Route::post('/office-accounts', [OfficeAccountAdminController::class, 'store'])->name('admin.office-accounts.store');
         Route::put('/office-accounts/{officeAccount}', [OfficeAccountAdminController::class, 'update'])

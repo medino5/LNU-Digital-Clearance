@@ -8,6 +8,7 @@ use App\Models\OfficeDesignationAssignment;
 use App\Models\Program;
 use App\Models\Semester;
 use App\Models\Student;
+use App\Models\StudentRegistrationRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -524,5 +525,20 @@ class AdminControllerValidationTest extends TestCase
             ->assertSessionHas('error', 'Program cannot be deleted while students are assigned to it.');
 
         $this->assertDatabaseHas('programs', ['code' => 'BSEC']);
+    }
+
+    public function test_program_delete_is_not_allowed_while_registration_requests_exist(): void
+    {
+        $program = Program::factory()->create(['code' => 'BSCR']);
+        StudentRegistrationRequest::factory()->create(['program_id' => $program->id]);
+
+        $this->actingAs($this->admin)
+            ->delete(route('admin.programs.destroy', $program), [
+                'delete_confirmation' => 'DELETE BSCR',
+            ])
+            ->assertRedirect(route('admin.programs.index'))
+            ->assertSessionHas('error', 'Program cannot be deleted while mobile registration requests are using it.');
+
+        $this->assertDatabaseHas('programs', ['code' => 'BSCR']);
     }
 }

@@ -64,10 +64,9 @@ class PortalRoutingTest extends TestCase
             ->assertRedirect(route('office.dashboard'));
     }
 
-    public function test_authenticated_admin_can_view_shared_login_page(): void
+    public function test_authenticated_admin_login_page_redirects_to_dashboard(): void
     {
-        // Signed-in users can still open the shared login page to switch
-        // accounts without getting trapped on the dashboard.
+        // Signed-in users must log out before using the login page again.
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN,
             'is_student' => false,
@@ -76,8 +75,7 @@ class PortalRoutingTest extends TestCase
 
         $this->actingAs($admin)
             ->get(route('portal.login'))
-            ->assertOk()
-            ->assertSee('Digital Clearance Login Portal');
+            ->assertRedirect(route('admin.dashboard'));
     }
 
     public function test_shared_login_routes_admin_to_admin_dashboard(): void
@@ -102,10 +100,9 @@ class PortalRoutingTest extends TestCase
         $this->assertAuthenticatedAs($admin);
     }
 
-    public function test_authenticated_admin_can_switch_to_office_account_from_shared_login(): void
+    public function test_authenticated_admin_login_post_keeps_current_session(): void
     {
-        // Signing into another role from the shared login replaces the active
-        // session and lands on the correct dashboard.
+        // Account changes are intentionally logout-then-login only.
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN,
             'is_student' => false,
@@ -136,13 +133,13 @@ class PortalRoutingTest extends TestCase
             'password' => 'password',
         ]);
 
-        $response->assertRedirect(route('office.dashboard'));
+        $response->assertRedirect(route('admin.dashboard'));
 
-        $this->assertAuthenticatedAs($officeUser);
+        $this->assertAuthenticatedAs($admin);
 
-        $this->get(route('office.dashboard'))
+        $this->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('Sign Out');
+            ->assertSee('Log Out');
     }
 
     public function test_shared_login_rejects_student_accounts(): void
@@ -239,7 +236,7 @@ class PortalRoutingTest extends TestCase
         $this->get(route('office.login'))->assertRedirect(route('portal.login'));
     }
 
-    public function test_admin_dashboard_shows_logout_and_switch_actions(): void
+    public function test_admin_dashboard_shows_logout_action(): void
     {
         // The admin shell should expose route-based navigation and a logout
         // action after the admin redesign work.
@@ -258,9 +255,9 @@ class PortalRoutingTest extends TestCase
             ->assertSee('Log Out');
     }
 
-    public function test_office_dashboard_shows_logout_and_switch_actions(): void
+    public function test_office_dashboard_shows_logout_action(): void
     {
-        // Office users should see the same shared-login and logout actions.
+        // Office users should have a clear logout action.
         $officeUser = User::factory()->create([
             'name' => 'Office User',
             'username' => 'office.user',

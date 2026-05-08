@@ -8,6 +8,7 @@ use App\Models\OfficeDesignation;
 use App\Models\Program;
 use App\Models\Semester;
 use App\Models\Student;
+use App\Models\StudentRegistrationRequest;
 
 class AdminDashboardController extends Controller
 {
@@ -58,6 +59,9 @@ class AdminDashboardController extends Controller
             'programCount' => Program::query()->count(),
             'semesterCount' => Semester::query()->count(),
             'studentCount' => Student::query()->count(),
+            'pendingRegistrationRequestCount' => StudentRegistrationRequest::query()
+                ->where('status', StudentRegistrationRequest::STATUS_PENDING)
+                ->count(),
             'officeAccountCount' => OfficeAccount::query()->count(),
             'designationCount' => OfficeDesignation::query()
                 ->where('is_active', true)

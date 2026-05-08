@@ -36,12 +36,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
-  static const Color _navy = Color(0xFF0D1730);
-  static const Color _field = Color(0xFF1A2446);
-  static const Color _gold = Color(0xFFE3B13F);
-  static const Color _danger = Color(0xFFFF5B5B);
-  static final RegExp _namePattern = RegExp(r"^[A-Za-zÀ-ÖØ-öø-ÿÑñ' -]+$");
-  static final RegExp _middleInitialPattern = RegExp(r'^[A-Za-zÀ-ÖØ-öø-ÿÑñ]$');
+  static const Color _navy = Color(0xFF16385F);
+  static const Color _paper = Color(0xFFFCFBF7);
+  static const Color _field = Colors.white;
+  static const Color _line = Color(0xFFD7D3C8);
+  static const Color _ink = Color(0xFF1B1B1B);
+  static const Color _muted = Color(0xFF667085);
+  static const Color _gold = Color(0xFFD2A83D);
+  static const Color _danger = Color(0xFFB5442C);
+  static final RegExp _supportedNameCharacterPattern = RegExp(
+    r"^[A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF\u00D1\u00F1' -]+$",
+    unicode: true,
+  );
+  static final RegExp _supportedMiddleInitialPattern = RegExp(
+    r'^[A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF\u00D1\u00F1]$',
+    unicode: true,
+  );
   static final RegExp _emailPattern = RegExp(
     r'^[A-Za-z0-9._%+-]+@lnu\.edu\.ph$',
   );
@@ -150,7 +160,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         !_isLoadingOptions && _options.programs.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: _navy,
+      backgroundColor: _paper,
       body: SafeArea(
         child: Form(
           key: _formKey,
@@ -376,12 +386,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                       controlAffinity: ListTileControlAffinity.leading,
                       contentPadding: EdgeInsets.zero,
-                      activeColor: _gold,
-                      checkColor: _navy,
+                      activeColor: _navy,
+                      checkColor: Colors.white,
                       title: RichText(
                         text: const TextSpan(
                           style: TextStyle(
-                            color: Color(0xFFDDE5F5),
+                            color: _ink,
                             fontSize: 14,
                             height: 1.35,
                           ),
@@ -418,14 +428,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ? null
                             : _submit,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _gold,
+                          backgroundColor: _navy,
                           disabledBackgroundColor: Colors.white.withValues(
-                            alpha: 0.16,
+                            alpha: 0.7,
                           ),
-                          foregroundColor: _navy,
-                          disabledForegroundColor: Colors.white.withValues(
-                            alpha: 0.45,
-                          ),
+                          foregroundColor: Colors.white,
+                          disabledForegroundColor: _muted,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
                           ),
@@ -440,10 +448,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 width: 22,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.4,
-                                  color: _navy,
+                                  color: Colors.white,
                                 ),
                               )
-                            : const Text('Create Account'),
+                            : const Text('Submit for Approval'),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -454,7 +462,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: const Text(
                         'Already have an account? Sign In',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: _navy,
                           fontWeight: FontWeight.w700,
                           decoration: TextDecoration.underline,
                         ),
@@ -498,7 +506,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       validator: (value) {
         final normalized = value?.trim() ?? '';
         if (normalized.isEmpty) return null;
-        if (!_middleInitialPattern.hasMatch(normalized)) {
+        if (!_supportedMiddleInitialPattern.hasMatch(normalized)) {
           return 'Middle initial must be one letter.';
         }
         return null;
@@ -540,7 +548,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return _inputDecoration(label: label, icon: Icons.lock_outline).copyWith(
       suffixIcon: IconButton(
         tooltip: obscure ? 'Show password' : 'Hide password',
-        color: Colors.white70,
+        color: _navy,
         icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
         onPressed: onToggle,
       ),
@@ -555,19 +563,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      prefixIcon: Icon(icon, color: Colors.white70),
+      prefixIcon: Icon(icon, color: _navy),
       labelStyle: const TextStyle(
-        color: Colors.white,
+        color: _navy,
         fontWeight: FontWeight.w700,
       ),
-      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.48)),
+      hintStyle: const TextStyle(color: _muted),
       filled: true,
       fillColor: _field,
       errorMaxLines: 2,
-      errorStyle: const TextStyle(color: Color(0xFFFFC1C1)),
+      errorStyle: const TextStyle(color: _danger),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+        borderSide: const BorderSide(color: _line),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
@@ -583,14 +591,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       disabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+        borderSide: const BorderSide(color: _line),
       ),
     );
   }
 
   TextStyle _inputTextStyle() {
     return const TextStyle(
-      color: Colors.white,
+      color: _ink,
       fontWeight: FontWeight.w600,
       fontSize: 15,
     );
@@ -603,7 +611,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return required ? '$label is required.' : null;
     }
 
-    if (!_namePattern.hasMatch(normalized)) {
+    if (!_supportedNameCharacterPattern.hasMatch(normalized)) {
       return '$label may only contain letters, spaces, apostrophes, and hyphens.';
     }
 
@@ -686,7 +694,11 @@ class _HeaderCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
       decoration: const BoxDecoration(
-        color: Color(0xFF101B6B),
+        gradient: LinearGradient(
+          colors: [Color(0xFF0E2742), Color(0xFF16385F)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(34),
           bottomRight: Radius.circular(34),
@@ -707,10 +719,10 @@ class _HeaderCard extends StatelessWidget {
             height: 86,
             width: 86,
             decoration: BoxDecoration(
-              color: const Color(0xFFE3B13F),
+              color: const Color(0xFFD2A83D),
               borderRadius: BorderRadius.circular(28),
             ),
-            child: const Icon(Icons.school, color: Color(0xFF101B6B), size: 52),
+            child: const Icon(Icons.school, color: Color(0xFF0E2742), size: 52),
           ),
           const SizedBox(height: 20),
           const Text(
@@ -727,7 +739,7 @@ class _HeaderCard extends StatelessWidget {
             'Join LNU Digital Clearance',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Color(0xFFE3B13F),
+              color: Color(0xFFD2A83D),
               fontSize: 18,
               letterSpacing: 0.8,
               fontWeight: FontWeight.w600,
@@ -753,7 +765,7 @@ class _SectionTitle extends StatelessWidget {
         Text(
           title,
           style: const TextStyle(
-            color: Colors.white,
+            color: Color(0xFF16385F),
             fontSize: 25,
             fontWeight: FontWeight.w900,
           ),
@@ -762,7 +774,7 @@ class _SectionTitle extends StatelessWidget {
         Text(
           subtitle,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.68),
+            color: Color(0xFF667085),
             fontSize: 15,
             height: 1.35,
           ),
@@ -782,20 +794,20 @@ class _ErrorBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF241A2A),
+        color: const Color(0xFFFFF1ED),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF7A2738)),
+        border: Border.all(color: const Color(0xFFF4C8BE)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.error_outline, color: Color(0xFFFF5B5B)),
+          const Icon(Icons.error_outline, color: Color(0xFFB5442C)),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               message,
               style: const TextStyle(
-                color: Color(0xFFFF5B5B),
+                color: Color(0xFFB5442C),
                 fontWeight: FontWeight.w800,
                 height: 1.35,
               ),
@@ -821,13 +833,13 @@ class _OrganizationCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A2446),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        border: Border.all(color: Color(0xFFD7D3C8)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.groups_2_outlined, color: Colors.white70),
+          const Icon(Icons.groups_2_outlined, color: Color(0xFF16385F)),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -836,7 +848,7 @@ class _OrganizationCard extends StatelessWidget {
                 const Text(
                   'Organization',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFF16385F),
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -844,7 +856,7 @@ class _OrganizationCard extends StatelessWidget {
                 Text(
                   text,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.72),
+                    color: Color(0xFF667085),
                     height: 1.35,
                   ),
                 ),

@@ -804,6 +804,12 @@
                 'keywords' => ['search student', 'find student', 'student filter', 'student lookup'],
             ],
             [
+                'title' => 'Registration Requests',
+                'description' => 'Review mobile student account requests before accounts are created.',
+                'url' => route('admin.registration-requests.index'),
+                'keywords' => ['registration', 'requests', 'pending accounts', 'approve student', 'mobile signup'],
+            ],
+            [
                 'title' => 'Programs',
                 'description' => 'Manage program codes, names, and organizations.',
                 'url' => route('admin.programs.index') . '#program-records',
@@ -879,6 +885,7 @@
                 <a href="{{ route('admin.semesters.index') }}" class="nav-item {{ request()->routeIs('admin.semesters.*') ? 'active' : '' }}">Semesters</a>
                 <a href="{{ route('admin.routing.index') }}" class="nav-item {{ request()->routeIs('admin.routing.*') ? 'active' : '' }}">Routing</a>
                 <a href="{{ route('admin.students.index') }}" class="nav-item {{ request()->routeIs('admin.students.*') ? 'active' : '' }}">Students</a>
+                <a href="{{ route('admin.registration-requests.index') }}" class="nav-item {{ request()->routeIs('admin.registration-requests.*') ? 'active' : '' }}">Registration Requests</a>
                 <a href="{{ route('admin.office-accounts.index') }}" class="nav-item {{ request()->routeIs('admin.office-accounts.*') ? 'active' : '' }}">Office Accounts</a>
                 <a href="{{ route('admin.clearance-history.index') }}" class="nav-item {{ request()->routeIs('admin.clearance-history.*') || request()->routeIs('admin.clearances.show') ? 'active' : '' }}">Clearance History</a>
             </nav>
