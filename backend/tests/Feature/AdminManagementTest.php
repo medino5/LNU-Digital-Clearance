@@ -428,8 +428,14 @@ class AdminManagementTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.clearance-history.index'))
             ->assertOk()
-            ->assertSee('Completed clearance records by semester and academic year')
+            ->assertSee('Download Reports')
             ->assertSee('Download Excel Report');
+
+        $this->actingAs($admin)
+            ->get(route('admin.analytics.index'))
+            ->assertOk()
+            ->assertSee('Office Signing Performance')
+            ->assertSee('Program Flow');
     }
 
     public function test_admin_sidebar_highlights_each_current_route_based_page(): void
@@ -443,7 +449,8 @@ class AdminManagementTest extends TestCase
             route('admin.routing.index') => 'Routing',
             route('admin.students.index') => 'Students',
             route('admin.office-accounts.index') => 'Office Accounts',
-            route('admin.clearance-history.index') => 'Clearance History',
+            route('admin.analytics.index') => 'Analytics',
+            route('admin.clearance-history.index') => 'Download Reports',
         ];
 
         foreach ($pages as $url => $label) {

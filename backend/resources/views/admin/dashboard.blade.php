@@ -1,6 +1,6 @@
 @extends('layouts.portal', [
     'title' => 'Dashboard',
-    'subtitle' => 'Start here to navigate programs, semesters, routing, accounts, and clearance history.',
+    'subtitle' => 'Start here to navigate programs, semesters, routing, accounts, reports, and analytics.',
 ])
 
 @section('page')
@@ -70,7 +70,7 @@
                         </span>
                     </a>
 
-                    <a href="{{ route('admin.clearance-history.index') }}" class="quick-action-card quick-action-card--accent">
+                    <a href="{{ route('admin.clearance-history.index') }}" class="quick-action-card">
                         <span class="quick-action-icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M12 3v12"/>
@@ -80,7 +80,7 @@
                         </span>
                         <span class="quick-action-content">
                             <span class="quick-action-label">Download Report</span>
-                            <span class="quick-action-copy">Open completed clearance records for review, filtering, and export.</span>
+                            <span class="quick-action-copy">Open report filters and download the completed clearance workbook.</span>
                         </span>
                     </a>
                 </div>
@@ -291,37 +291,43 @@
 
         .quick-action-grid {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 14px;
+            align-items: stretch;
         }
 
         .quick-action-card {
-            display: grid;
-            gap: 8px;
-            padding: 15px 16px;
+            min-height: 132px;
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 17px 16px 44px;
             border-radius: 14px;
             text-decoration: none;
             color: #19324d;
             background: #ffffff;
             border: 1px solid #e3d9c9;
             box-shadow: 0 6px 16px rgba(24, 58, 99, 0.05);
+            cursor: pointer;
             transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+        }
+
+        .quick-action-card::after {
+            content: "Open →";
+            position: absolute;
+            right: 16px;
+            bottom: 14px;
+            color: #173c66;
+            font-size: 0.78rem;
+            font-weight: 900;
+            letter-spacing: 0.03em;
         }
 
         .quick-action-card:hover {
             transform: translateY(-1px);
             box-shadow: 0 12px 26px rgba(24, 58, 99, 0.1);
             border-color: #d4c0a6;
-        }
-
-        .quick-action-card--accent {
-            background: linear-gradient(135deg, #173c66 0%, #27588f 100%);
-            color: #f8f4ea;
-            border-color: #173c66;
-        }
-
-        .quick-action-card--accent .quick-action-copy {
-            color: rgba(248, 244, 234, 0.88);
         }
 
         .quick-action-label {
@@ -551,10 +557,6 @@
         }
 
         @media (max-width: 1100px) {
-            .quick-action-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
             .dashboard-chart-grid {
                 grid-template-columns: 1fr;
             }
@@ -567,10 +569,6 @@
         }
 
         @media (max-width: 720px) {
-            .quick-action-grid {
-                grid-template-columns: 1fr;
-            }
-
             .grid-3 {
                 grid-template-columns: 1fr;
             }
@@ -588,26 +586,6 @@
                 width: 96px;
                 height: 96px;
             }
-        }
-
-        .quick-action-card {
-            display: flex;
-            align-items: flex-start;
-            gap: 14px;
-            padding: 17px 16px;
-            border-radius: 14px;
-            text-decoration: none;
-            color: #19324d;
-            background: #ffffff;
-            border: 1px solid #e3d9c9;
-            box-shadow: 0 6px 16px rgba(24, 58, 99, 0.05);
-            transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
-        }
-
-        .quick-action-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 26px rgba(24, 58, 99, 0.1);
-            border-color: #d4c0a6;
         }
 
         .quick-action-icon {
@@ -635,22 +613,6 @@
         .quick-action-content {
             display: grid;
             gap: 7px;
-        }
-
-        .quick-action-card--accent {
-            background: linear-gradient(135deg, #173c66 0%, #27588f 100%);
-            color: #f8f4ea;
-            border-color: #173c66;
-        }
-
-        .quick-action-card--accent .quick-action-icon {
-            background: rgba(255, 255, 255, 0.16);
-            color: #ffffff;
-            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
-        }
-
-        .quick-action-card--accent .quick-action-copy {
-            color: rgba(248, 244, 234, 0.88);
         }
 
         .quick-action-label {
