@@ -30,6 +30,23 @@ class ClearanceService {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
+  Future<Map<String, dynamic>> getClearanceHistory() async {
+    final response = await _apiClient.get(
+      '/clearance/history',
+      headers: await _authHeaders(),
+    );
+
+    _throwIfSessionExpired(response.statusCode);
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        _extractMessage(response.body, 'Unable to load clearance history.'),
+      );
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
   Future<Map<String, dynamic>> createOrResumeClearance() async {
     final response = await _apiClient.post(
       '/clearance',

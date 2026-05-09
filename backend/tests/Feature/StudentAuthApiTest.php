@@ -278,4 +278,21 @@ class StudentAuthApiTest extends TestCase
             ->assertJsonPath('profile.student_id_number', '2302314')
             ->assertJsonPath('profile.program.code', 'BSIT');
     }
+
+    public function test_authenticated_student_can_load_clearance_history(): void
+    {
+        $clearance = $this->createCompletedSeededClearance();
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        Sanctum::actingAs($student->user);
+
+        $this->getJson('/api/clearance/history')
+            ->assertOk()
+            ->assertJsonPath('history.0.id', $clearance->id)
+            ->assertJsonPath('history.0.status', 'completed')
+            ->assertJsonPath('history.0.semester_label', $clearance->semester_label)
+            ->assertJsonPath('history.0.academic_year', $clearance->semester->displayAcademicYear())
+            ->assertJsonPath('history.0.program_code', 'BSIT')
+            ->assertJsonPath('history.0.counts.total', 5)
+            ->assertJsonPath('history.0.counts.approved', 5);
+    }
 }

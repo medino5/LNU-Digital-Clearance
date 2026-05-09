@@ -8,28 +8,64 @@ import '../helpers/test_payloads.dart';
 
 void main() {
   group('AppShell', () {
-    testWidgets(
-      'shell shows the three student tabs from the rehauled mobile flow',
-      (WidgetTester tester) async {
-        // This is the navigation baseline for the current app: once logged in,
-        // the student should land in a shell with Dashboard, PDF, and Profile.
-        await tester.pumpWidget(
-          MaterialApp(
-            home: AppShell(
-              authService: FakeAuthService(),
-              clearanceService: FakeClearanceService(
-                currentPayload: buildTestPayload(),
-              ),
+    testWidgets('shell shows the student tabs from the rehauled mobile flow', (
+      WidgetTester tester,
+    ) async {
+      // This is the navigation baseline for the current app: once logged in,
+      // the student should land in a shell with Dashboard, PDF, History, and Profile.
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AppShell(
+            authService: FakeAuthService(),
+            clearanceService: FakeClearanceService(
+              currentPayload: buildTestPayload(),
             ),
           ),
-        );
-        await tester.pumpAndSettle();
+        ),
+      );
+      await tester.pumpAndSettle();
 
-        expect(find.text('Dashboard'), findsOneWidget);
-        expect(find.text('PDF'), findsOneWidget);
-        expect(find.text('Profile'), findsOneWidget);
-      },
-    );
+      expect(find.text('Dashboard'), findsOneWidget);
+      expect(find.text('PDF'), findsOneWidget);
+      expect(find.text('History'), findsOneWidget);
+      expect(find.text('Profile'), findsOneWidget);
+    });
+
+    testWidgets('history tab shows semester and school year records', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AppShell(
+            authService: FakeAuthService(),
+            clearanceService: FakeClearanceService(
+              currentPayload: buildTestPayload(),
+              historyPayload: const {
+                'history': [
+                  {
+                    'status': 'completed',
+                    'semester_label': '2nd Semester 2024-2025',
+                    'academic_year': '2024-2025',
+                    'program_code': 'BSIT',
+                    'reference_number': 'CLR-2024-BSIT-001',
+                    'completed_at': '2024-05-20T10:30:00Z',
+                    'counts': {'total': 5, 'approved': 5},
+                  },
+                ],
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('History'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('2nd Semester 2024-2025'), findsOneWidget);
+      expect(find.text('School Year 2024-2025'), findsOneWidget);
+      expect(find.text('Reference: CLR-2024-BSIT-001'), findsOneWidget);
+    });
 
     testWidgets('pdf tab stays locked until the clearance is completed', (
       WidgetTester tester,
@@ -131,7 +167,8 @@ void main() {
           MaterialApp(
             home: ProfileScreen(
               payload: buildTestPayload(),
-              error: null, // ADDED: required after profile state messaging update
+              error:
+                  null, // ADDED: required after profile state messaging update
               isLoading: false,
               isBusy: false,
               onRefresh: () async {},

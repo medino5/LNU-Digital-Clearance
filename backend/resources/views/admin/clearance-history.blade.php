@@ -12,6 +12,7 @@
     @php($exportSemester = $semesters->firstWhere('id', (int) $exportSemesterId))
     @php($selectedHistoryLabel = $selectedSemester?->label ?? 'All semesters')
     @php($selectedHistoryAcademicYear = $selectedAcademicYear !== '' ? $selectedAcademicYear : 'All academic years')
+    @php($selectedHistoryProgram = $selectedProgramCode !== '' ? $selectedProgramCode : 'All programs')
 
     <div class="admin-page management-page">
         @include('admin.partials.page-feedback')
@@ -36,6 +37,18 @@
             </div>
 
             <form method="GET" action="{{ route('admin.clearance-history.index') }}" class="history-filter-form management-filter-grid">
+                <label>
+                    Program
+                    <select name="history_program">
+                        <option value="">All programs</option>
+                        @foreach($programs as $program)
+                            <option value="{{ $program->code }}" {{ $selectedProgramCode === $program->code ? 'selected' : '' }}>
+                                {{ $program->code }} - {{ $program->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </label>
+
                 <label>
                     Academic Year
                     <select name="history_academic_year">
@@ -68,6 +81,7 @@
                 <span class="management-summary-pill">Table period</span>
                 <strong>{{ $selectedHistoryLabel }}</strong>
                 <span class="mini">{{ $selectedHistoryAcademicYear }}</span>
+                <span class="mini">{{ $selectedHistoryProgram }}</span>
             </div>
 
             @if($historyHasRecords)
@@ -141,8 +155,8 @@
                 </div>
             @else
                 <div class="empty-state history-empty-state">
-                    <strong>No completed clearances found.</strong>
-                    <p>Try a different semester or academic year before downloading a report.</p>
+            <strong>No completed clearances found.</strong>
+            <p>Try a different program, semester, or academic year before downloading a report.</p>
                 </div>
             @endif
         </section>
@@ -227,7 +241,7 @@
     <style>
         .history-filter-form,
         .history-export-form {
-            grid-template-columns: minmax(190px, 1fr) minmax(190px, 1fr) auto auto;
+            grid-template-columns: minmax(190px, 1fr) minmax(190px, 1fr) minmax(190px, 1fr) auto auto;
         }
 
         .history-export-form {
