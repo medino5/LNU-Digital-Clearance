@@ -38,8 +38,12 @@ class AdminClearanceReportExportTest extends TestCase
             ->assertSee('name="semester_id"', false)
             ->assertSee('data-export-academic-year-select', false)
             ->assertSee('name="academic_year"', false)
+            ->assertSee('name="program_code"', false)
             ->assertSee('Download Reports')
             ->assertDontSee('Program</th>', false)
+            ->assertDontSee('Use this for')
+            ->assertDontSee('Not shown here')
+            ->assertDontSee('Format')
             ->assertSee('Download Excel Report')
             ->assertSee($semester->displayAcademicYear());
     }
@@ -90,6 +94,7 @@ class AdminClearanceReportExportTest extends TestCase
             [
                 'semester_id' => $semester->id,
                 'academic_year' => $semester->displayAcademicYear(),
+                'program_code' => 'BSIT',
             ]
         );
 
@@ -124,6 +129,36 @@ class AdminClearanceReportExportTest extends TestCase
         $this->assertStringContainsString('2302314', $programSheetXml);
         $this->assertStringContainsString('John A. Doe', $programSheetXml);
         $this->assertStringContainsString($clearance->reference_number, $programSheetXml);
+    }
+
+    public function test_admin_can_filter_completed_clearance_excel_report_by_program(): void
+    {
+        $clearance = $this->createCompletedSeededClearance();
+        $semester = $clearance->semester;
+
+        $response = $this->actingAs($this->seededAdminUser())->post(
+            route('admin.clearance-reports.completed.export'),
+            [
+                'semester_id' => $semester->id,
+                'academic_year' => $semester->displayAcademicYear(),
+                'program_code' => 'BSIT',
+            ]
+        );
+
+        $response->assertOk();
+        $response->assertDownload();
+
+        $file = $response->baseResponse->getFile();
+        $this->assertNotNull($file);
+
+        $zip = new ZipArchive();
+        $this->assertTrue($zip->open($file->getPathname()) === true);
+
+        $workbookXml = $zip->getFromName('xl/workbook.xml');
+        $zip->close();
+
+        $this->assertIsString($workbookXml);
+        $this->assertStringContainsString('BSIT', $workbookXml);
     }
 
     public function test_export_redirects_with_validation_when_required_filters_are_missing(): void
@@ -184,7 +219,7 @@ class AdminClearanceReportExportTest extends TestCase
             'history_semester' => $semester->id,
             'history_academic_year' => '2025-2026',
         ]));
-        $response->assertSessionHas('error', 'No completed clearances found for the selected semester and academic year.');
+        $response->assertSessionHas('error', 'No completed clearances found for the selected filters.');
     }
 
     public function test_export_redirects_with_message_when_report_file_cannot_be_created(): void

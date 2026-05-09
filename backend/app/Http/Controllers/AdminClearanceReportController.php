@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Clearance;
+use App\Models\Program;
 use App\Models\Semester;
 use App\Support\CompletedClearanceReportExporter;
 use Illuminate\Http\Request;
@@ -19,12 +20,16 @@ class AdminClearanceReportController extends Controller
     {
         $selectedSemesterId = $request->integer('history_semester');
         $selectedAcademicYear = trim((string) $request->query('history_academic_year', ''));
+        $selectedProgramCode = trim((string) $request->query('history_program_code', ''));
         $semesters = Semester::orderByDesc('is_active')->orderByDesc('created_at')->get();
+        $programs = Program::orderBy('code')->get(['code', 'name']);
 
         return view('admin.clearance-history', [
             'semesters' => $semesters,
+            'programs' => $programs,
             'selectedSemesterId' => $selectedSemesterId,
             'selectedAcademicYear' => $selectedAcademicYear,
+            'selectedProgramCode' => $selectedProgramCode,
             'academicYears' => $semesters
                 ->map(fn (Semester $semester) => $semester->displayAcademicYear())
                 ->filter()
@@ -44,6 +49,7 @@ class AdminClearanceReportController extends Controller
             [
                 'semester_id' => ['required', 'integer', 'exists:semesters,id'],
                 'academic_year' => ['required', 'regex:/^\d{4}-\d{4}$/'],
+                'program_code' => ['nullable', 'string', 'exists:programs,code'],
             ],
             $redirectTo,
             [
@@ -57,6 +63,7 @@ class AdminClearanceReportController extends Controller
         $filteredRedirectTo = route('admin.clearance-history.index', [
             'history_semester' => $semester->id,
             'history_academic_year' => $data['academic_year'],
+            'history_program_code' => $data['program_code'] ?? null,
         ]);
 
         if ($semester->displayAcademicYear() !== $data['academic_year']) {
@@ -71,6 +78,7 @@ class AdminClearanceReportController extends Controller
         $clearances = Clearance::query()
             ->where('status', Clearance::STATUS_COMPLETED)
             ->where('semester_id', $semester->id)
+            ->when(! empty($data['program_code']), fn ($query) => $query->where('program_code', $data['program_code']))
             ->orderBy('program_code')
             ->orderBy('student_name')
             ->get();
@@ -80,7 +88,7 @@ class AdminClearanceReportController extends Controller
                 $request,
                 $filteredRedirectTo,
                 'error',
-                'No completed clearances found for the selected semester and academic year.',
+                'No completed clearances found for the selected filters.',
             );
         }
 
@@ -98,9 +106,10 @@ class AdminClearanceReportController extends Controller
         }
 
         $fileName = sprintf(
-            'completed-clearances-%s-%s.xlsx',
+            'completed-clearances-%s-%s%s.xlsx',
             str($semester->label)->lower()->replaceMatches('/[^a-z0-9]+/', '-')->trim('-'),
-            $data['academic_year']
+            $data['academic_year'],
+            ! empty($data['program_code']) ? '-' . str($data['program_code'])->lower()->toString() : ''
         );
 
         return response()->download(

@@ -293,6 +293,22 @@ class StudentAuthApiTest extends TestCase
             ->assertJsonPath('history.0.academic_year', $clearance->semester->displayAcademicYear())
             ->assertJsonPath('history.0.program_code', 'BSIT')
             ->assertJsonPath('history.0.counts.total', 5)
-            ->assertJsonPath('history.0.counts.approved', 5);
+            ->assertJsonPath('history.0.counts.approved', 5)
+            ->assertJsonPath('history.0.steps.0.status', 'approved')
+            ->assertJsonStructure([
+                'history' => [
+                    [
+                        'steps' => [
+                            [
+                                'office_label',
+                                'scope_label',
+                                'status',
+                                'signed_at',
+                                'signed_by',
+                            ],
+                        ],
+                    ],
+                ],
+            ]);
     }
 }

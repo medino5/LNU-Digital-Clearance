@@ -58,7 +58,11 @@ class StudentClearanceController extends Controller
                 'program_name',
                 'year_level',
             ])
-            ->with(['semester:id,label,academic_year'])
+            ->with([
+                'semester:id,label,academic_year',
+                'steps:id,clearance_id,status,remarks,signed_at,office_label,office_type,scope_label',
+                'steps.latestEvent.actor:id,name,first_name,middle_initial,last_name,name_extension,username,is_student,role',
+            ])
             ->withCount([
                 'steps as total_steps_count',
                 'steps as approved_steps_count' => fn ($query) => $query->where('status', 'approved'),
@@ -89,6 +93,17 @@ class StudentClearanceController extends Controller
                     'flagged' => (int) $clearance->flagged_steps_count,
                     'awaiting_action' => (int) $clearance->awaiting_steps_count,
                 ],
+                'steps' => $clearance->steps->map(fn (ClearanceStep $step) => [
+                    'office_label' => $step->office_label,
+                    'office_type' => $step->office_type,
+                    'scope_label' => $step->scope_label,
+                    'status' => $step->status,
+                    'remarks' => $step->remarks,
+                    'signed_at' => $step->signed_at?->toISOString(),
+                    'last_action' => $step->latestEvent?->action,
+                    'last_action_at' => $step->latestEvent?->created_at?->toISOString(),
+                    'signed_by' => $step->latestEvent?->actor?->formattedName(),
+                ])->values(),
             ])->values(),
         ]);
     }

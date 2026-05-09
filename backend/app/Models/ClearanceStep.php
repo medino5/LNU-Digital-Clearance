@@ -44,4 +44,9 @@ class ClearanceStep extends Model
     {
         return $this->hasMany(ClearanceStepEvent::class)->latest();
     }
+
+    public function latestEvent()
+    {
+        return $this->hasOne(ClearanceStepEvent::class)->latestOfMany();
+    }
 }
