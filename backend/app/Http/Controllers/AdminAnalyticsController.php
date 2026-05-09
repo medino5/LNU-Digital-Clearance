@@ -7,7 +7,6 @@ use App\Models\ClearanceStep;
 use App\Models\Program;
 use App\Models\Semester;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -97,7 +96,9 @@ class AdminAnalyticsController extends Controller
         $this->applyClearanceFilters($completedClearanceQuery, $selectedSemesterId, $semesterIdsForAcademicYear, $selectedProgramCode);
 
         $completedCount = (clone $completedClearanceQuery)->count();
-        $avgCompletionMinutes = (clone $completedClearanceQuery)->avg(DB::raw($completionMinutes));
+        $avgCompletionMinutes = (clone $completedClearanceQuery)
+            ->selectRaw('AVG(' . $completionMinutes . ') as average_completion_minutes')
+            ->value('average_completion_minutes');
 
         $activeClearanceQuery = Clearance::query()
             ->whereIn('status', [Clearance::STATUS_IN_PROGRESS, Clearance::STATUS_FLAGGED]);
@@ -215,7 +216,7 @@ class AdminAnalyticsController extends Controller
     }
 
     private function applyJoinedClearanceFilters(
-        Builder|QueryBuilder $query,
+        $query,
         int $semesterId,
         $semesterIdsForAcademicYear,
         string $programCode,

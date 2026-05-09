@@ -50,6 +50,16 @@ void main() {
                     'reference_number': 'CLR-2024-BSIT-001',
                     'completed_at': '2024-05-20T10:30:00Z',
                     'counts': {'total': 5, 'approved': 5},
+                    'steps': [
+                      {
+                        'office_label': 'College Chief Librarian',
+                        'scope_label': 'College-wide',
+                        'status': 'approved',
+                        'signed_at': '2024-05-19T08:00:00Z',
+                        'signed_by': 'Maria Santos',
+                        'remarks': 'Cleared',
+                      },
+                    ],
                   },
                 ],
               },
@@ -64,7 +74,13 @@ void main() {
 
       expect(find.text('2nd Semester 2024-2025'), findsOneWidget);
       expect(find.text('School Year 2024-2025'), findsOneWidget);
+
+      await tester.tap(find.text('2nd Semester 2024-2025'));
+      await tester.pumpAndSettle();
+
       expect(find.text('Reference: CLR-2024-BSIT-001'), findsOneWidget);
+      expect(find.text('College Chief Librarian'), findsOneWidget);
+      expect(find.textContaining('Signed by Maria Santos'), findsOneWidget);
     });
 
     testWidgets('pdf tab stays locked until the clearance is completed', (

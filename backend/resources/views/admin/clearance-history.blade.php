@@ -9,7 +9,7 @@
     @php($selectedSemester = $semesters->firstWhere('id', $selectedSemesterId))
     @php($exportSemesterId = old('semester_id', $selectedSemesterId ?: ''))
     @php($exportAcademicYear = old('academic_year', $selectedAcademicYear ?: ($selectedSemester?->displayAcademicYear() ?? '')))
-    @php($exportSemester = $semesters->firstWhere('id', (int) $exportSemesterId))
+    @php($exportProgramCode = old('program_code', $selectedProgramCode ?? ''))
 
     <div class="admin-page management-page">
         @include('admin.partials.page-feedback')
@@ -17,7 +17,6 @@
         <section class="admin-page-header management-header">
             <div>
                 <h1>Download Reports</h1>
-                <p>Generate the completed clearance Excel workbook for a specific semester and school year. Student-by-student clearance history stays in the office archive section.</p>
             </div>
         </section>
 
@@ -25,37 +24,15 @@
             <div class="management-card-header">
                 <div>
                     <div class="eyebrow">Excel Export</div>
-                    <h2>Completed clearance workbook</h2>
-                    <p class="management-card-kicker">Choose the exact semester and academic year before downloading. The workbook includes the summary sheet and per-program sheets.</p>
+                    <h2>Completed clearances</h2>
                 </div>
-            </div>
-
-            <div class="report-guidance-grid">
-                <div class="report-guidance-card">
-                    <strong>Use this for</strong>
-                    <span>Official completed-clearance reporting by semester.</span>
-                </div>
-                <div class="report-guidance-card">
-                    <strong>Not shown here</strong>
-                    <span>Individual clearance history is now kept in the office archive flow.</span>
-                </div>
-                <div class="report-guidance-card">
-                    <strong>Format</strong>
-                    <span>Downloadable Excel workbook with summary and program sheets.</span>
-                </div>
-            </div>
-
-            <div class="management-summary-strip" data-report-summary>
-                <span class="management-summary-pill">Selected Report Period</span>
-                <strong data-report-semester-text>{{ $exportSemester?->label ?? 'Choose semester' }}</strong>
-                <span class="mini" data-report-academic-year-text>{{ $exportAcademicYear ?: 'Choose academic year' }}</span>
             </div>
 
             @if($activeFormKey === 'history-export')
                 <div class="empty-state report-validation-state">
-                    <p class="mini">Report download needs a semester and academic year.</p>
                     <x-field-error field="semester_id" bag="historyExport" />
                     <x-field-error field="academic_year" bag="historyExport" />
+                    <x-field-error field="program_code" bag="historyExport" />
                 </div>
             @endif
 
@@ -64,7 +41,7 @@
                 <input type="hidden" name="_form_key" value="history-export">
 
                 <label>
-                    Report Semester
+                    Semester
                     <select name="semester_id" data-export-semester-select required>
                         <option value="">Choose semester</option>
                         @foreach($semesters as $semester)
@@ -83,7 +60,7 @@
                 </label>
 
                 <label>
-                    Report Academic Year
+                    Academic Year
                     <select name="academic_year" data-export-academic-year-select required>
                         <option value="">Choose academic year</option>
                         @foreach($academicYears as $academicYear)
@@ -94,6 +71,21 @@
                     </select>
                     @if($activeFormKey === 'history-export')
                         <x-field-error field="academic_year" bag="historyExport" />
+                    @endif
+                </label>
+
+                <label>
+                    Program
+                    <select name="program_code">
+                        <option value="">All programs</option>
+                        @foreach($programs as $program)
+                            <option value="{{ $program->code }}" {{ $exportProgramCode === $program->code ? 'selected' : '' }}>
+                                {{ $program->code }} - {{ $program->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @if($activeFormKey === 'history-export')
+                        <x-field-error field="program_code" bag="historyExport" />
                     @endif
                 </label>
 
@@ -114,35 +106,8 @@
 
     @push('styles')
     <style>
-        .report-guidance-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 12px;
-        }
-
-        .report-guidance-card {
-            display: grid;
-            gap: 6px;
-            padding: 15px;
-            border-radius: 16px;
-            background: #ffffff;
-            border: 1px solid #e4dacd;
-            color: #183a63;
-        }
-
-        .report-guidance-card strong {
-            font-size: 0.82rem;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-        }
-
-        .report-guidance-card span {
-            color: #667085;
-            line-height: 1.45;
-        }
-
         .history-export-form {
-            grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) auto;
+            grid-template-columns: minmax(200px, 1fr) minmax(200px, 1fr) minmax(240px, 1.2fr) auto;
         }
 
         .history-download-button {
@@ -155,7 +120,6 @@
         }
 
         @media (max-width: 980px) {
-            .report-guidance-grid,
             .history-export-form {
                 grid-template-columns: 1fr;
             }
@@ -172,8 +136,6 @@
         document.addEventListener('DOMContentLoaded', function () {
             const semesterSelect = document.querySelector('[data-export-semester-select]');
             const academicYearSelect = document.querySelector('[data-export-academic-year-select]');
-            const semesterText = document.querySelector('[data-report-semester-text]');
-            const academicYearText = document.querySelector('[data-report-academic-year-text]');
 
             if (!semesterSelect || !academicYearSelect) {
                 return;
@@ -185,14 +147,6 @@
 
                 if (academicYear && selectedOption?.value) {
                     academicYearSelect.value = academicYear;
-                }
-
-                if (semesterText) {
-                    semesterText.textContent = selectedOption?.value ? selectedOption.textContent.trim() : 'Choose semester';
-                }
-
-                if (academicYearText) {
-                    academicYearText.textContent = academicYearSelect.value || 'Choose academic year';
                 }
             };
 

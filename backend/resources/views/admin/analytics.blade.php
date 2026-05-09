@@ -10,7 +10,6 @@
         <section class="admin-page-header management-header">
             <div>
                 <h1>Analytics</h1>
-                <p>Track how long clearances take, which offices sign fastest, and where students tend to wait longer.</p>
             </div>
 
             <a
@@ -25,7 +24,6 @@
             <div class="management-card-header">
                 <div>
                     <div class="eyebrow">Report Filters</div>
-                    <p class="management-card-kicker">Filter analytics by program, semester, or academic year without loading individual clearance records.</p>
                 </div>
             </div>
 
@@ -85,8 +83,7 @@
                 <div class="management-card-header">
                     <div>
                         <div class="eyebrow">Office Signing Performance</div>
-                        <h2>Which offices take longer to sign?</h2>
-                        <p class="management-card-kicker">Average time is measured from when a step appears for an office until it is approved.</p>
+                        <h2>Office signing time</h2>
                     </div>
                 </div>
 
@@ -126,8 +123,7 @@
                 <div class="management-card-header">
                     <div>
                         <div class="eyebrow">Program Flow</div>
-                        <h2>Where do students wait longer?</h2>
-                        <p class="management-card-kicker">Programs are ranked by average completed-clearance duration, with active and flagged counts shown for context.</p>
+                        <h2>Student wait time by program</h2>
                     </div>
                 </div>
 
