@@ -75,7 +75,9 @@ class FakeClearanceService extends ClearanceService {
     this.currentPayload,
     this.startOrResumePayload,
     this.resubmitPayload,
+    this.historyPayload,
     this.loadError,
+    this.historyError,
     this.startError,
     this.resubmitError,
     this.downloadError,
@@ -86,7 +88,9 @@ class FakeClearanceService extends ClearanceService {
   Map<String, dynamic>? currentPayload;
   Map<String, dynamic>? startOrResumePayload;
   Map<String, dynamic>? resubmitPayload;
+  Map<String, dynamic>? historyPayload;
   Object? loadError;
+  Object? historyError;
   Object? startError;
   Object? resubmitError;
   Object? downloadError;
@@ -95,6 +99,7 @@ class FakeClearanceService extends ClearanceService {
 
   final List<Map<String, dynamic>> payloadQueue;
   int loadCalls = 0;
+  int historyCalls = 0;
 
   @override
   Future<Map<String, dynamic>> createOrResumeClearance() async {
@@ -130,6 +135,17 @@ class FakeClearanceService extends ClearanceService {
 
     loadCalls += 1;
     return currentPayload ?? const <String, dynamic>{};
+  }
+
+  @override
+  Future<Map<String, dynamic>> getClearanceHistory() async {
+    historyCalls += 1;
+
+    if (historyError != null) {
+      throw historyError!;
+    }
+
+    return historyPayload ?? const <String, dynamic>{'history': []};
   }
 
   @override

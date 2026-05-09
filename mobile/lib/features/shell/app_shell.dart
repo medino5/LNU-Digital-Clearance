@@ -5,6 +5,7 @@ import '../../screens/dashboard_screen.dart';
 import '../../screens/login_screen.dart';
 import '../../services/auth_service.dart';
 import '../../services/clearance_service.dart';
+import '../history/history_screen.dart';
 import '../pdf/pdf_screen.dart';
 import '../profile/profile_screen.dart';
 
@@ -35,6 +36,7 @@ class _AppShellState extends State<AppShell> {
       widget.clearanceService ?? ClearanceService();
 
   Map<String, dynamic>? _payload;
+  Map<String, dynamic>? _historyPayload;
   String? _error;
 
   // Ticket polish: separate first screen load from user-initiated refresh
@@ -67,7 +69,7 @@ class _AppShellState extends State<AppShell> {
     if (mode == ShellLoadMode.refresh && _isRefreshing) {
       return;
     }
-    
+
     if (mode == ShellLoadMode.initial) {
       setState(() {
         // Ticket polish: full loading only on first load
@@ -83,12 +85,18 @@ class _AppShellState extends State<AppShell> {
     }
 
     try {
-      final payload = await _clearanceService.getCurrentClearance();
+      final results = await Future.wait([
+        _clearanceService.getCurrentClearance(),
+        _clearanceService.getClearanceHistory(),
+      ]);
+      final payload = results[0];
+      final historyPayload = results[1];
 
       if (!mounted) return;
 
       setState(() {
         _payload = payload;
+        _historyPayload = historyPayload;
         _error = null;
         _isInitialLoading = false;
         _isRefreshing = false;
@@ -326,6 +334,8 @@ class _AppShellState extends State<AppShell> {
       case 1:
         return 'Clearance PDF';
       case 2:
+        return 'Clearance History';
+      case 3:
         return 'Student Profile';
       default:
         return 'Student Clearance';
@@ -339,6 +349,8 @@ class _AppShellState extends State<AppShell> {
       case 1:
         return 'Download your official clearance once it is completed.';
       case 2:
+        return 'Review your previous semester and school year records.';
+      case 3:
         return 'Review your account details and sign out securely.';
       default:
         return '';
@@ -394,8 +406,8 @@ class _AppShellState extends State<AppShell> {
             IconButton(
               tooltip: 'Refresh',
               onPressed: _isRefreshing
-                ? null
-                : () => _loadClearance(mode: ShellLoadMode.refresh),
+                  ? null
+                  : () => _loadClearance(mode: ShellLoadMode.refresh),
               style: IconButton.styleFrom(
                 backgroundColor: Colors.white.withValues(alpha: 0.12),
                 foregroundColor: Colors.white,
@@ -420,35 +432,41 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final tabs = [
-    DashboardScreen(
-      payload: _payload,
-      error: _error,
-      isLoading: _isInitialLoading,
-      isStartingOrResuming: _isStartingOrResuming,
-      isDownloadingPdf: _isDownloadingPdf,
-      resubmittingStepId: _resubmittingStepId,
-      onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
-      onStartOrResume: _startOrResumeClearance,
-      onResubmitStep: _resubmitStep,
-      onDownloadPdf: _downloadPdf,
-    ),
-    PdfScreen(
-      payload: _payload,
-      error: _error,
-      isLoading: _isInitialLoading,
-      isDownloadingPdf: _isDownloadingPdf,
-      onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
-      onDownloadPdf: _downloadPdf,
-    ),
-    ProfileScreen(
-      payload: _payload,
-      error: _error, // ADDED: pass shared shell error
-      isLoading: _isInitialLoading,
-      isBusy: _isLoggingOut, // FIX: match parameter name
-      onLogout: _logout,
-      onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
-    ),
-  ];
+      DashboardScreen(
+        payload: _payload,
+        error: _error,
+        isLoading: _isInitialLoading,
+        isStartingOrResuming: _isStartingOrResuming,
+        isDownloadingPdf: _isDownloadingPdf,
+        resubmittingStepId: _resubmittingStepId,
+        onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
+        onStartOrResume: _startOrResumeClearance,
+        onResubmitStep: _resubmitStep,
+        onDownloadPdf: _downloadPdf,
+      ),
+      PdfScreen(
+        payload: _payload,
+        error: _error,
+        isLoading: _isInitialLoading,
+        isDownloadingPdf: _isDownloadingPdf,
+        onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
+        onDownloadPdf: _downloadPdf,
+      ),
+      HistoryScreen(
+        payload: _historyPayload,
+        error: _error,
+        isLoading: _isInitialLoading,
+        onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
+      ),
+      ProfileScreen(
+        payload: _payload,
+        error: _error, // ADDED: pass shared shell error
+        isLoading: _isInitialLoading,
+        isBusy: _isLoggingOut, // FIX: match parameter name
+        onLogout: _logout,
+        onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
+      ),
+    ];
 
     return PopScope<void>(
       canPop: _selectedIndex == 0,
@@ -517,6 +535,11 @@ class _AppShellState extends State<AppShell> {
                   icon: Icon(Icons.picture_as_pdf_outlined),
                   selectedIcon: Icon(Icons.picture_as_pdf_rounded),
                   label: 'PDF',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.history_outlined),
+                  selectedIcon: Icon(Icons.history_rounded),
+                  label: 'History',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.person_outline_rounded),

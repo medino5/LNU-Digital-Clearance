@@ -40,6 +40,59 @@ class StudentClearanceController extends Controller
         );
     }
 
+    public function history(Request $request)
+    {
+        $student = $this->studentFromRequest($request);
+
+        $clearances = Clearance::query()
+            ->select([
+                'id',
+                'student_id',
+                'semester_id',
+                'status',
+                'reference_number',
+                'completed_at',
+                'created_at',
+                'semester_label',
+                'program_code',
+                'program_name',
+                'year_level',
+            ])
+            ->with(['semester:id,label,academic_year'])
+            ->withCount([
+                'steps as total_steps_count',
+                'steps as approved_steps_count' => fn ($query) => $query->where('status', 'approved'),
+                'steps as flagged_steps_count' => fn ($query) => $query->where('status', 'flagged'),
+                'steps as awaiting_steps_count' => fn ($query) => $query->where('status', 'awaiting_action'),
+            ])
+            ->where('student_id', $student->id)
+            ->orderByDesc('completed_at')
+            ->orderByDesc('created_at')
+            ->limit(50)
+            ->get();
+
+        return response()->json([
+            'history' => $clearances->map(fn (Clearance $clearance) => [
+                'id' => $clearance->id,
+                'status' => $clearance->status,
+                'reference_number' => $clearance->reference_number,
+                'semester_label' => $clearance->semester_label ?: $clearance->semester?->label,
+                'academic_year' => $clearance->semester?->displayAcademicYear(),
+                'program_code' => $clearance->program_code,
+                'program_name' => $clearance->program_name,
+                'year_level' => $clearance->year_level,
+                'completed_at' => $clearance->completed_at?->toISOString(),
+                'started_at' => $clearance->created_at?->toISOString(),
+                'counts' => [
+                    'total' => (int) $clearance->total_steps_count,
+                    'approved' => (int) $clearance->approved_steps_count,
+                    'flagged' => (int) $clearance->flagged_steps_count,
+                    'awaiting_action' => (int) $clearance->awaiting_steps_count,
+                ],
+            ])->values(),
+        ]);
+    }
+
     public function store(Request $request)
     {
         $student = $this->studentFromRequest($request);

@@ -91,6 +91,63 @@ void main() {
       },
     );
 
+    test('getClearanceHistory returns lightweight history records', () async {
+      final tokenStore = FakeTokenStore(token: 'active-token');
+      final clearanceService = ClearanceService(
+        tokenStore: tokenStore,
+        apiClient: ApiClient(
+          client: MockClient((request) async {
+            expect(request.url.path, '/api/clearance/history');
+            expect(request.headers['Authorization'], 'Bearer active-token');
+
+            return http.Response(
+              jsonEncode({
+                'history': [
+                  {
+                    'status': 'completed',
+                    'semester_label': '2nd Semester 2024-2025',
+                    'academic_year': '2024-2025',
+                    'program_code': 'BSIT',
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }),
+        ),
+      );
+
+      final payload = await clearanceService.getClearanceHistory();
+      final history = payload['history'] as List<dynamic>;
+
+      expect(history.single['semester_label'], '2nd Semester 2024-2025');
+      expect(history.single['academic_year'], '2024-2025');
+    });
+
+    test(
+      'getClearanceHistory throws SessionExpiredException on 401 responses',
+      () async {
+        final clearanceService = ClearanceService(
+          tokenStore: FakeTokenStore(token: 'expired-token'),
+          apiClient: ApiClient(
+            client: MockClient((request) async {
+              return http.Response(
+                jsonEncode({'message': 'Unauthenticated.'}),
+                401,
+                headers: {'content-type': 'application/json'},
+              );
+            }),
+          ),
+        );
+
+        expect(
+          () => clearanceService.getClearanceHistory(),
+          throwsA(isA<SessionExpiredException>()),
+        );
+      },
+    );
+
     test(
       'downloadCurrentClearancePdf saves PDF bytes with a safe file name',
       () async {

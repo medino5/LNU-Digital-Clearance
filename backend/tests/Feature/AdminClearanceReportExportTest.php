@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Clearance;
 use App\Models\Semester;
 use App\Support\CompletedClearanceReportExporter;
 use Database\Seeders\DatabaseSeeder;
@@ -40,6 +41,37 @@ class AdminClearanceReportExportTest extends TestCase
             ->assertSee('name="academic_year"', false)
             ->assertSee('Download Excel Report')
             ->assertSee($semester->displayAcademicYear());
+    }
+
+    public function test_clearance_history_page_filters_by_program(): void
+    {
+        $clearance = $this->createCompletedSeededClearance();
+        $semester = $clearance->semester;
+
+        Clearance::factory()->create([
+            'semester_id' => $semester->id,
+            'status' => Clearance::STATUS_COMPLETED,
+            'reference_number' => 'CLR-BAEL-TEST',
+            'completed_at' => now(),
+            'student_name' => 'Other Student',
+            'student_id_number' => '2401111',
+            'program_code' => 'BAEL',
+            'program_name' => 'Bachelor of Arts in English Language',
+            'semester_label' => $clearance->semester_label,
+        ]);
+
+        $response = $this->actingAs($this->seededAdminUser())
+            ->get(route('admin.clearance-history.index', [
+                'history_program' => 'BSIT',
+                'history_semester' => $semester->id,
+                'history_academic_year' => $semester->displayAcademicYear(),
+            ]));
+
+        $response->assertOk()
+            ->assertSee($clearance->reference_number)
+            ->assertDontSee('CLR-BAEL-TEST')
+            ->assertSee('name="history_program"', false)
+            ->assertSee('BSIT - Bachelor of Science in Information Technology');
     }
 
     public function test_admin_can_download_completed_clearance_excel_report_for_selected_period(): void
