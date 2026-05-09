@@ -49,9 +49,7 @@ class StudentAdminController extends Controller
         }
 
         $students = $studentsQuery
-            ->orderBy('users.last_name')
-            ->orderBy('users.first_name')
-            ->orderBy('users.middle_initial')
+            ->orderBy('students.student_id_number')
             ->paginate(25)
             ->withQueryString();
 

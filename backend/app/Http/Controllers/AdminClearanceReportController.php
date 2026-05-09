@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Clearance;
-use App\Models\Program;
 use App\Models\Semester;
 use App\Support\CompletedClearanceReportExporter;
 use Illuminate\Http\Request;
@@ -20,60 +19,12 @@ class AdminClearanceReportController extends Controller
     {
         $selectedSemesterId = $request->integer('history_semester');
         $selectedAcademicYear = trim((string) $request->query('history_academic_year', ''));
-        $selectedProgramCode = trim((string) $request->query('history_program', ''));
-
-        $historyQuery = Clearance::query()
-            ->select([
-                'id',
-                'student_id',
-                'semester_id',
-                'status',
-                'reference_number',
-                'completed_at',
-                'student_name',
-                'student_id_number',
-                'year_level',
-                'program_code',
-                'program_name',
-                'semester_label',
-            ])
-            ->with(['steps:id,clearance_id,office_label,signed_at'])
-            ->where('status', Clearance::STATUS_COMPLETED)
-            ->orderByDesc('completed_at');
-
-        if ($selectedSemesterId) {
-            $historyQuery->where('semester_id', $selectedSemesterId);
-        }
-
-        if ($selectedAcademicYear !== '') {
-            $semesterIds = Semester::query()
-                ->where('academic_year', $selectedAcademicYear)
-                ->pluck('id');
-
-            $historyQuery->whereIn('semester_id', $semesterIds);
-        }
-
-        if ($selectedProgramCode !== '') {
-            $historyQuery->where('program_code', $selectedProgramCode);
-        }
-
-        $historyPaginator = $historyQuery
-            ->paginate(25)
-            ->withQueryString();
         $semesters = Semester::orderByDesc('is_active')->orderByDesc('created_at')->get();
-        $programs = Program::query()
-            ->orderBy('code')
-            ->get(['code', 'name']);
 
         return view('admin.clearance-history', [
-            'history' => collect($historyPaginator->items())->groupBy('semester_label'),
-            'historyHasRecords' => $historyPaginator->total() > 0,
-            'historyPaginator' => $historyPaginator,
             'semesters' => $semesters,
-            'programs' => $programs,
             'selectedSemesterId' => $selectedSemesterId,
             'selectedAcademicYear' => $selectedAcademicYear,
-            'selectedProgramCode' => $selectedProgramCode,
             'academicYears' => $semesters
                 ->map(fn (Semester $semester) => $semester->displayAcademicYear())
                 ->filter()

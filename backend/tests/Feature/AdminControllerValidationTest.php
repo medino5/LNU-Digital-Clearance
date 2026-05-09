@@ -121,6 +121,34 @@ class AdminControllerValidationTest extends TestCase
             ->assertDontSee('Bryan');
     }
 
+    public function test_students_page_orders_by_student_number(): void
+    {
+        $program = Program::factory()->create();
+
+        Student::factory()->create([
+            'program_id' => $program->id,
+            'student_id_number' => '2302316',
+        ]);
+        Student::factory()->create([
+            'program_id' => $program->id,
+            'student_id_number' => '2302314',
+        ]);
+        Student::factory()->create([
+            'program_id' => $program->id,
+            'student_id_number' => '2302315',
+        ]);
+
+        $content = $this->actingAs($this->admin)
+            ->get(route('admin.students.index'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertTrue(
+            strpos($content, '2302314') < strpos($content, '2302315')
+            && strpos($content, '2302315') < strpos($content, '2302316')
+        );
+    }
+
     public function test_students_page_searches_by_last_name(): void
     {
         Student::factory()

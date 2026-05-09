@@ -858,14 +858,20 @@
                 'keywords' => ['add office account', 'create office account', 'new office account', 'staff account'],
             ],
             [
-                'title' => 'Clearance History',
-                'description' => 'Review completed clearances by semester and academic year.',
-                'url' => route('admin.clearance-history.index') . '#clearance-history-panel',
-                'keywords' => ['clearance history', 'history', 'completed clearance', 'completed clearances'],
+                'title' => 'Analytics',
+                'description' => 'Review office signing speed and program bottlenecks.',
+                'url' => route('admin.analytics.index'),
+                'keywords' => ['analytics', 'performance', 'slow office', 'bottleneck', 'signing speed'],
+            ],
+            [
+                'title' => 'Download Reports',
+                'description' => 'Download completed clearance reports by semester and academic year.',
+                'url' => route('admin.clearance-history.index') . '#download-reports-panel',
+                'keywords' => ['download reports', 'reports', 'completed clearance', 'completed clearances'],
             ],
             [
                 'title' => 'Download Excel Report',
-                'description' => 'Export completed clearance history as an Excel workbook.',
+                'description' => 'Export completed clearances as an Excel workbook.',
                 'url' => route('admin.clearance-history.index') . '#history-export-form',
                 'keywords' => ['excel', 'report', 'download', 'export', 'xlsx', 'clearance report'],
             ],
@@ -887,7 +893,8 @@
                 <a href="{{ route('admin.students.index') }}" class="nav-item {{ request()->routeIs('admin.students.*') ? 'active' : '' }}">Students</a>
                 <a href="{{ route('admin.registration-requests.index') }}" class="nav-item {{ request()->routeIs('admin.registration-requests.*') ? 'active' : '' }}">Registration Requests</a>
                 <a href="{{ route('admin.office-accounts.index') }}" class="nav-item {{ request()->routeIs('admin.office-accounts.*') ? 'active' : '' }}">Office Accounts</a>
-                <a href="{{ route('admin.clearance-history.index') }}" class="nav-item {{ request()->routeIs('admin.clearance-history.*') || request()->routeIs('admin.clearances.show') ? 'active' : '' }}">Clearance History</a>
+                <a href="{{ route('admin.analytics.index') }}" class="nav-item {{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}">Analytics</a>
+                <a href="{{ route('admin.clearance-history.index') }}" class="nav-item {{ request()->routeIs('admin.clearance-history.*') || request()->routeIs('admin.clearances.show') ? 'active' : '' }}">Download Reports</a>
             </nav>
 
             <form method="POST" action="{{ route('portal.logout') }}" class="sidebar-logout">

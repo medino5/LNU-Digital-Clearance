@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminClearanceDetailController;
 use App\Http\Controllers\AdminClearanceReportController;
+use App\Http\Controllers\AdminAnalyticsController;
 use App\Http\Controllers\AdminStudentRegistrationRequestController;
 use App\Http\Controllers\AdminOfficeDesignationController;
 use App\Http\Controllers\OfficeAccountAdminController;
@@ -40,6 +41,8 @@ Route::prefix('admin')
         Route::get('/registration-requests', [AdminStudentRegistrationRequestController::class, 'index'])
             ->name('admin.registration-requests.index');
         Route::get('/office-accounts', [OfficeAccountAdminController::class, 'index'])->name('admin.office-accounts.index');
+        Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('admin.analytics.index');
+        Route::get('/analytics/export', [AdminAnalyticsController::class, 'export'])->name('admin.analytics.export');
         Route::get('/clearance-history', [AdminClearanceReportController::class, 'index'])->name('admin.clearance-history.index');
         Route::get('/students/{student}', [StudentProfileController::class, 'adminShow'])->name('admin.students.show');
         Route::get('/clearances/{clearance}', [AdminClearanceDetailController::class, 'show'])

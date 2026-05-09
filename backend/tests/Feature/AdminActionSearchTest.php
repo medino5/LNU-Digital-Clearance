@@ -32,6 +32,8 @@ class AdminActionSearchTest extends TestCase
             ->assertSee('Routing Configuration')
             ->assertSee('Assign Designation Holder')
             ->assertSee('Add Office Account')
+            ->assertSee('Analytics')
+            ->assertSee('Download Reports')
             ->assertSee('Download Excel Report')
             ->assertSee('No matching admin action found.');
     }
@@ -70,9 +72,15 @@ class AdminActionSearchTest extends TestCase
             ->assertSee('id="routing-configuration"', false);
 
         $this->actingAs($admin)
+            ->get(route('admin.analytics.index'))
+            ->assertOk()
+            ->assertSee('Analytics')
+            ->assertSee('Download Analytics Report');
+
+        $this->actingAs($admin)
             ->get(route('admin.clearance-history.index'))
             ->assertOk()
-            ->assertSee('id="clearance-history-panel"', false)
+            ->assertSee('id="download-reports-panel"', false)
             ->assertSee('id="history-export-form"', false);
     }
 }

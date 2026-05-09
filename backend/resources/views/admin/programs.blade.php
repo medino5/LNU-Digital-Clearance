@@ -81,8 +81,6 @@
                                             >
                                                 Delete
                                             </button>
-                                        @else
-                                            <span class="mini">Delete locked while students are assigned.</span>
                                         @endif
                                     </div>
                                 </td>
