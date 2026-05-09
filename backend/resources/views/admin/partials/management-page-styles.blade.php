@@ -305,6 +305,22 @@
         margin-top: 6px;
     }
 
+    .alert-success {
+        background: #dcfce7 !important;
+        border: 1px solid #22c55e !important;
+        color: #166534 !important;
+        border-radius: 14px;
+        box-shadow: 0 8px 20px rgba(34, 197, 94, 0.15);
+    }
+
+    .alert-danger {
+        border-radius: 14px;
+    }
+
+    .alert-info {
+        border-radius: 14px;
+    }
+
     @media (max-width: 720px) {
         .management-header,
         .admin-page-header,

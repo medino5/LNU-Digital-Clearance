@@ -127,7 +127,7 @@
                                 name="code"
                                 placeholder="BSIT"
                                 value="{{ $shouldOpenCreate ? old('code') : '' }}"
-                                maxlength="15"
+                                maxlength="5"
                                 required
                             >
                             @if($shouldOpenCreate)
@@ -142,7 +142,7 @@
                                 name="org_name"
                                 placeholder="DIGITS"
                                 value="{{ $shouldOpenCreate ? old('org_name') : '' }}"
-                                maxlength="120"
+                                maxlength="100"
                                 required
                             >
                             @if($shouldOpenCreate)
@@ -230,7 +230,7 @@
                                     type="text"
                                     name="org_name"
                                     value="{{ $shouldOpenEdit ? old('org_name', $program->org_name) : $program->org_name }}"
-                                    maxlength="120"
+                                    maxlength="100"
                                     required
                                 >
                                 @if($shouldOpenEdit)
@@ -247,7 +247,7 @@
                             type="text"
                             name="name"
                             value="{{ $shouldOpenEdit ? old('name', $program->name) : $program->name }}"
-                            maxlength="120"
+                            maxlength="100"
                             required
                         >
                             @if($shouldOpenEdit)

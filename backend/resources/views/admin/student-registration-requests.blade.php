@@ -9,7 +9,7 @@
 
         <section class="management-header">
             <div>
-                <h1>Registration Requests</h1>
+                <h1>REGISTRATION REQUESTS</h1>
                 <p>Mobile account sign-ups stay pending here until an admin approves or rejects them.</p>
             </div>
         </section>
