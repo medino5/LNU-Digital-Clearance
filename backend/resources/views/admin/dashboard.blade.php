@@ -136,6 +136,13 @@
                 </div>
 
                 <div class="stat-card stat-tile">
+                    <div class="eyebrow">Active Clearances</div>
+                    <div class="metric-circle">
+                        <span>{{ $activeClearanceCount }}</span>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-tile">
                     <div class="eyebrow">Routing Designations</div>
                     <div class="metric-circle">
                         <span>{{ $designationCount }}</span>
@@ -291,7 +298,7 @@
 
         .quick-action-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 14px;
             align-items: stretch;
         }
@@ -308,7 +315,7 @@
             color: #19324d;
             background: #ffffff;
             border: 1px solid #e3d9c9;
-            box-shadow: 0 6px 16px rgba(24, 58, 99, 0.05);
+            box-shadow: 0 10px 24px rgba(24, 58, 99, 0.08);
             cursor: pointer;
             transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
         }
@@ -325,8 +332,8 @@
         }
 
         .quick-action-card:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 12px 26px rgba(24, 58, 99, 0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 18px 34px rgba(24, 58, 99, 0.16);
             border-color: #d4c0a6;
         }
 
@@ -349,7 +356,7 @@
 
         .grid-3 {
             display: grid;
-            grid-template-columns: repeat(3, minmax(180px, 1fr));
+            grid-template-columns: repeat(4, minmax(160px, 1fr));
             justify-content: center;
             gap: 16px;
         }
@@ -560,6 +567,11 @@
             .dashboard-chart-grid {
                 grid-template-columns: 1fr;
             }
+
+            .quick-action-grid,
+            .grid-3 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
 
         @media (max-width: 860px) {
@@ -570,6 +582,10 @@
 
         @media (max-width: 720px) {
             .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .quick-action-grid {
                 grid-template-columns: 1fr;
             }
 

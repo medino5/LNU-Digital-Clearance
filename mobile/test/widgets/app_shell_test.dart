@@ -187,7 +187,10 @@ void main() {
                   null, // ADDED: required after profile state messaging update
               isLoading: false,
               isBusy: false,
+              isUploadingPhoto: false,
               onRefresh: () async {},
+              onUpdateProfilePhoto:
+                  ({required bytes, required filename}) async {},
               onLogout: () async {
                 logoutCalled = true;
               },

@@ -82,6 +82,7 @@
                     <table class="management-table">
                         <thead>
                             <tr>
+                                <th>Photo</th>
                                 <th>Display Name</th>
                                 <th>Username</th>
                                 <th>Office Type</th>
@@ -93,6 +94,15 @@
                         <tbody>
                             @foreach($officeAccounts as $officeAccount)
                                 <tr>
+                                    <td>
+                                        <div class="account-avatar">
+                                            @if($officeAccount->user->profilePhotoUrl())
+                                                <img src="{{ $officeAccount->user->profilePhotoUrl() }}" alt="{{ $officeAccount->display_name }} profile picture">
+                                            @else
+                                                <span>{{ strtoupper(substr($officeAccount->display_name, 0, 1)) }}</span>
+                                            @endif
+                                        </div>
+                                    </td>
                                     <td>
                                         <div class="table-main-text">{{ $officeAccount->display_name }}</div>
                                     </td>
@@ -445,6 +455,46 @@
                             </button>
                         </div>
                     </form>
+
+                    <form
+                        method="POST"
+                        action="{{ route('admin.office-accounts.profile-photo.update', $officeAccount) }}"
+                        enctype="multipart/form-data"
+                        class="profile-photo-form"
+                    >
+                        @csrf
+                        <div class="profile-photo-edit-row">
+                            <div class="account-avatar large">
+                                @if($officeAccount->user->profilePhotoUrl())
+                                    <img src="{{ $officeAccount->user->profilePhotoUrl() }}" alt="{{ $officeAccount->display_name }} profile picture">
+                                @else
+                                    <span>{{ strtoupper(substr($officeAccount->display_name, 0, 1)) }}</span>
+                                @endif
+                            </div>
+
+                            <label>
+                                Profile Picture
+                                <input
+                                    type="file"
+                                    name="profile_photo"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    required
+                                >
+                                <span class="mini">JPG, PNG, or WEBP. Max 2 MB.</span>
+                                <x-field-error field="profile_photo" bag="officeAccountPhoto" />
+                            </label>
+                        </div>
+
+                        <div class="form-actions modal-actions">
+                            <button
+                                type="submit"
+                                class="secondary"
+                                data-loading-text="Uploading Photo..."
+                            >
+                                Upload Profile Picture
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         @endforeach
@@ -492,6 +542,45 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        .account-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            background: linear-gradient(135deg, #173c66 0%, #27588f 100%);
+            color: #fff;
+            font-weight: 900;
+            border: 2px solid #f3ead9;
+            box-shadow: 0 6px 14px rgba(24, 58, 99, 0.12);
+        }
+
+        .account-avatar.large {
+            width: 72px;
+            height: 72px;
+            font-size: 1.4rem;
+        }
+
+        .account-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-photo-form {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e4dacd;
+        }
+
+        .profile-photo-edit-row {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            gap: 16px;
+            align-items: center;
         }
 
         .modal-readonly-text {

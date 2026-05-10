@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Student;
+use App\Support\ProfilePhotoStorage;
 use App\Support\StudentClearancePayloadBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -68,6 +69,32 @@ class StudentAuthController extends Controller
 
         return response()->json([
             'profile' => $this->payloadBuilder->build($student, null, null)['student'],
+        ]);
+    }
+
+    public function updateProfilePhoto(Request $request, ProfilePhotoStorage $profilePhotoStorage)
+    {
+        $data = $request->validate([
+            'profile_photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ], [
+            'profile_photo.max' => 'Profile picture must be 2 MB or smaller.',
+            'profile_photo.image' => 'Choose a valid image file.',
+            'profile_photo.mimes' => 'Profile picture must be JPG, PNG, or WEBP.',
+        ]);
+
+        $student = $request->user()->loadMissing('studentProfile.program')->studentProfile;
+
+        if (!$student) {
+            return response()->json([
+                'message' => 'Student profile not found.',
+            ], 404);
+        }
+
+        $profilePhotoStorage->storeForUser($student->user, $data['profile_photo']);
+
+        return response()->json([
+            'message' => 'Profile picture updated.',
+            'profile' => $this->payloadBuilder->build($student->fresh(['user', 'program']), null, null)['student'],
         ]);
     }
 }

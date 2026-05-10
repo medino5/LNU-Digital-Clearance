@@ -67,10 +67,7 @@ class DashboardScreen extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
         children: [
-          _HeaderCard(
-            profile: _profile,
-            activeSemester: _activeSemester,
-          ),
+          _HeaderCard(profile: _profile, activeSemester: _activeSemester),
           const SizedBox(height: 18),
           if (error != null) ...[
             _InfoCard(
@@ -103,9 +100,9 @@ class DashboardScreen extends StatelessWidget {
             Text(
               'Required Offices',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: _navy,
-                    fontWeight: FontWeight.bold,
-                  ),
+                color: _navy,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 10),
             if (_steps.isEmpty)
@@ -136,10 +133,7 @@ class DashboardScreen extends StatelessWidget {
 }
 
 class _HeaderCard extends StatelessWidget {
-  const _HeaderCard({
-    required this.profile,
-    required this.activeSemester,
-  });
+  const _HeaderCard({required this.profile, required this.activeSemester});
 
   final Map<String, dynamic>? profile;
   final Map<String, dynamic>? activeSemester;
@@ -186,7 +180,10 @@ class _HeaderCard extends StatelessWidget {
             spacing: 12,
             runSpacing: 10,
             children: [
-              _MetaPill(label: 'Student ID', value: profile?['student_id_number']),
+              _MetaPill(
+                label: 'Student ID',
+                value: profile?['student_id_number'],
+              ),
               _MetaPill(label: 'Program', value: program?['code']),
               _MetaPill(label: 'Year', value: profile?['year_level_label']),
               _MetaPill(
@@ -317,10 +314,7 @@ class _StartClearanceCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             'The active semester is $semesterLabel. Starting a clearance now will immediately route the request to all required offices.',
-            style: TextStyle(
-              color: Colors.grey.shade700,
-              height: 1.5,
-            ),
+            style: TextStyle(color: Colors.grey.shade700, height: 1.5),
           ),
           const SizedBox(height: 20),
           SizedBox(
@@ -427,10 +421,7 @@ class _ClearanceSummaryCard extends StatelessWidget {
             const SizedBox(height: 18),
             Text(
               'Reference Number: $referenceNumber',
-              style: const TextStyle(
-                color: _navy,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(color: _navy, fontWeight: FontWeight.bold),
             ),
           ],
           if (completedAt != null) ...[
@@ -444,10 +435,7 @@ class _ClearanceSummaryCard extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Approved offices stay approved. Re-submit only the flagged office steps once your issue is resolved.',
-              style: TextStyle(
-                color: Colors.grey.shade800,
-                height: 1.45,
-              ),
+              style: TextStyle(color: Colors.grey.shade800, height: 1.45),
             ),
           ],
           if (pdfAvailable) ...[
@@ -466,7 +454,9 @@ class _ClearanceSummaryCard extends StatelessWidget {
                         ),
                       )
                     : const Icon(Icons.picture_as_pdf_rounded),
-                label: Text(isBusy ? 'Preparing PDF...' : 'Download Clearance PDF'),
+                label: Text(
+                  isBusy ? 'Preparing PDF...' : 'Download Clearance PDF',
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _gold,
                   foregroundColor: _navy,
@@ -506,10 +496,7 @@ class _SummaryChip extends StatelessWidget {
       ),
       child: Text(
         '$label: $value',
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w700,
-        ),
+        style: TextStyle(color: color, fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -553,10 +540,7 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: foreground,
-          fontWeight: FontWeight.bold,
-        ),
+        style: TextStyle(color: foreground, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -582,26 +566,30 @@ class _ClearanceStepCard extends StatelessWidget {
     final remarks = step['remarks'] as String?;
     final signedAt = step['signed_at'] as String?;
     final scopeLabel = step['scope_label'] as String?;
+    final assignedOfficer =
+        step['assigned_officer'] as Map<String, dynamic>? ?? {};
+    final officerPhotoUrl = assignedOfficer['profile_photo_url'] as String?;
+    final officerName = assignedOfficer['name'] as String?;
 
     final theme = switch (status) {
       'approved' => (
-          background: const Color(0xFFE9F6EF),
-          foreground: Colors.green.shade800,
-          icon: Icons.check_circle_rounded,
-          label: 'Approved',
-        ),
+        background: const Color(0xFFE9F6EF),
+        foreground: Colors.green.shade800,
+        icon: Icons.check_circle_rounded,
+        label: 'Approved',
+      ),
       'flagged' => (
-          background: const Color(0xFFFFEEEA),
-          foreground: Colors.red.shade700,
-          icon: Icons.flag_rounded,
-          label: 'Flagged',
-        ),
+        background: const Color(0xFFFFEEEA),
+        foreground: Colors.red.shade700,
+        icon: Icons.flag_rounded,
+        label: 'Flagged',
+      ),
       _ => (
-          background: const Color(0xFFFFF4DA),
-          foreground: Colors.orange.shade800,
-          icon: Icons.pending_actions_rounded,
-          label: 'Awaiting Action',
-        ),
+        background: const Color(0xFFFFF4DA),
+        foreground: Colors.orange.shade800,
+        icon: Icons.pending_actions_rounded,
+        label: 'Awaiting Action',
+      ),
     };
 
     return Container(
@@ -619,7 +607,13 @@ class _ClearanceStepCard extends StatelessWidget {
               CircleAvatar(
                 backgroundColor: theme.background,
                 foregroundColor: theme.foreground,
-                child: Icon(theme.icon),
+                backgroundImage:
+                    officerPhotoUrl != null && officerPhotoUrl.isNotEmpty
+                    ? NetworkImage(officerPhotoUrl)
+                    : null,
+                child: officerPhotoUrl == null || officerPhotoUrl.isEmpty
+                    ? Icon(theme.icon)
+                    : null,
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -640,11 +634,21 @@ class _ClearanceStepCard extends StatelessWidget {
                         style: TextStyle(color: Colors.grey.shade700),
                       ),
                     ],
+                    if ((officerName?.isNotEmpty ?? false)) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Officer: $officerName',
+                        style: TextStyle(color: Colors.grey.shade700),
+                      ),
+                    ],
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: theme.background,
                   borderRadius: BorderRadius.circular(999),
@@ -678,10 +682,7 @@ class _ClearanceStepCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               remarks!,
-              style: TextStyle(
-                color: Colors.grey.shade800,
-                height: 1.45,
-              ),
+              style: TextStyle(color: Colors.grey.shade800, height: 1.45),
             ),
           ],
           if (onResubmit != null) ...[

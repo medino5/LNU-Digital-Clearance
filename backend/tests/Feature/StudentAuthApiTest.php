@@ -9,6 +9,7 @@ use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\UploadedFile;
 use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -310,5 +311,29 @@ class StudentAuthApiTest extends TestCase
                     ],
                 ],
             ]);
+    }
+
+    public function test_student_can_upload_profile_picture_from_mobile_app(): void
+    {
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        Sanctum::actingAs($student->user);
+
+        $this->postJson('/api/me/profile-photo', [
+            'profile_photo' => UploadedFile::fake()->createWithContent(
+                'profile.png',
+                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=')
+            ),
+        ])
+            ->assertOk()
+            ->assertJsonPath('profile.student_id_number', '2302314')
+            ->assertJsonPath('profile.profile_photo_url', fn ($value) => is_string($value) && str_contains($value, '/profile-photos/'));
+
+        $student->user->refresh();
+        $this->assertNotNull($student->user->profile_photo_path);
+        $this->assertNotNull($student->user->profile_photo_content);
+
+        $this->get($student->user->profilePhotoUrl())
+            ->assertOk()
+            ->assertHeader('content-type', 'image/png');
     }
 }

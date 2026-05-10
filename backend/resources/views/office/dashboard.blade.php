@@ -84,10 +84,19 @@
 
                             <div class="record office-record pending-record">
                                 <div class="record-top">
-                                    <div>
-                                        <strong class="record-name">{{ $student->displayName() }}</strong>
-                                        <div class="mini">
-                                            {{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}
+                                    <div class="office-student-identity">
+                                        <div class="office-student-avatar">
+                                            @if($student->user->profilePhotoUrl())
+                                                <img src="{{ $student->user->profilePhotoUrl() }}" alt="{{ $student->displayName() }} profile picture">
+                                            @else
+                                                <span>{{ strtoupper(substr($student->displayName(), 0, 1)) }}</span>
+                                            @endif
+                                        </div>
+                                        <div>
+                                            <strong class="record-name">{{ $student->displayName() }}</strong>
+                                            <div class="mini">
+                                                {{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -224,10 +233,19 @@
 
                             <div class="record office-record processed-record">
                                 <div class="record-top">
-                                    <div>
-                                        <strong class="record-name">{{ $student->displayName() }}</strong>
-                                        <div class="mini">
-                                            {{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}
+                                    <div class="office-student-identity">
+                                        <div class="office-student-avatar">
+                                            @if($student->user->profilePhotoUrl())
+                                                <img src="{{ $student->user->profilePhotoUrl() }}" alt="{{ $student->displayName() }} profile picture">
+                                            @else
+                                                <span>{{ strtoupper(substr($student->displayName(), 0, 1)) }}</span>
+                                            @endif
+                                        </div>
+                                        <div>
+                                            <strong class="record-name">{{ $student->displayName() }}</strong>
+                                            <div class="mini">
+                                                {{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -656,6 +674,34 @@
             font-size: 1.08rem;
             margin-bottom: 4px;
             color: var(--navy-deep);
+        }
+
+        .office-student-identity {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .office-student-avatar {
+            width: 48px;
+            height: 48px;
+            flex: 0 0 48px;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            background: linear-gradient(135deg, #173c66 0%, #27588f 100%);
+            color: #fff;
+            font-weight: 900;
+            border: 2px solid #fff;
+            box-shadow: 0 8px 16px rgba(24, 58, 99, 0.12);
+        }
+
+        .office-student-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .record-actions {

@@ -6,10 +6,19 @@
 
 <article class="student-profile-panel">
     <header class="student-profile-hero">
-        <div>
-            <div class="eyebrow">Student Profile</div>
-            <h1>{{ $student->displayName() }}</h1>
-            <p>{{ $student->student_id_number }} / {{ $student->program->code }} / {{ $student->yearLevelLabel() }}</p>
+        <div class="student-profile-identity">
+            <div class="student-profile-avatar">
+                @if($student->user->profilePhotoUrl())
+                    <img src="{{ $student->user->profilePhotoUrl() }}" alt="{{ $student->displayName() }} profile picture">
+                @else
+                    <span>{{ strtoupper(substr($student->displayName(), 0, 1)) }}</span>
+                @endif
+            </div>
+            <div>
+                <div class="eyebrow">Student Profile</div>
+                <h1>{{ $student->displayName() }}</h1>
+                <p>{{ $student->student_id_number }} / {{ $student->program->code }} / {{ $student->yearLevelLabel() }}</p>
+            </div>
         </div>
 
         <span class="badge {{ $currentClearance?->status ?? 'neutral' }}">{{ $currentStatus }}</span>

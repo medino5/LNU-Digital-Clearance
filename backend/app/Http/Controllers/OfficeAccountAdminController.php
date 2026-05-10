@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\OfficeAccount;
 use App\Models\User;
+use App\Support\ProfilePhotoStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -166,6 +167,34 @@ class OfficeAccountAdminController extends Controller
             $redirectTo,
             'success',
             'Office account updated successfully.',
+        );
+    }
+
+    public function updateProfilePhoto(
+        Request $request,
+        OfficeAccount $officeAccount,
+        ProfilePhotoStorage $profilePhotoStorage,
+    ) {
+        $data = $this->validateForm(
+            $request,
+            'officeAccountPhoto',
+            [
+                'profile_photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            ],
+            route('admin.office-accounts.index'),
+            [
+                'profile_photo.max' => 'Profile picture must be 2 MB or smaller.',
+                'profile_photo.image' => 'Choose a valid image file.',
+                'profile_photo.mimes' => 'Profile picture must be JPG, PNG, or WEBP.',
+            ],
+        );
+
+        $profilePhotoStorage->storeForUser($officeAccount->user, $data['profile_photo']);
+
+        return $this->redirectWithMessage(
+            route('admin.office-accounts.index'),
+            'success',
+            'Profile picture updated successfully.',
         );
     }
 

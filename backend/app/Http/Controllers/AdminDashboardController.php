@@ -69,6 +69,9 @@ class AdminDashboardController extends Controller
             'completedClearanceCount' => Clearance::query()
                 ->where('status', Clearance::STATUS_COMPLETED)
                 ->count(),
+            'activeClearanceCount' => Clearance::query()
+                ->whereIn('status', [Clearance::STATUS_IN_PROGRESS, Clearance::STATUS_FLAGGED])
+                ->count(),
             'clearancesPerSemester' => $clearancesPerSemester,
             'semesterChartHasData' => $clearancesPerSemester->sum('count') > 0,
             'semesterChartMax' => $semesterChartMax,
