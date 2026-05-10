@@ -45,6 +45,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   static const Color _muted = Color(0xFF667085);
   static const Color _gold = Color(0xFFD2A83D);
   static const Color _danger = Color(0xFFB5442C);
+  static const String _logoAsset =
+      'assets/branding/lnu_digital_clearance_logo_compact.png';
   static final RegExp _supportedNameCharacterPattern = RegExp(
     r"^[A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF\u00D1\u00F1' -]+$",
     unicode: true,
@@ -82,6 +84,12 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
   void initState() {
     super.initState();
     _loadOptions();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    precacheImage(const AssetImage(_logoAsset), context);
   }
 
   @override
@@ -308,64 +316,24 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
                   children: [
                     _HeaderCard(onBack: () => Navigator.of(context).pop()),
                     const SizedBox(height: 28),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final useTwoColumns = constraints.maxWidth >= 430;
-
-                        if (!useTwoColumns) {
-                          return Column(
-                            children: [
-                              _nameField(
-                                controller: _firstNameController,
-                                label: 'First Name',
-                                required: true,
-                              ),
-                              const SizedBox(height: 14),
-                              _nameField(
-                                controller: _lastNameController,
-                                label: 'Last Name',
-                                required: true,
-                              ),
-                              const SizedBox(height: 14),
-                              _middleInitialField(),
-                              const SizedBox(height: 14),
-                              _suffixDropdown(),
-                            ],
-                          );
-                        }
-
-                        return Column(
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _nameField(
-                                    controller: _firstNameController,
-                                    label: 'First Name',
-                                    required: true,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: _nameField(
-                                    controller: _lastNameController,
-                                    label: 'Last Name',
-                                    required: true,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 14),
-                            Row(
-                              children: [
-                                Expanded(child: _middleInitialField()),
-                                const SizedBox(width: 14),
-                                Expanded(child: _suffixDropdown()),
-                              ],
-                            ),
-                          ],
-                        );
-                      },
+                    Column(
+                      children: [
+                        _nameField(
+                          controller: _firstNameController,
+                          label: 'First Name',
+                          required: true,
+                        ),
+                        const SizedBox(height: 14),
+                        _nameField(
+                          controller: _lastNameController,
+                          label: 'Last Name',
+                          required: true,
+                        ),
+                        const SizedBox(height: 14),
+                        _middleInitialField(),
+                        const SizedBox(height: 14),
+                        _suffixDropdown(),
+                      ],
                     ),
                     const SizedBox(height: 14),
                     TextFormField(
@@ -828,8 +796,9 @@ class _HeaderCard extends StatelessWidget {
               border: Border.all(color: const Color(0xFFE6D9B8)),
             ),
             child: Image.asset(
-              'assets/branding/lnu_digital_clearance_logo.png',
+              _RegisterScreenState._logoAsset,
               fit: BoxFit.contain,
+              cacheWidth: 512,
             ),
           ),
           const SizedBox(height: 18),

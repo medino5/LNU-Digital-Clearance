@@ -15,9 +15,13 @@ class ClearancePdfService
         $pdf = new SimplePdfDocument();
         $y = 752;
 
-        $pdf->text(48, $y, 'LEYTE NORMAL UNIVERSITY', 18, true);
+        $hasLogo = $pdf->jpegImage(public_path('images/lnu-logo-pdf.jpg'), 48, 704, 54, 54)
+            || $pdf->pngImage(public_path('images/lnu-logo.png'), 48, 704, 54, 54);
+        $headerX = $hasLogo ? 116 : 48;
+
+        $pdf->text($headerX, $y, 'LEYTE NORMAL UNIVERSITY', 18, true);
         $y -= 24;
-        $pdf->text(48, $y, 'GENERAL STUDENTS CLEARANCE', 13, true);
+        $pdf->text($headerX, $y, 'GENERAL STUDENTS CLEARANCE', 13, true);
         $y -= 26;
 
         $pdf->text(48, $y, 'Student Name:', 10, true);

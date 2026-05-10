@@ -36,12 +36,20 @@ class _LoginScreenState extends State<LoginScreen> {
   static const Color _navy = Color(0xFF183A63);
   static const Color _gold = Color(0xFFD1A33B);
   static const Color _paper = Color(0xFFF8F4EA);
+  static const String _logoAsset =
+      'assets/branding/lnu_digital_clearance_logo_compact.png';
 
   @override
   void initState() {
     super.initState();
     _notice = widget.initialMessage;
     _restoreSession();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    precacheImage(const AssetImage(_logoAsset), context);
   }
 
   @override
@@ -200,8 +208,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               ],
                             ),
                             child: Image.asset(
-                              'assets/branding/lnu_digital_clearance_logo.png',
+                              _logoAsset,
                               fit: BoxFit.contain,
+                              cacheWidth: 256,
                             ),
                           ),
                           const SizedBox(height: 16),

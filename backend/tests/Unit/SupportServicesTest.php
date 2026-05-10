@@ -69,7 +69,11 @@ class SupportServicesTest extends TestCase
 
         Storage::disk('local')->assertExists($path);
         $this->assertSame('clearances/clr-test-0001.pdf', $path);
-        $this->assertStringStartsWith('%PDF', Storage::disk('local')->get($path));
+        $contents = Storage::disk('local')->get($path);
+
+        $this->assertStringStartsWith('%PDF', $contents);
+        $this->assertStringContainsString('/Subtype /Image', $contents);
+        $this->assertStringContainsString('/XObject', $contents);
     }
 
     public function test_clearance_pdf_service_uses_fallback_name_when_reference_is_missing(): void

@@ -508,47 +508,55 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
+  Widget _buildSelectedTab() {
+    switch (_selectedIndex) {
+      case 0:
+        return DashboardScreen(
+          payload: _payload,
+          error: _error,
+          isLoading: _isInitialLoading,
+          isStartingOrResuming: _isStartingOrResuming,
+          isDownloadingPdf: _isDownloadingPdf,
+          resubmittingStepId: _resubmittingStepId,
+          onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
+          onStartOrResume: _startOrResumeClearance,
+          onResubmitStep: _resubmitStep,
+          onDownloadPdf: _downloadPdf,
+        );
+      case 1:
+        return PdfScreen(
+          payload: _payload,
+          error: _error,
+          isLoading: _isInitialLoading,
+          isDownloadingPdf: _isDownloadingPdf,
+          onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
+          onDownloadPdf: _downloadPdf,
+        );
+      case 2:
+        return HistoryScreen(
+          payload: _historyPayload,
+          error: _error,
+          isLoading: _isInitialLoading,
+          onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
+        );
+      case 3:
+        return ProfileScreen(
+          payload: _payload,
+          error: _error,
+          isLoading: _isInitialLoading,
+          isBusy: _isLoggingOut,
+          isUploadingPhoto: _isUploadingProfilePhoto,
+          onLogout: _logout,
+          onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
+          onUpdateProfilePhoto: _updateProfilePhoto,
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final tabs = [
-      DashboardScreen(
-        payload: _payload,
-        error: _error,
-        isLoading: _isInitialLoading,
-        isStartingOrResuming: _isStartingOrResuming,
-        isDownloadingPdf: _isDownloadingPdf,
-        resubmittingStepId: _resubmittingStepId,
-        onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
-        onStartOrResume: _startOrResumeClearance,
-        onResubmitStep: _resubmitStep,
-        onDownloadPdf: _downloadPdf,
-      ),
-      PdfScreen(
-        payload: _payload,
-        error: _error,
-        isLoading: _isInitialLoading,
-        isDownloadingPdf: _isDownloadingPdf,
-        onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
-        onDownloadPdf: _downloadPdf,
-      ),
-      HistoryScreen(
-        payload: _historyPayload,
-        error: _error,
-        isLoading: _isInitialLoading,
-        onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
-      ),
-      ProfileScreen(
-        payload: _payload,
-        error: _error, // ADDED: pass shared shell error
-        isLoading: _isInitialLoading,
-        isBusy: _isLoggingOut, // FIX: match parameter name
-        isUploadingPhoto: _isUploadingProfilePhoto,
-        onLogout: _logout,
-        onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
-        onUpdateProfilePhoto: _updateProfilePhoto,
-      ),
-    ];
-
     return PopScope<void>(
       canPop: _selectedIndex == 0,
       onPopInvokedWithResult: (didPop, result) {
@@ -574,7 +582,10 @@ class _AppShellState extends State<AppShell> {
             children: [
               _buildTopBar(),
               Expanded(
-                child: IndexedStack(index: _selectedIndex, children: tabs),
+                child: KeyedSubtree(
+                  key: ValueKey<int>(_selectedIndex),
+                  child: _buildSelectedTab(),
+                ),
               ),
             ],
           ),
