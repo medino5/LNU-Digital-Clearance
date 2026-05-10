@@ -238,9 +238,14 @@ class AdminAnalyticsController extends Controller
     {
         $start = $table . '.' . $startColumn;
         $end = $table . '.' . $endColumn;
+        $driver = DB::connection()->getDriverName();
 
-        if (DB::connection()->getDriverName() === 'sqlite') {
+        if ($driver === 'sqlite') {
             return "((strftime('%s', {$end}) - strftime('%s', {$start})) / 60.0)";
+        }
+
+        if ($driver === 'pgsql') {
+            return "(EXTRACT(EPOCH FROM ({$end} - {$start})) / 60.0)";
         }
 
         return "TIMESTAMPDIFF(MINUTE, {$start}, {$end})";

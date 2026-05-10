@@ -11,6 +11,7 @@ class UatDatabaseSeeder extends Seeder
         $this->call([
             CoreSystemSeeder::class,
             UatStudentSeeder::class,
+            HistoricalClearanceDemoSeeder::class,
         ]);
     }
 }
