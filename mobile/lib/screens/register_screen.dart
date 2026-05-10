@@ -762,68 +762,47 @@ class _HeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFD7D3C8)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+    return Column(
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: IconButton(
+            tooltip: 'Back to sign in',
+            onPressed: onBack,
+            color: const Color(0xFF16385F),
+            icon: const Icon(Icons.arrow_back),
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: IconButton(
-              tooltip: 'Back to sign in',
-              onPressed: onBack,
-              color: const Color(0xFF16385F),
-              icon: const Icon(Icons.arrow_back),
-            ),
+        ),
+        SizedBox(
+          height: 118,
+          child: Image.asset(
+            _RegisterScreenState._logoAsset,
+            fit: BoxFit.contain,
+            cacheWidth: 360,
           ),
-          Container(
-            constraints: const BoxConstraints(maxWidth: 260),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFCFBF7),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: const Color(0xFFE6D9B8)),
-            ),
-            child: Image.asset(
-              _RegisterScreenState._logoAsset,
-              fit: BoxFit.contain,
-              cacheWidth: 512,
-            ),
+        ),
+        const SizedBox(height: 14),
+        const Text(
+          'Create Account',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Color(0xFF16385F),
+            fontSize: 30,
+            fontWeight: FontWeight.w900,
           ),
-          const SizedBox(height: 18),
-          const Text(
-            'Create Account',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Color(0xFF16385F),
-              fontSize: 31,
-              fontWeight: FontWeight.w900,
-            ),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'Submit your student details for admin approval.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Color(0xFF667085),
+            fontSize: 14,
+            height: 1.35,
+            fontWeight: FontWeight.w600,
           ),
-          const SizedBox(height: 6),
-          const Text(
-            'Submit your student details for admin approval.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Color(0xFF667085),
-              fontSize: 14,
-              height: 1.35,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

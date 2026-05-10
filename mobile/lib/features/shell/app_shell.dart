@@ -50,6 +50,7 @@ class _AppShellState extends State<AppShell> {
   bool _isDownloadingPdf = false;
   bool _isLoggingOut = false;
   bool _isUploadingProfilePhoto = false;
+  bool _isChangingPassword = false;
   int? _resubmittingStepId;
 
   int _selectedIndex = 0;
@@ -352,6 +353,52 @@ class _AppShellState extends State<AppShell> {
     }
   }
 
+  Future<void> _changePassword({
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    if (_isChangingPassword) {
+      return;
+    }
+
+    setState(() {
+      _isChangingPassword = true;
+    });
+
+    try {
+      final message = await _authService.changePassword(
+        password: password,
+        passwordConfirmation: passwordConfirmation,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    } catch (error) {
+      if (await _handleSessionExpired(error)) {
+        return;
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_getErrorMessage(error))));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isChangingPassword = false;
+        });
+      }
+    }
+  }
+
   Future<bool> _handleSessionExpired(Object error) async {
     if (error is! SessionExpiredException) {
       return false;
@@ -546,9 +593,11 @@ class _AppShellState extends State<AppShell> {
           isLoading: _isInitialLoading,
           isBusy: _isLoggingOut,
           isUploadingPhoto: _isUploadingProfilePhoto,
+          isChangingPassword: _isChangingPassword,
           onLogout: _logout,
           onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
           onUpdateProfilePhoto: _updateProfilePhoto,
+          onChangePassword: _changePassword,
         );
       default:
         return const SizedBox.shrink();

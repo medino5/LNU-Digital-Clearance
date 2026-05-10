@@ -32,9 +32,6 @@ class DashboardScreen extends StatelessWidget {
   static const Color _navy = Color(0xFF183A63);
   static const Color _gold = Color(0xFFD1A33B);
 
-  Map<String, dynamic>? get _profile =>
-      payload?['student'] as Map<String, dynamic>?;
-
   Map<String, dynamic>? get _activeSemester =>
       payload?['active_semester'] as Map<String, dynamic>?;
 
@@ -67,8 +64,6 @@ class DashboardScreen extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
         children: [
-          _HeaderCard(profile: _profile, activeSemester: _activeSemester),
-          const SizedBox(height: 18),
           if (error != null) ...[
             _InfoCard(
               title: 'Unable to refresh right now',
@@ -93,6 +88,7 @@ class DashboardScreen extends StatelessWidget {
           else ...[
             _ClearanceSummaryCard(
               clearance: _clearance!,
+              activeSemesterLabel: _activeSemester?['label'] as String?,
               isBusy: isDownloadingPdf,
               onDownload: onDownloadPdf,
             ),
@@ -127,113 +123,6 @@ class DashboardScreen extends StatelessWidget {
               ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _HeaderCard extends StatelessWidget {
-  const _HeaderCard({required this.profile, required this.activeSemester});
-
-  final Map<String, dynamic>? profile;
-  final Map<String, dynamic>? activeSemester;
-
-  static const Color _navy = Color(0xFF183A63);
-  static const Color _gold = Color(0xFFD1A33B);
-
-  @override
-  Widget build(BuildContext context) {
-    final program = profile?['program'] as Map<String, dynamic>?;
-
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
-          colors: [_navy, Color(0xFF254F84)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Student Overview',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            profile?['name'] as String? ?? 'Student',
-            style: const TextStyle(
-              color: _gold,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 10,
-            children: [
-              _MetaPill(
-                label: 'Student ID',
-                value: profile?['student_id_number'],
-              ),
-              _MetaPill(label: 'Program', value: program?['code']),
-              _MetaPill(label: 'Year', value: profile?['year_level_label']),
-              _MetaPill(
-                label: 'Semester',
-                value: activeSemester?['label'] ?? 'Not set',
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MetaPill extends StatelessWidget {
-  const _MetaPill({required this.label, required this.value});
-
-  final String label;
-  final Object? value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: RichText(
-        text: TextSpan(
-          style: DefaultTextStyle.of(context).style,
-          children: [
-            TextSpan(
-              text: '$label\n',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.7),
-                fontSize: 12,
-                height: 1.35,
-              ),
-            ),
-            TextSpan(
-              text: '${value ?? '-'}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -351,11 +240,13 @@ class _StartClearanceCard extends StatelessWidget {
 class _ClearanceSummaryCard extends StatelessWidget {
   const _ClearanceSummaryCard({
     required this.clearance,
+    required this.activeSemesterLabel,
     required this.isBusy,
     required this.onDownload,
   });
 
   final Map<String, dynamic> clearance;
+  final String? activeSemesterLabel;
   final bool isBusy;
   final Future<void> Function() onDownload;
 
@@ -369,9 +260,13 @@ class _ClearanceSummaryCard extends StatelessWidget {
     final referenceNumber = clearance['reference_number'] as String?;
     final completedAt = clearance['completed_at'] as String?;
     final pdfAvailable = clearance['pdf_available'] == true;
+    final approved = counts['approved'] ?? 0;
+    final total = counts['total'] ?? 0;
+    final awaiting = counts['awaiting_action'] ?? 0;
+    final flagged = counts['flagged'] ?? 0;
 
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -381,7 +276,7 @@ class _ClearanceSummaryCard extends StatelessWidget {
         children: [
           Wrap(
             spacing: 12,
-            runSpacing: 12,
+            runSpacing: 10,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               const Text(
@@ -395,25 +290,43 @@ class _ClearanceSummaryCard extends StatelessWidget {
               _StatusChip(status: status),
             ],
           ),
+          if ((activeSemesterLabel?.isNotEmpty ?? false)) ...[
+            const SizedBox(height: 8),
+            Text(
+              activeSemesterLabel!,
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
           const SizedBox(height: 14),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
+          _ProgressBar(approved: approved, total: total),
+          const SizedBox(height: 12),
+          Row(
             children: [
-              _SummaryChip(
-                label: 'Approved',
-                value: '${counts['approved'] ?? 0}',
-                color: Colors.green.shade700,
+              Expanded(
+                child: _SummaryChip(
+                  label: 'Approved',
+                  value: '$approved',
+                  color: Colors.green.shade700,
+                ),
               ),
-              _SummaryChip(
-                label: 'Awaiting Action',
-                value: '${counts['awaiting_action'] ?? 0}',
-                color: Colors.orange.shade700,
+              const SizedBox(width: 8),
+              Expanded(
+                child: _SummaryChip(
+                  label: 'Waiting',
+                  value: '$awaiting',
+                  color: Colors.orange.shade700,
+                ),
               ),
-              _SummaryChip(
-                label: 'Flagged',
-                value: '${counts['flagged'] ?? 0}',
-                color: Colors.red.shade700,
+              const SizedBox(width: 8),
+              Expanded(
+                child: _SummaryChip(
+                  label: 'Issues',
+                  value: '$flagged',
+                  color: Colors.red.shade700,
+                ),
               ),
             ],
           ),
@@ -427,7 +340,7 @@ class _ClearanceSummaryCard extends StatelessWidget {
           if (completedAt != null) ...[
             const SizedBox(height: 8),
             Text(
-              'Completed: $completedAt',
+              'Completed: ${formatMobileDateTime(completedAt)}',
               style: TextStyle(color: Colors.grey.shade700),
             ),
           ],
@@ -495,9 +408,51 @@ class _SummaryChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Text(
-        '$label: $value',
-        style: TextStyle(color: color, fontWeight: FontWeight.w700),
+        '$value\n$label',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w800,
+          height: 1.2,
+        ),
       ),
+    );
+  }
+}
+
+class _ProgressBar extends StatelessWidget {
+  const _ProgressBar({required this.approved, required this.total});
+
+  final Object approved;
+  final Object total;
+
+  @override
+  Widget build(BuildContext context) {
+    final approvedCount = int.tryParse('$approved') ?? 0;
+    final totalCount = int.tryParse('$total') ?? 0;
+    final progress = totalCount == 0 ? 0.0 : approvedCount / totalCount;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: LinearProgressIndicator(
+            value: progress.clamp(0.0, 1.0),
+            minHeight: 9,
+            backgroundColor: const Color(0xFFE9EEF5),
+            color: const Color(0xFFD1A33B),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '$approvedCount of $totalCount offices signed',
+          style: TextStyle(
+            color: Colors.grey.shade700,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -604,16 +559,11 @@ class _ClearanceStepCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
+              _OfficerAvatar(
+                photoUrl: officerPhotoUrl,
+                icon: theme.icon,
                 backgroundColor: theme.background,
                 foregroundColor: theme.foreground,
-                backgroundImage:
-                    officerPhotoUrl != null && officerPhotoUrl.isNotEmpty
-                    ? NetworkImage(officerPhotoUrl)
-                    : null,
-                child: officerPhotoUrl == null || officerPhotoUrl.isEmpty
-                    ? Icon(theme.icon)
-                    : null,
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -666,7 +616,7 @@ class _ClearanceStepCard extends StatelessWidget {
           if (signedAt != null) ...[
             const SizedBox(height: 14),
             Text(
-              'Last action: $signedAt',
+              'Last action: ${formatMobileDateTime(signedAt)}',
               style: TextStyle(color: Colors.grey.shade700),
             ),
           ],
@@ -710,4 +660,76 @@ class _ClearanceStepCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _OfficerAvatar extends StatelessWidget {
+  const _OfficerAvatar({
+    required this.photoUrl,
+    required this.icon,
+    required this.backgroundColor,
+    required this.foregroundColor,
+  });
+
+  final String? photoUrl;
+  final IconData icon;
+  final Color backgroundColor;
+  final Color foregroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
+      clipBehavior: Clip.antiAlias,
+      child: photoUrl != null && photoUrl!.isNotEmpty
+          ? Image.network(
+              photoUrl!,
+              fit: BoxFit.cover,
+              width: 48,
+              height: 48,
+              errorBuilder: (context, error, stackTrace) =>
+                  Icon(icon, color: foregroundColor),
+              loadingBuilder: (context, child, progress) =>
+                  progress == null ? child : Icon(icon, color: foregroundColor),
+            )
+          : Icon(icon, color: foregroundColor),
+    );
+  }
+}
+
+String formatMobileDateTime(String? value) {
+  if (value == null || value.isEmpty) {
+    return 'Pending';
+  }
+
+  final parsed = DateTime.tryParse(value)?.toLocal();
+
+  if (parsed == null) {
+    return value;
+  }
+
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  final hour = parsed.hour == 0
+      ? 12
+      : parsed.hour > 12
+      ? parsed.hour - 12
+      : parsed.hour;
+  final minute = parsed.minute.toString().padLeft(2, '0');
+  final period = parsed.hour >= 12 ? 'PM' : 'AM';
+
+  return '${months[parsed.month - 1]} ${parsed.day}, ${parsed.year}, $hour:$minute $period';
 }

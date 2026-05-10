@@ -14,6 +14,8 @@ Route::post('/register', [StudentRegistrationController::class, 'store'])
 Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
     Route::post('/logout', [StudentAuthController::class, 'logout'])->name('api.logout');
     Route::get('/me', [StudentAuthController::class, 'me'])->name('api.me');
+    Route::post('/me/password', [StudentAuthController::class, 'updatePassword'])
+        ->name('api.me.password.update');
     Route::post('/me/profile-photo', [StudentAuthController::class, 'updateProfilePhoto'])
         ->name('api.me.profile-photo.update');
 

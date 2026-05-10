@@ -9,9 +9,11 @@ class ProfileScreen extends StatelessWidget {
     required this.isLoading,
     required this.isBusy,
     required this.isUploadingPhoto,
+    required this.isChangingPassword,
     required this.onLogout,
     required this.onRefresh,
     required this.onUpdateProfilePhoto,
+    required this.onChangePassword,
   });
 
   final Map<String, dynamic>? payload;
@@ -19,6 +21,7 @@ class ProfileScreen extends StatelessWidget {
   final bool isLoading;
   final bool isBusy;
   final bool isUploadingPhoto;
+  final bool isChangingPassword;
   final Future<void> Function() onLogout;
   final Future<void> Function() onRefresh;
   final Future<void> Function({
@@ -26,6 +29,11 @@ class ProfileScreen extends StatelessWidget {
     required String filename,
   })
   onUpdateProfilePhoto;
+  final Future<void> Function({
+    required String password,
+    required String passwordConfirmation,
+  })
+  onChangePassword;
 
   static const Color _navy = Color(0xFF183A63);
   static const Color _gold = Color(0xFFD1A33B);
@@ -162,6 +170,11 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
+          _PasswordCard(
+            isBusy: isChangingPassword,
+            onPressed: () => _showChangePasswordDialog(context),
+          ),
+          const SizedBox(height: 18),
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
@@ -239,6 +252,217 @@ class ProfileScreen extends StatelessWidget {
       filename: image.name,
     );
   }
+
+  Future<void> _showChangePasswordDialog(BuildContext context) async {
+    final passwordController = TextEditingController();
+    final confirmController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    var obscurePassword = true;
+    var obscureConfirm = true;
+    var isSubmitting = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Change Password'),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: passwordController,
+                      obscureText: obscurePassword,
+                      decoration: InputDecoration(
+                        labelText: 'New password',
+                        suffixIcon: IconButton(
+                          tooltip: obscurePassword
+                              ? 'Show password'
+                              : 'Hide password',
+                          onPressed: () {
+                            setDialogState(() {
+                              obscurePassword = !obscurePassword;
+                            });
+                          },
+                          icon: Icon(
+                            obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                        ),
+                      ),
+                      validator: (value) {
+                        final password = value ?? '';
+
+                        if (password.length < 8) {
+                          return 'Use at least 8 characters.';
+                        }
+
+                        if (password.length > 72) {
+                          return 'Password is too long.';
+                        }
+
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: confirmController,
+                      obscureText: obscureConfirm,
+                      decoration: InputDecoration(
+                        labelText: 'Confirm password',
+                        suffixIcon: IconButton(
+                          tooltip: obscureConfirm
+                              ? 'Show password'
+                              : 'Hide password',
+                          onPressed: () {
+                            setDialogState(() {
+                              obscureConfirm = !obscureConfirm;
+                            });
+                          },
+                          icon: Icon(
+                            obscureConfirm
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                        ),
+                      ),
+                      validator: (value) {
+                        if ((value ?? '').isEmpty) {
+                          return 'Confirm your password.';
+                        }
+
+                        if (value != passwordController.text) {
+                          return 'Passwords do not match.';
+                        }
+
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) {
+                            return;
+                          }
+
+                          setDialogState(() {
+                            isSubmitting = true;
+                          });
+
+                          await onChangePassword(
+                            password: passwordController.text,
+                            passwordConfirmation: confirmController.text,
+                          );
+
+                          if (dialogContext.mounted) {
+                            Navigator.of(dialogContext).pop();
+                          }
+                        },
+                  child: isSubmitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    passwordController.dispose();
+    confirmController.dispose();
+  }
+}
+
+class _PasswordCard extends StatelessWidget {
+  const _PasswordCard({required this.isBusy, required this.onPressed});
+
+  final bool isBusy;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: ProfileScreen._gold.withValues(alpha: 0.18),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.lock_reset_rounded,
+              color: ProfileScreen._navy,
+            ),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Password',
+                  style: TextStyle(
+                    color: ProfileScreen._navy,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 17,
+                  ),
+                ),
+                SizedBox(height: 3),
+                Text(
+                  'Update your student app password.',
+                  style: TextStyle(color: Colors.black54, height: 1.35),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: isBusy ? null : onPressed,
+            child: isBusy
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Change'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ProfilePhotoButton extends StatelessWidget {
@@ -279,22 +503,25 @@ class _ProfilePhotoButton extends StatelessWidget {
                 ),
               ],
             ),
-            clipBehavior: Clip.antiAlias,
-            child: photoUrl != null && photoUrl!.isNotEmpty
-                ? Image.network(
-                    photoUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
+            child: ClipOval(
+              child: photoUrl != null && photoUrl!.isNotEmpty
+                  ? Image.network(
+                      photoUrl!,
+                      fit: BoxFit.cover,
+                      width: 92,
+                      height: 92,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.person_rounded,
+                        size: 46,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(
                       Icons.person_rounded,
                       size: 46,
                       color: Colors.white,
                     ),
-                  )
-                : const Icon(
-                    Icons.person_rounded,
-                    size: 46,
-                    color: Colors.white,
-                  ),
+            ),
           ),
           Positioned(
             right: 4,

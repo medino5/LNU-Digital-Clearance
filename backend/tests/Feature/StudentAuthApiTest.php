@@ -336,4 +336,21 @@ class StudentAuthApiTest extends TestCase
             ->assertOk()
             ->assertHeader('content-type', 'image/png');
     }
+
+    public function test_authenticated_student_can_change_mobile_password(): void
+    {
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        Sanctum::actingAs($student->user);
+
+        $this->postJson('/api/me/password', [
+            'password' => 'new-password',
+            'password_confirmation' => 'new-password',
+        ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Password updated successfully.');
+
+        $student->user->refresh();
+
+        $this->assertTrue(Hash::check('new-password', $student->user->password));
+    }
 }

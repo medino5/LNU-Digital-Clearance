@@ -156,94 +156,75 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _paper,
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 24,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(26, 18, 26, 18),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: 440,
+                  minHeight: constraints.maxHeight - 36,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(22),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF0E2742), _navy, Color(0xFF2A568E)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                    Center(
+                      child: Container(
+                        width: 126,
+                        height: 126,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: _paper,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFFE7D7AE)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 22,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: Image.asset(
+                          _logoAsset,
+                          fit: BoxFit.contain,
+                          cacheWidth: 256,
                         ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Container(
-                            height: 118,
-                            width: 118,
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(28),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.16),
-                                  blurRadius: 18,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: Image.asset(
-                              _logoAsset,
-                              fit: BoxFit.contain,
-                              cacheWidth: 256,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'LNU Student Clearance Portal',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 21,
-                              fontWeight: FontWeight.w900,
-                              height: 1.15,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Digital Clearance Mobile App',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Color(0xFFF0D28A),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 20),
                     const Text(
-                      'Student Sign In',
+                      'LNU Student Clearance Portal',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         color: _navy,
-                        fontSize: 28,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                        height: 1.12,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Digital Clearance Mobile App',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: _gold,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    const Text(
+                      'Student Sign In',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: _navy,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -273,9 +254,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       decoration: InputDecoration(
                         labelText: 'Student ID',
                         filled: true,
-                        fillColor: const Color(0xFFF7F7F2),
+                        fillColor: const Color(0xFFF8F4EA),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(18),
                           borderSide: BorderSide.none,
                         ),
                       ),
@@ -302,9 +283,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                         ),
                         filled: true,
-                        fillColor: const Color(0xFFF7F7F2),
+                        fillColor: const Color(0xFFF8F4EA),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(18),
                           borderSide: BorderSide.none,
                         ),
                       ),
@@ -358,8 +339,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );

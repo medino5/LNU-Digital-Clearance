@@ -127,6 +127,44 @@ class AuthService {
         <String, dynamic>{};
   }
 
+  Future<String> changePassword({
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw Exception('You are not logged in.');
+    }
+
+    final response = await _apiClient.post(
+      '/me/password',
+      headers: {..._authHeaders(token), 'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      }),
+    );
+
+    if (response.statusCode == 401) {
+      await clearStoredToken();
+      throw SessionExpiredException();
+    }
+
+    final message = _extractMessage(
+      response.body,
+      response.statusCode == 200
+          ? 'Password updated successfully.'
+          : 'Unable to update password.',
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(message);
+    }
+
+    return message;
+  }
+
   Future<String?> getToken() async {
     return _tokenStore.readToken();
   }

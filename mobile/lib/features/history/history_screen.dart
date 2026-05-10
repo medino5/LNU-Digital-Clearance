@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class HistoryScreen extends StatelessWidget {
+class HistoryScreen extends StatefulWidget {
   const HistoryScreen({
     super.key,
     required this.payload,
@@ -20,32 +20,64 @@ class HistoryScreen extends StatelessWidget {
   static const Color _muted = Color(0xFF667085);
 
   @override
+  State<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends State<HistoryScreen> {
+  String _selectedAcademicYear = '';
+
+  @override
   Widget build(BuildContext context) {
-    final history = (payload?['history'] as List? ?? const [])
+    final allHistory = (widget.payload?['history'] as List? ?? const [])
         .whereType<Map>()
         .map((item) => item.cast<String, dynamic>())
         .toList();
+    final academicYears =
+        allHistory
+            .map((record) => record['academic_year']?.toString() ?? '')
+            .where((year) => year.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort((a, b) => b.compareTo(a));
+    final history = _selectedAcademicYear.isEmpty
+        ? allHistory
+        : allHistory
+              .where(
+                (record) =>
+                    record['academic_year']?.toString() ==
+                    _selectedAcademicYear,
+              )
+              .toList();
 
     return RefreshIndicator(
-      onRefresh: onRefresh,
+      onRefresh: widget.onRefresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
         children: [
-          _IntroCard(totalCount: history.length),
+          _IntroCard(
+            totalCount: history.length,
+            academicYears: academicYears,
+            selectedAcademicYear: _selectedAcademicYear,
+            onAcademicYearChanged: (value) {
+              setState(() {
+                _selectedAcademicYear = value ?? '';
+              });
+            },
+          ),
           const SizedBox(height: 14),
-          if (isLoading)
+          if (widget.isLoading)
             const _StateCard(
               icon: Icons.history_rounded,
               title: 'Loading clearance history',
               message: 'Checking previous semester records...',
               showSpinner: true,
             )
-          else if (error != null)
+          else if (widget.error != null)
             _StateCard(
               icon: Icons.wifi_off_rounded,
               title: 'History unavailable',
-              message: error!,
+              message: widget.error!,
             )
           else if (history.isEmpty)
             const _StateCard(
@@ -63,9 +95,17 @@ class HistoryScreen extends StatelessWidget {
 }
 
 class _IntroCard extends StatelessWidget {
-  const _IntroCard({required this.totalCount});
+  const _IntroCard({
+    required this.totalCount,
+    required this.academicYears,
+    required this.selectedAcademicYear,
+    required this.onAcademicYearChanged,
+  });
 
   final int totalCount;
+  final List<String> academicYears;
+  final String selectedAcademicYear;
+  final ValueChanged<String?> onAcademicYearChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -120,6 +160,38 @@ class _IntroCard extends StatelessWidget {
                     height: 1.35,
                   ),
                 ),
+                if (academicYears.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedAcademicYear,
+                    isDense: true,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: const Color(0xFFF8F4EA),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    items: [
+                      const DropdownMenuItem(
+                        value: '',
+                        child: Text('All school years'),
+                      ),
+                      ...academicYears.map(
+                        (year) => DropdownMenuItem(
+                          value: year,
+                          child: Text('SY $year'),
+                        ),
+                      ),
+                    ],
+                    onChanged: onAcademicYearChanged,
+                  ),
+                ],
               ],
             ),
           ),
@@ -157,9 +229,14 @@ class _HistoryCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: const Color(0xFFE4DACD)),
+          border: Border.all(color: const Color(0xFFE8EDF3)),
         ),
         child: ExpansionTile(
+          maintainState: true,
+          expansionAnimationStyle: AnimationStyle(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+          ),
           tilePadding: const EdgeInsets.fromLTRB(18, 14, 18, 10),
           childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
           iconColor: HistoryScreen._navy,
@@ -301,9 +378,9 @@ class _StepDetailCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: HistoryScreen._paper,
+        color: const Color(0xFFF6F9FC),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE4DACD)),
+        border: Border.all(color: const Color(0xFFE8EDF3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -394,7 +471,7 @@ class _StatusPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
       decoration: BoxDecoration(
-        color: isCompleted ? const Color(0xFFDFF3E7) : HistoryScreen._paper,
+        color: isCompleted ? const Color(0xFFE5F4EC) : const Color(0xFFEAF0F7),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -419,9 +496,9 @@ class _InfoPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
       decoration: BoxDecoration(
-        color: HistoryScreen._paper,
+        color: const Color(0xFFF6F9FC),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFFE4DACD)),
+        border: Border.all(color: const Color(0xFFE8EDF3)),
       ),
       child: Text(
         text,

@@ -97,4 +97,24 @@ class StudentAuthController extends Controller
             'profile' => $this->payloadBuilder->build($student->fresh(['user', 'program']), null, null)['student'],
         ]);
     }
+
+    public function updatePassword(Request $request)
+    {
+        $data = $request->validate([
+            'password' => ['required', 'string', 'min:8', 'max:72', 'confirmed'],
+        ], [
+            'password.min' => 'Password must be at least 8 characters.',
+            'password.max' => 'Password must not exceed 72 characters.',
+            'password.confirmed' => 'Password confirmation does not match.',
+        ]);
+
+        $user = $request->user();
+        $user->forceFill([
+            'password' => Hash::make($data['password']),
+        ])->save();
+
+        return response()->json([
+            'message' => 'Password updated successfully.',
+        ]);
+    }
 }

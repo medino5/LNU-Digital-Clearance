@@ -70,5 +70,38 @@ void main() {
         expect(await tokenStore.readToken(), isNull);
       },
     );
+
+    test(
+      'changePassword posts confirmed password to the authenticated API',
+      () async {
+        final tokenStore = FakeTokenStore(token: 'active-token');
+        final authService = AuthService(
+          tokenStore: tokenStore,
+          apiClient: ApiClient(
+            client: MockClient((request) async {
+              expect(request.url.path, '/api/me/password');
+              expect(request.headers['Authorization'], 'Bearer active-token');
+
+              final payload = jsonDecode(request.body) as Map<String, dynamic>;
+              expect(payload['password'], 'new-password');
+              expect(payload['password_confirmation'], 'new-password');
+
+              return http.Response(
+                jsonEncode({'message': 'Password updated successfully.'}),
+                200,
+                headers: {'content-type': 'application/json'},
+              );
+            }),
+          ),
+        );
+
+        final message = await authService.changePassword(
+          password: 'new-password',
+          passwordConfirmation: 'new-password',
+        );
+
+        expect(message, 'Password updated successfully.');
+      },
+    );
   });
 }

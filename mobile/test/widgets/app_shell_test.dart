@@ -188,9 +188,12 @@ void main() {
               isLoading: false,
               isBusy: false,
               isUploadingPhoto: false,
+              isChangingPassword: false,
               onRefresh: () async {},
               onUpdateProfilePhoto:
                   ({required bytes, required filename}) async {},
+              onChangePassword:
+                  ({required password, required passwordConfirmation}) async {},
               onLogout: () async {
                 logoutCalled = true;
               },
