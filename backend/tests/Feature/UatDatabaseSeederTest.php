@@ -7,6 +7,7 @@ use App\Models\Student;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\UatDatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class UatDatabaseSeederTest extends TestCase
@@ -44,7 +45,7 @@ class UatDatabaseSeederTest extends TestCase
     public function test_uat_database_seeder_adds_a_balanced_1400_student_roster(): void
     {
         // This protects the manual-testing dataset: UAT should always reseed
-        // with 200 deterministic student accounts per program plus the demo student.
+        // with deterministic students plus historical completed clearances.
         $this->seed(UatDatabaseSeeder::class);
 
         $this->assertSame(1401, Student::query()->count());
@@ -116,5 +117,37 @@ class UatDatabaseSeederTest extends TestCase
             'last_name' => 'Doe',
             'name_extension' => null,
         ]);
+
+        $this->assertSame(1344, DB::table('clearances')
+            ->where('status', 'completed')
+            ->where('reference_number', 'like', 'DEMO-%')
+            ->count());
+
+        $completedBySemester = DB::table('clearances')
+            ->select('semester_label', DB::raw('COUNT(*) as total'))
+            ->where('status', 'completed')
+            ->where('reference_number', 'like', 'DEMO-%')
+            ->groupBy('semester_label')
+            ->pluck('total', 'semester_label');
+
+        foreach ([
+            '1st Semester 2023-2024',
+            '2nd Semester 2023-2024',
+            '1st Semester 2024-2025',
+            '2nd Semester 2024-2025',
+        ] as $semesterLabel) {
+            $this->assertSame(336, (int) $completedBySemester[$semesterLabel]);
+        }
+
+        $completedByProgram = DB::table('clearances')
+            ->select('program_code', DB::raw('COUNT(*) as total'))
+            ->where('status', 'completed')
+            ->where('reference_number', 'like', 'DEMO-%')
+            ->groupBy('program_code')
+            ->pluck('total', 'program_code');
+
+        foreach (['BSIT', 'BAEL', 'BSTM', 'BSEntrep', 'AS', 'EC', 'SM'] as $programCode) {
+            $this->assertSame(192, (int) $completedByProgram[$programCode]);
+        }
     }
 }
