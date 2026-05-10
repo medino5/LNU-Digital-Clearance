@@ -25,6 +25,7 @@ class FakeAuthService extends AuthService {
   String? lastPassword;
   bool clearedStoredToken = false;
   int logoutCalls = 0;
+  int profilePhotoUploadCalls = 0;
 
   @override
   Future<Map<String, dynamic>> getProfile() async {
@@ -53,6 +54,15 @@ class FakeAuthService extends AuthService {
     if (logoutError != null) {
       throw logoutError!;
     }
+  }
+
+  @override
+  Future<Map<String, dynamic>> updateProfilePhoto({
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    profilePhotoUploadCalls += 1;
+    return profile;
   }
 
   @override

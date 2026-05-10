@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({
@@ -7,16 +8,24 @@ class ProfileScreen extends StatelessWidget {
     required this.error, // ADDED: for consistent state messaging across tabs
     required this.isLoading,
     required this.isBusy,
+    required this.isUploadingPhoto,
     required this.onLogout,
     required this.onRefresh,
+    required this.onUpdateProfilePhoto,
   });
 
   final Map<String, dynamic>? payload;
   final String? error; // ADDED: display errors similar to Dashboard/PDF
   final bool isLoading;
   final bool isBusy;
+  final bool isUploadingPhoto;
   final Future<void> Function() onLogout;
   final Future<void> Function() onRefresh;
+  final Future<void> Function({
+    required List<int> bytes,
+    required String filename,
+  })
+  onUpdateProfilePhoto;
 
   static const Color _navy = Color(0xFF183A63);
   static const Color _gold = Color(0xFFD1A33B);
@@ -30,6 +39,7 @@ class ProfileScreen extends StatelessWidget {
     final student = payload?['student'] as Map<String, dynamic>?;
     final program = student?['program'] as Map<String, dynamic>?;
     final semester = payload?['active_semester'] as Map<String, dynamic>?;
+    final profilePhotoUrl = student?['profile_photo_url'] as String?;
 
     return RefreshIndicator(
       color: _gold,
@@ -106,30 +116,10 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                width: 92,
-                height: 92,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 4),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFE7E3E1), Color(0xFFD1CFCF)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.person_rounded,
-                  size: 46,
-                  color: Colors.white,
-                ),
+              _ProfilePhotoButton(
+                photoUrl: profilePhotoUrl,
+                isUploading: isUploadingPhoto,
+                onPressed: isUploadingPhoto ? null : _pickAndUploadPhoto,
               ),
             ],
           ),
@@ -225,6 +215,105 @@ class ProfileScreen extends StatelessWidget {
                     )
                   : const Icon(Icons.logout_rounded),
               label: const Text('Logout'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickAndUploadPhoto() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      imageQuality: 82,
+    );
+
+    if (image == null) {
+      return;
+    }
+
+    await onUpdateProfilePhoto(
+      bytes: await image.readAsBytes(),
+      filename: image.name,
+    );
+  }
+}
+
+class _ProfilePhotoButton extends StatelessWidget {
+  const _ProfilePhotoButton({
+    required this.photoUrl,
+    required this.isUploading,
+    required this.onPressed,
+  });
+
+  final String? photoUrl;
+  final bool isUploading;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 104,
+      height: 104,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 92,
+            height: 92,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 4),
+              gradient: const LinearGradient(
+                colors: [Color(0xFFE7E3E1), Color(0xFFD1CFCF)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: photoUrl != null && photoUrl!.isNotEmpty
+                ? Image.network(
+                    photoUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.person_rounded,
+                      size: 46,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(
+                    Icons.person_rounded,
+                    size: 46,
+                    color: Colors.white,
+                  ),
+          ),
+          Positioned(
+            right: 4,
+            bottom: 8,
+            child: IconButton.filled(
+              tooltip: 'Update profile picture',
+              onPressed: onPressed,
+              style: IconButton.styleFrom(
+                backgroundColor: ProfileScreen._gold,
+                foregroundColor: ProfileScreen._navy,
+                minimumSize: const Size(34, 34),
+              ),
+              icon: isUploading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.camera_alt_rounded, size: 18),
             ),
           ),
         ],

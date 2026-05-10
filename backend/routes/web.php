@@ -9,6 +9,7 @@ use App\Http\Controllers\AdminOfficeDesignationController;
 use App\Http\Controllers\OfficeAccountAdminController;
 use App\Http\Controllers\OfficeDashboardController;
 use App\Http\Controllers\PortalAuthController;
+use App\Http\Controllers\ProfilePhotoController;
 use App\Http\Controllers\ProgramAdminController;
 use App\Http\Controllers\SemesterAdminController;
 use App\Http\Controllers\StudentAdminController;
@@ -16,6 +17,8 @@ use App\Http\Controllers\StudentProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PortalAuthController::class, 'landing'])->name('portal.landing');
+Route::get('/profile-photos/{fileName}', [ProfilePhotoController::class, 'show'])
+    ->name('profile-photos.show');
 
 Route::get('/login', [PortalAuthController::class, 'showLogin'])->name('portal.login');
 Route::post('/login', [PortalAuthController::class, 'login'])->name('portal.login.submit');
@@ -52,7 +55,11 @@ Route::prefix('admin')
 
         Route::post('/programs', [ProgramAdminController::class, 'store'])->name('admin.programs.store');
         Route::put('/programs/{program}', [ProgramAdminController::class, 'update'])->name('admin.programs.update');
-        Route::delete('/programs/{program}', [ProgramAdminController::class, 'destroy'])->name('admin.programs.destroy');
+        Route::delete('/programs/{program}', [ProgramAdminController::class, 'destroy'])
+            ->missing(fn () => redirect()
+                ->route('admin.programs.index')
+                ->with('info', 'Program was already deleted or no longer exists.'))
+            ->name('admin.programs.destroy');
 
         Route::post('/semesters', [SemesterAdminController::class, 'store'])->name('admin.semesters.store');
         Route::put('/semesters/{semester}', [SemesterAdminController::class, 'update'])->name('admin.semesters.update');
@@ -68,6 +75,8 @@ Route::prefix('admin')
         Route::post('/office-accounts', [OfficeAccountAdminController::class, 'store'])->name('admin.office-accounts.store');
         Route::put('/office-accounts/{officeAccount}', [OfficeAccountAdminController::class, 'update'])
             ->name('admin.office-accounts.update');
+        Route::post('/office-accounts/{officeAccount}/profile-photo', [OfficeAccountAdminController::class, 'updateProfilePhoto'])
+            ->name('admin.office-accounts.profile-photo.update');
 
         Route::get('/office-designations/{officeDesignation}/eligible-users', [AdminOfficeDesignationController::class, 'eligibleUsers'])
             ->name('admin.office-designations.eligible-users');

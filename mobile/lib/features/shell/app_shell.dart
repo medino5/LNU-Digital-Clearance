@@ -49,13 +49,13 @@ class _AppShellState extends State<AppShell> {
   bool _isStartingOrResuming = false;
   bool _isDownloadingPdf = false;
   bool _isLoggingOut = false;
+  bool _isUploadingProfilePhoto = false;
   int? _resubmittingStepId;
 
   int _selectedIndex = 0;
 
   static const Color _navy = Color(0xFF183A63);
   static const Color _gold = Color(0xFFD1A33B);
-  static const Color _paper = Color(0xFFF8F4EA);
 
   @override
   void initState() {
@@ -305,6 +305,62 @@ class _AppShellState extends State<AppShell> {
     }
   }
 
+  Future<void> _updateProfilePhoto({
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    if (_isUploadingProfilePhoto) {
+      return;
+    }
+
+    setState(() {
+      _isUploadingProfilePhoto = true;
+    });
+
+    try {
+      final profile = await _authService.updateProfilePhoto(
+        bytes: bytes,
+        filename: filename,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      final updatedPayload = Map<String, dynamic>.from(_payload ?? {});
+      updatedPayload['student'] = profile;
+
+      setState(() {
+        _payload = updatedPayload;
+        _error = null;
+      });
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Profile picture updated.')));
+    } catch (error) {
+      if (await _handleSessionExpired(error)) {
+        return;
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingProfilePhoto = false;
+        });
+      }
+    }
+  }
+
   Future<bool> _handleSessionExpired(Object error) async {
     if (error is! SessionExpiredException) {
       return false;
@@ -361,7 +417,11 @@ class _AppShellState extends State<AppShell> {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
       decoration: const BoxDecoration(
-        color: _navy,
+        gradient: LinearGradient(
+          colors: [Color(0xFF0E2742), _navy, Color(0xFF214F82)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         border: Border(bottom: BorderSide(color: _gold, width: 3)),
       ),
       child: SafeArea(
@@ -463,8 +523,10 @@ class _AppShellState extends State<AppShell> {
         error: _error, // ADDED: pass shared shell error
         isLoading: _isInitialLoading,
         isBusy: _isLoggingOut, // FIX: match parameter name
+        isUploadingPhoto: _isUploadingProfilePhoto,
         onLogout: _logout,
         onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
+        onUpdateProfilePhoto: _updateProfilePhoto,
       ),
     ];
 
@@ -480,14 +542,23 @@ class _AppShellState extends State<AppShell> {
         });
       },
       child: Scaffold(
-        backgroundColor: _paper,
-        body: Column(
-          children: [
-            _buildTopBar(),
-            Expanded(
-              child: IndexedStack(index: _selectedIndex, children: tabs),
+        backgroundColor: Colors.transparent,
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFF8F5ED), Color(0xFFF1EBDF)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
-          ],
+          ),
+          child: Column(
+            children: [
+              _buildTopBar(),
+              Expanded(
+                child: IndexedStack(index: _selectedIndex, children: tabs),
+              ),
+            ],
+          ),
         ),
         bottomNavigationBar: Container(
           decoration: BoxDecoration(

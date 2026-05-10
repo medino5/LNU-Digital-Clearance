@@ -91,6 +91,42 @@ class AuthService {
         <String, dynamic>{};
   }
 
+  Future<Map<String, dynamic>> updateProfilePhoto({
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw Exception('You are not logged in.');
+    }
+
+    final streamedResponse = await _apiClient.multipartPost(
+      '/me/profile-photo',
+      headers: _authHeaders(token),
+      fieldName: 'profile_photo',
+      bytes: bytes,
+      filename: filename,
+    );
+
+    final responseBody = await streamedResponse.stream.bytesToString();
+
+    if (streamedResponse.statusCode == 401) {
+      await clearStoredToken();
+      throw SessionExpiredException();
+    }
+
+    if (streamedResponse.statusCode != 200) {
+      throw Exception(
+        _extractMessage(responseBody, 'Unable to upload profile picture.'),
+      );
+    }
+
+    final payload = jsonDecode(responseBody) as Map<String, dynamic>;
+    return (payload['profile'] as Map?)?.cast<String, dynamic>() ??
+        <String, dynamic>{};
+  }
+
   Future<String?> getToken() async {
     return _tokenStore.readToken();
   }

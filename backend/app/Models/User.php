@@ -32,11 +32,16 @@ class User extends Authenticatable
         'is_staff',
         'program_id',
         'year_level',
+        'profile_photo_path',
+        'profile_photo_mime_type',
+        'profile_photo_content',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'profile_photo_path',
+        'profile_photo_content',
     ];
 
     protected $casts = [
@@ -171,6 +176,15 @@ class User extends Authenticatable
         }
 
         return $this->name;
+    }
+
+    public function profilePhotoUrl(): ?string
+    {
+        if (! $this->profile_photo_path) {
+            return null;
+        }
+
+        return route('profile-photos.show', ['fileName' => $this->profile_photo_path]);
     }
 
     /**

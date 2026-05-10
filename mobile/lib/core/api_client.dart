@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -21,12 +20,10 @@ class ApiClient {
           .get(_buildUri(path), headers: headers)
           .timeout(const Duration(seconds: 10));
       return response;
-    } on SocketException {
+    } on http.ClientException {
       throw Exception(_deviceReachabilityMessage());
     } on TimeoutException {
       throw Exception(_timeoutMessage());
-    } on HandshakeException {
-      throw Exception(_tlsHandshakeMessage());
     }
   }
 
@@ -40,12 +37,10 @@ class ApiClient {
           .post(_buildUri(path), headers: headers, body: body)
           .timeout(const Duration(seconds: 10));
       return response;
-    } on SocketException {
+    } on http.ClientException {
       throw Exception(_deviceReachabilityMessage());
     } on TimeoutException {
       throw Exception(_timeoutMessage());
-    } on HandshakeException {
-      throw Exception(_tlsHandshakeMessage());
     }
   }
 
@@ -59,12 +54,32 @@ class ApiClient {
           .delete(_buildUri(path), headers: headers, body: body)
           .timeout(const Duration(seconds: 10));
       return response;
-    } on SocketException {
+    } on http.ClientException {
       throw Exception(_deviceReachabilityMessage());
     } on TimeoutException {
       throw Exception(_timeoutMessage());
-    } on HandshakeException {
-      throw Exception(_tlsHandshakeMessage());
+    }
+  }
+
+  Future<http.StreamedResponse> multipartPost(
+    String path, {
+    required Map<String, String> headers,
+    required String fieldName,
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    try {
+      final request = http.MultipartRequest('POST', _buildUri(path));
+      request.headers.addAll(headers);
+      request.files.add(
+        http.MultipartFile.fromBytes(fieldName, bytes, filename: filename),
+      );
+
+      return await request.send().timeout(const Duration(seconds: 20));
+    } on http.ClientException {
+      throw Exception(_deviceReachabilityMessage());
+    } on TimeoutException {
+      throw Exception(_timeoutMessage());
     }
   }
 
@@ -75,7 +90,7 @@ class ApiClient {
     }
 
     return 'Unable to reach the deployed backend at ${NetworkConfig.baseUrl}. '
-        'Check your internet connection and confirm the Railway service is running.';
+        'Check your internet connection and confirm the Render service is running.';
   }
 
   String _timeoutMessage() {
@@ -85,15 +100,6 @@ class ApiClient {
     }
 
     return 'The deployed backend at ${NetworkConfig.baseUrl} did not respond in time. '
-        'Check Railway logs or verify the server is still online.';
-  }
-
-  String _tlsHandshakeMessage() {
-    if (NetworkConfig.usesLocalDockerBackend) {
-      return 'Secure connection setup failed. Verify the app is still pointing to the local Docker backend.';
-    }
-
-    return 'Secure connection setup failed for ${NetworkConfig.baseUrl}. '
-        'Check the public Railway URL and SSL settings.';
+        'Check Render logs or verify the server is still online.';
   }
 }

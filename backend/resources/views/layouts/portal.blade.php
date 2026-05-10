@@ -970,22 +970,20 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('form').forEach(function (form) {
-        const submitButton = form.querySelector('[data-loading-button]');
-
-        if (!submitButton) {
-            return;
-        }
-
         form.addEventListener('submit', function (event) {
+            const submitButton = event.submitter || form.querySelector('[data-loading-button], button[type="submit"], input[type="submit"]');
+
             if (form.dataset.isSubmitting === 'true') {
                 event.preventDefault();
                 return;
             }
 
             form.dataset.isSubmitting = 'true';
-            submitButton.disabled = true;
-            submitButton.textContent =
-                submitButton.dataset.loadingText || 'Processing...';
+
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = submitButton.dataset.loadingText || 'Processing...';
+            }
         });
     });
 

@@ -305,7 +305,13 @@
 
                             <div class="form-actions modal-actions">
                                 <button type="button" class="secondary" data-modal-close>Cancel</button>
-                                <button type="submit" class="warn">Delete Program</button>
+                                <button
+                                    type="submit"
+                                    class="warn"
+                                    data-loading-text="Deleting Program..."
+                                >
+                                    Delete Program
+                                </button>
                             </div>
                         </form>
                     </div>

@@ -32,6 +32,35 @@
         color: #667085;
     }
 
+    .student-profile-identity {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        min-width: 0;
+    }
+
+    .student-profile-avatar {
+        width: 76px;
+        height: 76px;
+        flex: 0 0 76px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        background: linear-gradient(135deg, #173c66 0%, #27588f 100%);
+        color: #fff;
+        font-size: 1.6rem;
+        font-weight: 900;
+        border: 3px solid #fff;
+        box-shadow: 0 10px 22px rgba(24, 58, 99, 0.14);
+    }
+
+    .student-profile-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
     .student-profile-grid {
         display: grid;
         grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);

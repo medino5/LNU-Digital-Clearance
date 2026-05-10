@@ -11,6 +11,7 @@ use App\Models\Student;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class AdminManagementTest extends TestCase
@@ -77,6 +78,26 @@ class AdminManagementTest extends TestCase
                 ->where('is_active', true)
                 ->exists()
         );
+    }
+
+    public function test_admin_can_upload_office_account_profile_picture(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+        $officeAccount = OfficeAccount::with('user')->firstOrFail();
+
+        $this->actingAs($admin)->post(
+            route('admin.office-accounts.profile-photo.update', $officeAccount),
+            [
+                'profile_photo' => UploadedFile::fake()->createWithContent(
+                    'office.png',
+                    base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=')
+                ),
+            ],
+        )->assertRedirect(route('admin.office-accounts.index'));
+
+        $officeAccount->user->refresh();
+        $this->assertNotNull($officeAccount->user->profile_photo_path);
+        $this->assertNotNull($officeAccount->user->profile_photo_content);
     }
 
     public function test_program_create_normalizes_code_and_collapses_extra_spaces(): void

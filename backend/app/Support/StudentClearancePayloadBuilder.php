@@ -15,7 +15,7 @@ class StudentClearancePayloadBuilder
     {
         $student->loadMissing('user', 'program');
 
-        $clearance = $clearance?->loadMissing('steps.events', 'steps.officeDesignation');
+        $clearance = $clearance?->loadMissing('steps.events', 'steps.officeDesignation.activeUsers');
         $steps = $clearance?->steps ?? collect();
 
         return [
@@ -28,6 +28,7 @@ class StudentClearancePayloadBuilder
                 'middle_initial' => $student->user->middle_initial,
                 'last_name' => $student->user->last_name,
                 'name_extension' => $student->user->name_extension,
+                'profile_photo_url' => $student->user->profilePhotoUrl(),
                 'program' => [
                     'id' => $student->program->id,
                     'code' => $student->program->code,
@@ -54,6 +55,7 @@ class StudentClearancePayloadBuilder
                 ],
                 'steps' => $steps->map(function ($step) {
                     $lastEvent = $step->events->first();
+                    $assignedOfficer = $step->officeDesignation?->activeUsers?->first();
 
                     return [
                         'id' => $step->id,
@@ -63,6 +65,10 @@ class StudentClearancePayloadBuilder
                         'office_label' => $step->office_label,
                         'office_type' => $step->office_type,
                         'scope_label' => $step->scope_label,
+                        'assigned_officer' => $assignedOfficer ? [
+                            'name' => $assignedOfficer->formattedName(),
+                            'profile_photo_url' => $assignedOfficer->profilePhotoUrl(),
+                        ] : null,
                         'can_resubmit' => $step->status === 'flagged',
                         'last_event' => $lastEvent ? [
                             'action' => $lastEvent->action,

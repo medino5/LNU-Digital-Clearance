@@ -29,7 +29,7 @@ class StudentClearanceController extends Controller
         $clearance = null;
 
         if ($semester) {
-            $clearance = Clearance::with(['steps.events', 'steps.officeDesignation'])
+            $clearance = Clearance::with(['steps.events', 'steps.officeDesignation.activeUsers'])
                 ->where('student_id', $student->id)
                 ->where('semester_id', $semester->id)
                 ->first();
@@ -62,6 +62,7 @@ class StudentClearanceController extends Controller
                 'semester:id,label,academic_year',
                 'steps:id,clearance_id,status,remarks,signed_at,office_label,office_type,scope_label',
                 'steps.latestEvent.actor:id,name,first_name,middle_initial,last_name,name_extension,username,is_student,role',
+                'steps.officeDesignation.activeUsers:id,name,first_name,middle_initial,last_name,name_extension,username,profile_photo_path,is_student,role',
             ])
             ->withCount([
                 'steps as total_steps_count',
@@ -103,6 +104,11 @@ class StudentClearanceController extends Controller
                     'last_action' => $step->latestEvent?->action,
                     'last_action_at' => $step->latestEvent?->created_at?->toISOString(),
                     'signed_by' => $step->latestEvent?->actor?->formattedName(),
+                    'signed_by_profile_photo_url' => $step->latestEvent?->actor?->profilePhotoUrl(),
+                    'assigned_officer' => ($assignedOfficer = $step->officeDesignation?->activeUsers?->first()) ? [
+                        'name' => $assignedOfficer->formattedName(),
+                        'profile_photo_url' => $assignedOfficer->profilePhotoUrl(),
+                    ] : null,
                 ])->values(),
             ])->values(),
         ]);
