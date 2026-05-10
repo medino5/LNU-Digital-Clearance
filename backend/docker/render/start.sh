@@ -22,6 +22,8 @@ php artisan migrate --force
 
 if [ "${RUN_DATABASE_SEEDER:-true}" = "true" ]; then
     seeder_class="${RUN_DATABASE_SEEDER_CLASS:-Database\\Seeders\\DatabaseSeeder}"
+    seeder_class="${seeder_class//\\\\/\\}"
+    echo "Running database seeder: ${seeder_class}"
     php artisan db:seed --class="${seeder_class}" --force
 fi
 
