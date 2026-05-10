@@ -188,6 +188,7 @@
 .content.login-container {
     min-height: calc(100vh - 110px);
     display: flex;
+    flex-direction: column; /* Stacks the alert ON TOP of the card */
     align-items: center;
     justify-content: center;
     padding: 20px;
@@ -197,6 +198,14 @@
     width: 100%;
     max-width: 520px;
     margin: 0 auto;
+}
+
+.callout {
+    border-radius: 50px; /* Makes it a pill shape */
+    padding: 10px 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05); /* Soft shadow */
+    font-weight: 500;
+    border: 1px solid #d1fae5; /* Very subtle border */
 }
 
 </style>

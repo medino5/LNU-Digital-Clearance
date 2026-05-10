@@ -7,10 +7,7 @@ Future<String> saveClearancePdfBytes(
   List<int> bytes,
   String safeFileName,
 ) async {
-  final blob = html.Blob(
-    [Uint8List.fromList(bytes)],
-    'application/pdf',
-  );
+  final blob = html.Blob([Uint8List.fromList(bytes)], 'application/pdf');
 
   final url = html.Url.createObjectUrlFromBlob(blob);
 
@@ -24,5 +21,5 @@ Future<String> saveClearancePdfBytes(
 
   html.Url.revokeObjectUrl(url);
 
-  return 'Downloaded as $safeFileName';
+  return 'WEB_DOWNLOAD_TRIGGERED';
 }

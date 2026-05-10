@@ -4,22 +4,25 @@
     @php($validationErrors = collect($errors->getBags())->flatMap(fn ($bag) => $bag->all()))
 
     <div class="topbar">
-        <div>
-            <h1>{{ $dashboardTitle }}</h1>
+        <div class="topbar-left">
+            <img src="{{ asset('images/lnu-logo.png') }}" alt="LNU Logo" class="topbar-logo">
 
-            @if($hasActiveDesignation)
-                <p class="muted" style="margin: 8px 0 0;">
-                    Current designation{{ $officeDesignations->count() === 1 ? '' : 's' }}:
-                    {{ $officeDesignations->pluck('display_name')->implode(' | ') }}
-                </p>
-            @else
-                <p class="muted" style="margin: 8px 0 0;">
-                    No active designation assigned
-                </p>
-            @endif
+            <div>
+                <h1>{{ $dashboardTitle }}</h1>
+
+                @if($hasActiveDesignation)
+                    <p>
+                        Current designation{{ $officeDesignations->count() === 1 ? '' : 's' }}:
+                        {{ $officeDesignations->pluck('display_name')->implode(' | ') }}
+                    </p>
+                @else
+                    <p>No active designation assigned</p>
+                @endif
+            </div>
         </div>
+
         <div class="toolbar">
-            <form method="POST" action="{{ route('portal.logout') }}" class="topbar-form">
+            <form method="POST" action="{{ route('portal.logout') }}">
                 @csrf
                 <button type="submit" class="topbar-action">Sign Out</button>
             </form>
@@ -930,6 +933,30 @@
             color: #6b7280;
             text-decoration: underline;
             cursor: pointer;
+        }
+
+        .topbar-logo {
+            height: 110px;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.2));
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+        }
+
+        .topbar-logo {
+            height: 65px;
+            width: auto;
+            object-fit: contain;
         }
 
         @media (max-width: 980px) {
