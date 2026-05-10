@@ -100,8 +100,7 @@ void main() {
       );
       await tester.ensureVisible(termsCheckbox);
       await tester.pumpAndSettle();
-      await tester.tap(termsCheckbox);
-      await tester.pump();
+      await _readAndAcceptPrivacyStatement(tester);
 
       final submitButton = find.byKey(const Key('registration-submit-button'));
       await tester.ensureVisible(submitButton);
@@ -136,8 +135,7 @@ void main() {
       );
       await tester.ensureVisible(termsCheckbox);
       await tester.pumpAndSettle();
-      await tester.tap(termsCheckbox);
-      await tester.pump();
+      await _readAndAcceptPrivacyStatement(tester);
 
       final submitButton = find.byKey(const Key('registration-submit-button'));
       await tester.ensureVisible(submitButton);
@@ -153,4 +151,20 @@ void main() {
       );
     });
   });
+}
+
+Future<void> _readAndAcceptPrivacyStatement(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('registration-terms-open-button')));
+  await tester.pumpAndSettle();
+
+  for (var i = 0; i < 8; i++) {
+    await tester.drag(
+      find.byType(SingleChildScrollView).last,
+      const Offset(0, -700),
+    );
+    await tester.pump();
+  }
+
+  await tester.tap(find.byKey(const Key('privacy-agree-button')));
+  await tester.pumpAndSettle();
 }

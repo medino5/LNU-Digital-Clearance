@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../core/debug/connection_test_screen.dart';
-import '../core/network_config.dart';
 import '../core/session_expired_exception.dart';
 import '../features/shell/app_shell.dart';
 import '../services/auth_service.dart';
@@ -15,14 +13,12 @@ class LoginScreen extends StatefulWidget {
     this.authService,
     this.registrationService,
     this.shellBuilder,
-    this.connectionTestBuilder,
   });
 
   final String? initialMessage;
   final AuthService? authService;
   final RegistrationService? registrationService;
   final WidgetBuilder? shellBuilder;
-  final WidgetBuilder? connectionTestBuilder;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -176,33 +172,58 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(18),
+                      padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(22),
                         gradient: const LinearGradient(
-                          colors: [_navy, Color(0xFF2A568E)],
+                          colors: [Color(0xFF0E2742), _navy, Color(0xFF2A568E)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                       ),
-                      child: const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(
-                            'Leyte Normal University',
-                            style: TextStyle(
+                          Container(
+                            height: 118,
+                            width: 118,
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
                               color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
+                              borderRadius: BorderRadius.circular(28),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.16),
+                                  blurRadius: 18,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: Image.asset(
+                              'assets/branding/lnu_digital_clearance_logo.png',
+                              fit: BoxFit.contain,
                             ),
                           ),
-                          SizedBox(height: 6),
-                          Text(
-                            'Student Clearance Portal',
+                          const SizedBox(height: 16),
+                          const Text(
+                            'LNU Student Clearance Portal',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 21,
+                              fontWeight: FontWeight.w900,
+                              height: 1.15,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Digital Clearance Mobile App',
+                            textAlign: TextAlign.center,
                             style: TextStyle(
                               color: Color(0xFFF0D28A),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ],
@@ -215,15 +236,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: _navy,
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Use the student ID and password issued by MIS to access your clearance progress.',
-                      style: TextStyle(
-                        color: Colors.grey.shade700,
-                        fontSize: 15,
-                        height: 1.45,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -316,24 +328,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             : const Text('Sign In'),
                       ),
                     ),
-                    if (NetworkConfig.showConnectionTest) ...[
-                      const SizedBox(height: 12),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder:
-                                    widget.connectionTestBuilder ??
-                                    (_) => const ConnectionTestScreen(),
-                              ),
-                            );
-                          },
-                          child: const Text('Connection Test'),
-                        ),
-                      ),
-                    ],
                     const SizedBox(height: 14),
                     Wrap(
                       alignment: WrapAlignment.center,

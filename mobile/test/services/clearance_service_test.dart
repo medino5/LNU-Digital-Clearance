@@ -149,7 +149,7 @@ void main() {
     );
 
     test(
-      'downloadCurrentClearancePdf saves PDF bytes with a safe file name',
+      'downloadCurrentClearancePdf saves PDF bytes in a visible downloads path with a safe file name',
       () async {
         final tokenStore = FakeTokenStore(token: 'active-token');
         final clearanceService = ClearanceService(
@@ -217,6 +217,11 @@ class _FakePathProviderPlatform extends PathProviderPlatform {
 
   @override
   Future<String?> getApplicationDocumentsPath() async {
+    return documentsPath;
+  }
+
+  @override
+  Future<String?> getDownloadsPath() async {
     return documentsPath;
   }
 }

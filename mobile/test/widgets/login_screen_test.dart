@@ -70,6 +70,8 @@ void main() {
 
       await tester.enterText(find.byType(TextField).at(0), '2302314');
       await tester.enterText(find.byType(TextField).at(1), 'password');
+      await tester.ensureVisible(find.text('Sign In'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Sign In'));
       await tester.pumpAndSettle();
 

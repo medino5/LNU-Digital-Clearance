@@ -409,7 +409,11 @@ class _AppShellState extends State<AppShell> {
       return 'PDF download started. Check your browser downloads.';
     }
 
-    return 'PDF downloaded successfully.';
+    if (result.startsWith('content://')) {
+      return 'PDF saved to your phone Downloads.';
+    }
+
+    return 'PDF saved: $result';
   }
 
   String _getErrorMessage(Object error) {

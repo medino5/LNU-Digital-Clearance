@@ -17,6 +17,7 @@ void main() {
 
     expect(find.text('Student Sign In'), findsOneWidget);
     expect(find.byType(TextField), findsNWidgets(2));
-    expect(find.text('Connection Test'), findsOneWidget);
+    expect(find.text('LNU Student Clearance Portal'), findsOneWidget);
+    expect(find.text('Connection Test'), findsNothing);
   });
 }

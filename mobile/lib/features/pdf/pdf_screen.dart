@@ -192,7 +192,7 @@ class PdfScreen extends StatelessWidget {
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Your clearance PDF will download automatically. On Android, it will be saved using the app-safe file path. On Chrome/web, your browser will handle the download.',
+                      'Your clearance PDF will be saved to Downloads on Android. On Chrome/web, your browser will handle the download.',
                       style: TextStyle(
                         color: _navy,
                         fontWeight: FontWeight.w600,

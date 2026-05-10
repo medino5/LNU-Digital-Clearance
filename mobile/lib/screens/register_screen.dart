@@ -33,6 +33,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoadingOptions = true;
   bool _isSubmitting = false;
   bool _acceptedTerms = false;
+  bool _hasReadPrivacyStatement = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -55,6 +56,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
   static final RegExp _emailPattern = RegExp(
     r'^[A-Za-z0-9._%+-]+@lnu\.edu\.ph$',
   );
+  static const String _privacyStatement = '''
+LNU Data Privacy Statement
+
+Leyte Normal University (LNU) highly values your right to data privacy. It is firmly committed to ensuring that all personal data collected from students, employees, partners, stakeholders, and the public is handled with utmost care, in accordance with Republic Act No. 10173, otherwise known as the Data Privacy Act of 2012. LNU likewise adhere to the data privacy principles of (1) legitimate purpose; (2) transparency; and (3) proportionality.
+
+This Data Privacy Statement (DPS) outlines the policies and practices of LNU in collecting, using, storing, and disclosing your personal data. It seeks to inform you of your rights as a data subject and the ways in which the university protects and secures personal information under its control.
+
+Whether you are a student enrolling in the university, an employee rendering service, or an individual engaging with LNU in any capacity, the DPS aims to assure you that the University observes the highest standards of transparency, accountability, and lawful processing in all its data-handling practices.
+
+Purpose of Collection, Use and Disclosure of your Personal and Sensitive Personal Information
+
+LNU collects various types of personal information from students, employees, partners, stakeholders, and other individuals engaging with the University. This includes personal information that can be used to identify an individual, such as full name, maiden name, or other names used; date and place of birth; gender, civil status, and nationality; contact details including home address, email address, and telephone or mobile number; photographs or other identifying images; and government-issued identification numbers such as TIN, GSIS, SSS, and PhilHealth.
+
+It also includes sensitive personal information as defined under RA 10173, such as race or ethnic origin; religious, philosophical, or political affiliations; health and medical information including health records and medical clearances; educational background, academic records, and disciplinary records; criminal or administrative case records, if any; licenses or permits issued by government agencies along with details of their suspension, revocation, or denial; and tax returns or other financial records.
+
+In the course of its operations, LNU may likewise collect other relevant information such as student performance data (grades, academic progress, and achievements); employment details (position, salary grade, benefits, and performance evaluations); scholarship or financial assistance records; research outputs and intellectual property records; attendance records for classes, events, and training; CCTV footage and other security-related recordings; and digital logs from the University's online systems, portals, and platforms. The collection of such personal information is limited to what is necessary to fulfill the University's academic, research, administrative, and statutory mandates.
+
+Personal and sensitive personal information, as mentioned above, are collectively referred to as "personal data".
+
+LNU collects, uses, and discloses personal data for purposes that are directly related to the performance of its academic, research, administrative, and statutory functions. These purposes include, but are not limited to, student account registration, identity verification, clearance processing, academic record management, administrative coordination, security monitoring, system access control, and compliance with applicable legal and institutional requirements.
+''';
 
   @override
   void initState() {
@@ -100,10 +122,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
 
-    if (!_acceptedTerms) {
+    if (!_hasReadPrivacyStatement || !_acceptedTerms) {
       setState(() {
         _error =
-            'Please agree to the terms and privacy policy before creating an account.';
+            'Please read and agree to the LNU Data Privacy Statement before creating an account.';
       });
       return;
     }
@@ -152,6 +174,118 @@ class _RegisterScreenState extends State<RegisterScreen> {
         });
       }
     }
+  }
+
+  Future<void> _showPrivacyStatement() async {
+    bool hasReachedBottom = false;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            void markReachedBottom(ScrollMetrics metrics) {
+              if (!hasReachedBottom &&
+                  metrics.pixels >= metrics.maxScrollExtent - 24) {
+                setDialogState(() {
+                  hasReachedBottom = true;
+                });
+              }
+            }
+
+            return AlertDialog(
+              backgroundColor: _paper,
+              insetPadding: const EdgeInsets.all(18),
+              titlePadding: const EdgeInsets.fromLTRB(20, 18, 12, 0),
+              contentPadding: const EdgeInsets.fromLTRB(20, 14, 20, 12),
+              actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+              title: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Terms and Conditions',
+                      style: TextStyle(
+                        color: _navy,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: hasReachedBottom
+                        ? 'Close'
+                        : 'Scroll to the bottom first',
+                    onPressed: hasReachedBottom
+                        ? () => Navigator.of(dialogContext).pop()
+                        : null,
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              content: SizedBox(
+                width: 520,
+                height: MediaQuery.sizeOf(context).height * 0.62,
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    markReachedBottom(notification.metrics);
+                    return false;
+                  },
+                  child: SingleChildScrollView(
+                    child: Text(
+                      _privacyStatement,
+                      style: const TextStyle(
+                        color: _ink,
+                        height: 1.48,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              actions: [
+                Text(
+                  hasReachedBottom
+                      ? 'You can now agree to continue.'
+                      : 'Scroll to the bottom to enable agreement.',
+                  style: const TextStyle(
+                    color: _muted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    key: const Key('privacy-agree-button'),
+                    onPressed: hasReachedBottom
+                        ? () {
+                            setState(() {
+                              _hasReadPrivacyStatement = true;
+                              _acceptedTerms = true;
+                            });
+                            Navigator.of(dialogContext).pop();
+                          }
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _navy,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: _line,
+                      disabledForegroundColor: _muted,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    icon: const Icon(Icons.verified_user_outlined),
+                    label: const Text('I have read and agree'),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -376,48 +510,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       validator: _validatePasswordConfirmation,
                     ),
                     const SizedBox(height: 18),
-                    CheckboxListTile(
-                      key: const Key('registration-terms-checkbox'),
-                      value: _acceptedTerms,
+                    _PrivacyAgreement(
+                      acceptedTerms: _acceptedTerms,
+                      hasReadPrivacyStatement: _hasReadPrivacyStatement,
+                      onOpen: _showPrivacyStatement,
                       onChanged: (value) {
+                        if (!_hasReadPrivacyStatement) {
+                          _showPrivacyStatement();
+                          return;
+                        }
+
                         setState(() {
                           _acceptedTerms = value ?? false;
                         });
                       },
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: EdgeInsets.zero,
-                      activeColor: _navy,
-                      checkColor: Colors.white,
-                      title: RichText(
-                        text: const TextSpan(
-                          style: TextStyle(
-                            color: _ink,
-                            fontSize: 14,
-                            height: 1.35,
-                          ),
-                          children: [
-                            TextSpan(text: 'I agree to the '),
-                            TextSpan(
-                              text: 'Terms & Conditions',
-                              style: TextStyle(
-                                color: _gold,
-                                fontWeight: FontWeight.w700,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                            TextSpan(text: ' and '),
-                            TextSpan(
-                              text: 'Privacy Policy',
-                              style: TextStyle(
-                                color: _gold,
-                                fontWeight: FontWeight.w700,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                            TextSpan(text: '.'),
-                          ],
-                        ),
-                      ),
                     ),
                     const SizedBox(height: 18),
                     SizedBox(
@@ -564,10 +670,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       labelText: label,
       hintText: hint,
       prefixIcon: Icon(icon, color: _navy),
-      labelStyle: const TextStyle(
-        color: _navy,
-        fontWeight: FontWeight.w700,
-      ),
+      labelStyle: const TextStyle(color: _navy, fontWeight: FontWeight.w700),
       hintStyle: const TextStyle(color: _muted),
       filled: true,
       fillColor: _field,
@@ -692,17 +795,18 @@ class _HeaderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF0E2742), Color(0xFF16385F)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(34),
-          bottomRight: Radius.circular(34),
-        ),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: const Color(0xFFD7D3C8)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -711,38 +815,105 @@ class _HeaderCard extends StatelessWidget {
             child: IconButton(
               tooltip: 'Back to sign in',
               onPressed: onBack,
-              color: Colors.white,
+              color: const Color(0xFF16385F),
               icon: const Icon(Icons.arrow_back),
             ),
           ),
           Container(
-            height: 86,
-            width: 86,
+            constraints: const BoxConstraints(maxWidth: 260),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFD2A83D),
-              borderRadius: BorderRadius.circular(28),
+              color: const Color(0xFFFCFBF7),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFE6D9B8)),
             ),
-            child: const Icon(Icons.school, color: Color(0xFF0E2742), size: 52),
+            child: Image.asset(
+              'assets/branding/lnu_digital_clearance_logo.png',
+              fit: BoxFit.contain,
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
           const Text(
             'Create Account',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white,
-              fontSize: 32,
+              color: Color(0xFF16385F),
+              fontSize: 31,
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           const Text(
-            'Join LNU Digital Clearance',
+            'Submit your student details for admin approval.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Color(0xFFD2A83D),
-              fontSize: 18,
-              letterSpacing: 0.8,
+              color: Color(0xFF667085),
+              fontSize: 14,
+              height: 1.35,
               fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PrivacyAgreement extends StatelessWidget {
+  const _PrivacyAgreement({
+    required this.acceptedTerms,
+    required this.hasReadPrivacyStatement,
+    required this.onOpen,
+    required this.onChanged,
+  });
+
+  final bool acceptedTerms;
+  final bool hasReadPrivacyStatement;
+  final VoidCallback onOpen;
+  final ValueChanged<bool?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFD7D3C8)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextButton.icon(
+            key: const Key('registration-terms-open-button'),
+            onPressed: onOpen,
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF16385F),
+              padding: EdgeInsets.zero,
+              textStyle: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+            icon: const Icon(Icons.privacy_tip_outlined),
+            label: const Text('Read LNU Data Privacy Statement'),
+          ),
+          const SizedBox(height: 6),
+          CheckboxListTile(
+            key: const Key('registration-terms-checkbox'),
+            value: acceptedTerms,
+            onChanged: hasReadPrivacyStatement ? onChanged : (_) => onOpen(),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+            activeColor: const Color(0xFF16385F),
+            checkColor: Colors.white,
+            title: Text(
+              hasReadPrivacyStatement
+                  ? 'I have read and agree to the LNU Data Privacy Statement.'
+                  : 'Open and scroll through the statement before agreeing.',
+              style: const TextStyle(
+                color: Color(0xFF1B1B1B),
+                fontSize: 14,
+                height: 1.35,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -855,10 +1026,7 @@ class _OrganizationCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   text,
-                  style: TextStyle(
-                    color: Color(0xFF667085),
-                    height: 1.35,
-                  ),
+                  style: TextStyle(color: Color(0xFF667085), height: 1.35),
                 ),
               ],
             ),
