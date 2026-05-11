@@ -22,6 +22,7 @@ class StudentClearancePayloadBuilder
             'student' => [
                 'name' => $student->displayName(),
                 'student_id_number' => $student->student_id_number,
+                'date_of_birth' => $student->date_of_birth?->toDateString(),
                 'year_level' => $student->year_level,
                 'year_level_label' => $student->yearLevelLabel(),
                 'first_name' => $student->user->first_name,

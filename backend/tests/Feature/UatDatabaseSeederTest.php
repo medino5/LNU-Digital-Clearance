@@ -25,6 +25,10 @@ class UatDatabaseSeederTest extends TestCase
         $this->assertDatabaseHas('students', [
             'student_id_number' => '2302314',
         ]);
+        $this->assertSame(
+            '2005-03-14',
+            Student::where('student_id_number', '2302314')->firstOrFail()->date_of_birth->toDateString(),
+        );
         $this->assertDatabaseHas('programs', [
             'code' => 'AS',
             'name' => 'Bachelor of Science in Social Work',
@@ -69,6 +73,7 @@ class UatDatabaseSeederTest extends TestCase
         foreach ($generatedStudents as $student) {
             $this->assertMatchesRegularExpression('/^2\d{6}$/', $student->student_id_number);
             $this->assertSame($student->student_id_number, $student->user->username);
+            $this->assertNotNull($student->date_of_birth);
         }
 
         foreach (['BSIT', 'BAEL', 'BSTM', 'BSEntrep', 'AS', 'EC', 'SM'] as $programCode) {
@@ -102,6 +107,10 @@ class UatDatabaseSeederTest extends TestCase
             'student_id_number' => '2401400',
             'year_level' => 4,
         ]);
+        $this->assertSame(
+            '2001-09-01',
+            Student::where('student_id_number', '2401400')->firstOrFail()->date_of_birth->toDateString(),
+        );
 
         $this->assertDatabaseHas('students', [
             'student_id_number' => '2400801',
@@ -118,7 +127,7 @@ class UatDatabaseSeederTest extends TestCase
             'name_extension' => null,
         ]);
 
-        $this->assertSame(1344, DB::table('clearances')
+        $this->assertSame(3080, DB::table('clearances')
             ->where('status', 'completed')
             ->where('reference_number', 'like', 'DEMO-%')
             ->count());
@@ -131,12 +140,12 @@ class UatDatabaseSeederTest extends TestCase
             ->pluck('total', 'semester_label');
 
         foreach ([
-            '1st Semester 2023-2024',
-            '2nd Semester 2023-2024',
-            '1st Semester 2024-2025',
-            '2nd Semester 2024-2025',
-        ] as $semesterLabel) {
-            $this->assertSame(336, (int) $completedBySemester[$semesterLabel]);
+            '1st Semester 2023-2024' => 420,
+            '2nd Semester 2023-2024' => 420,
+            '1st Semester 2024-2025' => 1120,
+            '2nd Semester 2024-2025' => 1120,
+        ] as $semesterLabel => $expectedCount) {
+            $this->assertSame($expectedCount, (int) $completedBySemester[$semesterLabel]);
         }
 
         $completedByProgram = DB::table('clearances')
@@ -147,7 +156,7 @@ class UatDatabaseSeederTest extends TestCase
             ->pluck('total', 'program_code');
 
         foreach (['BSIT', 'BAEL', 'BSTM', 'BSEntrep', 'AS', 'EC', 'SM'] as $programCode) {
-            $this->assertSame(192, (int) $completedByProgram[$programCode]);
+            $this->assertSame(440, (int) $completedByProgram[$programCode]);
         }
     }
 }

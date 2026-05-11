@@ -25,7 +25,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Dashboard'), findsOneWidget);
+      expect(find.text('Home'), findsOneWidget);
       expect(find.text('PDF'), findsOneWidget);
       expect(find.text('History'), findsOneWidget);
       expect(find.text('Profile'), findsOneWidget);

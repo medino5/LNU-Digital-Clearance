@@ -10,6 +10,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             CoreSystemSeeder::class,
+            StudentBirthdayBackfillSeeder::class,
         ]);
     }
 }

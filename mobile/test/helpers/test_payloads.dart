@@ -6,6 +6,7 @@ Map<String, dynamic> buildTestPayload({
     'student': {
       'name': 'John A. Doe',
       'student_id_number': '2302314',
+      'date_of_birth': '2005-03-14',
       'year_level': 3,
       'year_level_label': '3rd Year',
       'program': {

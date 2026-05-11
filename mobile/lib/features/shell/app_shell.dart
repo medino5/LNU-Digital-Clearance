@@ -437,21 +437,6 @@ class _AppShellState extends State<AppShell> {
     }
   }
 
-  String _subtitleForIndex(int index) {
-    switch (index) {
-      case 0:
-        return 'Track office approvals and take the next step.';
-      case 1:
-        return 'Download your official clearance once it is completed.';
-      case 2:
-        return 'Review your previous semester and school year records.';
-      case 3:
-        return 'Review your account details and sign out securely.';
-      default:
-        return '';
-    }
-  }
-
   String _getPdfMessage(String result) {
     if (result == 'WEB_DOWNLOAD_TRIGGERED') {
       return 'PDF download started. Check your browser downloads.';
@@ -488,7 +473,7 @@ class _AppShellState extends State<AppShell> {
 
   Widget _buildTopBar() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF0E2742), _navy, Color(0xFF214F82)],
@@ -505,13 +490,13 @@ class _AppShellState extends State<AppShell> {
             ClipOval(
               child: Image.asset(
                 _schoolSealAsset,
-                width: 48,
-                height: 48,
+                width: 34,
+                height: 34,
                 fit: BoxFit.cover,
-                cacheWidth: 144,
+                cacheWidth: 102,
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -520,11 +505,11 @@ class _AppShellState extends State<AppShell> {
                     'Leyte Normal University',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 19,
+                      fontSize: 13,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 2),
                   Text(
                     _titleForIndex(_selectedIndex),
                     style: const TextStyle(
@@ -533,19 +518,10 @@ class _AppShellState extends State<AppShell> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _subtitleForIndex(_selectedIndex),
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.82),
-                      fontSize: 12.5,
-                      height: 1.35,
-                    ),
-                  ),
                 ],
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             IconButton(
               tooltip: 'Refresh',
               onPressed: _isRefreshing
@@ -554,6 +530,8 @@ class _AppShellState extends State<AppShell> {
               style: IconButton.styleFrom(
                 backgroundColor: Colors.white.withValues(alpha: 0.12),
                 foregroundColor: Colors.white,
+                minimumSize: const Size(36, 36),
+                padding: EdgeInsets.zero,
               ),
               icon: _isRefreshing
                   ? const SizedBox(
@@ -657,35 +635,49 @@ class _AppShellState extends State<AppShell> {
           ),
         ),
         bottomNavigationBar: Container(
+          padding: const EdgeInsets.fromLTRB(10, 7, 10, 7),
           decoration: BoxDecoration(
             color: Colors.white,
+            border: Border(
+              top: BorderSide(color: _gold.withValues(alpha: 0.18)),
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 18,
-                offset: const Offset(0, -4),
+                blurRadius: 16,
+                offset: const Offset(0, -3),
               ),
             ],
           ),
           child: NavigationBarTheme(
             data: NavigationBarThemeData(
-              backgroundColor: Colors.white,
-              indicatorColor: _gold.withValues(alpha: 0.18),
+              backgroundColor: Colors.transparent,
+              indicatorColor: _gold.withValues(alpha: 0.2),
+              indicatorShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
               labelTextStyle: WidgetStateProperty.resolveWith((states) {
                 final isSelected = states.contains(WidgetState.selected);
                 return TextStyle(
                   color: isSelected ? _navy : const Color(0xFF8F9197),
                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  fontSize: isSelected ? 11.5 : 11,
+                  height: 1.1,
                 );
               }),
               iconTheme: WidgetStateProperty.resolveWith((states) {
                 final isSelected = states.contains(WidgetState.selected);
                 return IconThemeData(
                   color: isSelected ? _gold : const Color(0xFF8F9197),
+                  size: isSelected ? 24 : 22,
                 );
               }),
             ),
             child: NavigationBar(
+              height: 62,
+              elevation: 0,
+              animationDuration: const Duration(milliseconds: 180),
+              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
               selectedIndex: _selectedIndex,
               onDestinationSelected: (index) {
                 setState(() {
@@ -696,7 +688,7 @@ class _AppShellState extends State<AppShell> {
                 NavigationDestination(
                   icon: Icon(Icons.dashboard_outlined),
                   selectedIcon: Icon(Icons.dashboard_rounded),
-                  label: 'Dashboard',
+                  label: 'Home',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.picture_as_pdf_outlined),

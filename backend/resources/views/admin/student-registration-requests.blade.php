@@ -86,6 +86,10 @@
                                     <dd>{{ $registrationRequest->yearLevelLabel() }}</dd>
                                 </div>
                                 <div>
+                                    <dt>Birthday</dt>
+                                    <dd>{{ $registrationRequest->date_of_birth?->format('M d, Y') ?? 'Not set' }}</dd>
+                                </div>
+                                <div>
                                     <dt>Submitted</dt>
                                     <dd>{{ $registrationRequest->created_at?->format('M d, Y g:i A') }}</dd>
                                 </div>

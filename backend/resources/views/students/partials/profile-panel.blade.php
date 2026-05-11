@@ -33,6 +33,10 @@
                     <dd>{{ $student->student_id_number }}</dd>
                 </div>
                 <div>
+                    <dt>Birthday</dt>
+                    <dd>{{ $student->date_of_birth?->format('M d, Y') ?? 'Not set' }}</dd>
+                </div>
+                <div>
                     <dt>Program</dt>
                     <dd>{{ $student->program->name }}</dd>
                 </div>

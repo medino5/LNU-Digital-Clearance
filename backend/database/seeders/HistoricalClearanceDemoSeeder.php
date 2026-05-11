@@ -15,7 +15,8 @@ use Illuminate\Support\Facades\DB;
 
 class HistoricalClearanceDemoSeeder extends Seeder
 {
-    private const STUDENTS_PER_YEAR_LEVEL_PER_PROGRAM = 12;
+    private const OLDER_STUDENTS_PER_YEAR_LEVEL_PER_PROGRAM = 15;
+    private const RECENT_STUDENTS_PER_YEAR_LEVEL_PER_PROGRAM = 40;
 
     /**
      * @var array<int, array{label:string, academic_year:string, starts_at:string}>
@@ -41,7 +42,7 @@ class HistoricalClearanceDemoSeeder extends Seeder
             $semesterStart = CarbonImmutable::parse($semesterData['starts_at']);
 
             foreach ($programs as $programIndex => $program) {
-                $students = $this->studentsForProgram($program);
+                $students = $this->studentsForProgram($program, $this->studentsPerYearLevelFor($semesterIndex));
 
                 foreach ($students as $studentIndex => $student) {
                     $this->seedCompletedClearance(
@@ -58,7 +59,7 @@ class HistoricalClearanceDemoSeeder extends Seeder
         }
     }
 
-    private function studentsForProgram(Program $program)
+    private function studentsForProgram(Program $program, int $studentsPerYearLevel)
     {
         return Student::query()
             ->with(['user', 'program'])
@@ -68,8 +69,15 @@ class HistoricalClearanceDemoSeeder extends Seeder
             ->orderBy('student_id_number')
             ->get()
             ->groupBy('year_level')
-            ->flatMap(fn ($students) => $students->take(self::STUDENTS_PER_YEAR_LEVEL_PER_PROGRAM))
+            ->flatMap(fn ($students) => $students->take($studentsPerYearLevel))
             ->values();
+    }
+
+    private function studentsPerYearLevelFor(int $semesterIndex): int
+    {
+        return $semesterIndex >= 2
+            ? self::RECENT_STUDENTS_PER_YEAR_LEVEL_PER_PROGRAM
+            : self::OLDER_STUDENTS_PER_YEAR_LEVEL_PER_PROGRAM;
     }
 
     private function seedCompletedClearance(

@@ -140,6 +140,10 @@ class ProfileScreen extends StatelessWidget {
                     student?['student_id_number'] as String? ?? 'Unavailable',
               ),
               _DetailRow(
+                label: 'Birthday',
+                value: _formatBirthday(student?['date_of_birth'] as String?),
+              ),
+              _DetailRow(
                 label: 'Program',
                 value: program?['name'] as String? ?? 'Unavailable',
               ),
@@ -233,6 +237,34 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatBirthday(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Not set';
+    }
+
+    final parsed = DateTime.tryParse(value);
+    if (parsed == null) {
+      return value;
+    }
+
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
+    return '${monthNames[parsed.month - 1]} ${parsed.day}, ${parsed.year}';
   }
 
   Future<void> _pickAndUploadPhoto() async {

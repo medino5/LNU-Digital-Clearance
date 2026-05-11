@@ -254,6 +254,20 @@
                             @endif
                         </label>
 
+                        <label>
+                            Birthday
+                            <input
+                                type="date"
+                                name="date_of_birth"
+                                value="{{ $shouldOpenCreate ? old('date_of_birth') : '' }}"
+                            >
+                            @if($shouldOpenCreate)
+                                <x-field-error field="date_of_birth" bag="studentCreate" />
+                            @endif
+                        </label>
+                    </div>
+
+                    <div class="field-grid">
                         <label class="password-wrapper">
                             Password
                             <div class="password-field">
@@ -411,23 +425,37 @@
                         </div>
 
                         <div class="field-grid">
-                            <label>
-                                Year Level
-                                <select name="year_level" required>
-                                    @foreach($yearLevels as $yearLevel)
-                                        <option value="{{ $yearLevel }}" {{ $shouldOpenEdit ? (((string) old('year_level', $student->year_level) === (string) $yearLevel) ? 'selected' : '') : (($student->year_level === $yearLevel) ? 'selected' : '') }}>
+                        <label>
+                            Year Level
+                            <select name="year_level" required>
+                                @foreach($yearLevels as $yearLevel)
+                                    <option value="{{ $yearLevel }}" {{ $shouldOpenEdit ? (((string) old('year_level', $student->year_level) === (string) $yearLevel) ? 'selected' : '') : (($student->year_level === $yearLevel) ? 'selected' : '') }}>
                                             {{ $yearLevel }}{{ ['st', 'nd', 'rd', 'th'][$yearLevel - 1] ?? 'th' }} Year
                                         </option>
                                     @endforeach
                                 </select>
                                 @if($shouldOpenEdit)
                                     <x-field-error field="year_level" bag="studentUpdate" />
-                                @endif
-                            </label>
+                            @endif
+                        </label>
 
-                            <label class="password-wrapper">
-                                Password
-                                <div class="password-field">
+                        <label>
+                            Birthday
+                            <input
+                                type="date"
+                                name="date_of_birth"
+                                value="{{ $shouldOpenEdit ? old('date_of_birth', $student->date_of_birth?->toDateString()) : $student->date_of_birth?->toDateString() }}"
+                            >
+                            @if($shouldOpenEdit)
+                                <x-field-error field="date_of_birth" bag="studentUpdate" />
+                            @endif
+                        </label>
+                    </div>
+
+                    <div class="field-grid">
+                        <label class="password-wrapper">
+                            Password
+                            <div class="password-field">
                                     <input
                                         type="password"
                                         name="password"

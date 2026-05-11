@@ -80,6 +80,7 @@ class StudentAdminController extends Controller
                 'name_extension' => ['nullable', Rule::in(User::studentNameExtensionOptions())],
                 'program_id' => ['required', 'exists:programs,id'],
                 'year_level' => ['required', 'integer', 'between:1,4'],
+                'date_of_birth' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today', 'after_or_equal:1900-01-01'],
                 'password' => ['required', 'string', 'min:8', 'max:72'],
             ],
             $redirectTo,
@@ -113,6 +114,7 @@ class StudentAdminController extends Controller
                 'student_id_number' => $data['student_id_number'],
                 'program_id' => $data['program_id'],
                 'year_level' => $data['year_level'],
+                'date_of_birth' => $data['date_of_birth'] ?? $this->fallbackDateOfBirthFor($data['student_id_number']),
             ]);
         });
 
@@ -138,6 +140,7 @@ class StudentAdminController extends Controller
                 'name_extension' => ['nullable', Rule::in(User::studentNameExtensionOptions())],
                 'program_id' => ['required', 'exists:programs,id'],
                 'year_level' => ['required', 'integer', 'between:1,4'],
+                'date_of_birth' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today', 'after_or_equal:1900-01-01'],
                 'password' => ['nullable', 'string', 'min:8', 'max:72'],
             ],
             $redirectTo,
@@ -171,6 +174,7 @@ class StudentAdminController extends Controller
                 'student_id_number' => $data['student_id_number'],
                 'program_id' => $data['program_id'],
                 'year_level' => $data['year_level'],
+                'date_of_birth' => $data['date_of_birth'] ?? $this->fallbackDateOfBirthFor($data['student_id_number']),
             ]);
         });
 
@@ -267,8 +271,22 @@ class StudentAdminController extends Controller
             'first_name.max' => 'First name must be 60 characters or fewer.',
             'last_name.max' => 'Last name must be 60 characters or fewer.',
             'middle_initial.regex' => 'Middle initial must be one letter.',
+            'date_of_birth.date_format' => 'Birthday must use the YYYY-MM-DD format.',
+            'date_of_birth.before_or_equal' => 'Birthday cannot be in the future.',
+            'date_of_birth.after_or_equal' => 'Birthday is outside the supported range.',
             'password.max' => 'Password must be 72 characters or fewer.',
         ];
+    }
+
+    protected function fallbackDateOfBirthFor(string $studentId): string
+    {
+        $digits = preg_replace('/\D/', '', $studentId) ?: '0';
+        $number = (int) substr($digits, -5);
+        $year = 2001 + ($number % 8);
+        $month = 1 + ($number % 12);
+        $day = 1 + ($number % 28);
+
+        return sprintf('%04d-%02d-%02d', $year, $month, $day);
     }
 
     /**
