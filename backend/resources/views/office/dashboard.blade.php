@@ -3,6 +3,12 @@
 @section('page')
     @php
         $validationErrors = collect($errors->getBags())->flatMap(fn ($bag) => $bag->all());
+        $currentOfficeUser = auth()->user();
+        $currentOfficerName = $currentOfficeUser?->officeAccount?->display_name
+            ?? $currentOfficeUser?->formattedName()
+            ?? $currentOfficeUser?->name
+            ?? 'Office User';
+        $currentOfficerPhoto = $currentOfficeUser?->profilePhotoUrl();
     @endphp
 
     <div class="topbar">
@@ -23,11 +29,31 @@
             </div>
         </div>
 
-        <div class="toolbar">
-            <form method="POST" action="{{ route('portal.logout') }}">
-                @csrf
-                <button type="submit" class="topbar-action">Sign Out</button>
-            </form>
+        <div class="toolbar office-user-toolbar">
+            <details class="office-user-menu">
+                <summary>
+                    <span class="office-user-name">{{ $currentOfficerName }}</span>
+                    <span class="office-user-avatar">
+                        @if($currentOfficerPhoto)
+                            <img src="{{ $currentOfficerPhoto }}" alt="{{ $currentOfficerName }} profile picture">
+                        @else
+                            <span>{{ strtoupper(substr($currentOfficerName, 0, 1)) }}</span>
+                        @endif
+                    </span>
+                </summary>
+
+                <div class="office-user-dropdown">
+                    <div>
+                        <strong>{{ $currentOfficerName }}</strong>
+                        <span>{{ $currentOfficeUser?->username }}</span>
+                    </div>
+
+                    <form method="POST" action="{{ route('portal.logout') }}">
+                        @csrf
+                        <button type="submit" class="topbar-action">Sign Out</button>
+                    </form>
+                </div>
+            </details>
         </div>
     </div>
 
@@ -985,6 +1011,103 @@
             align-items: center;
         }
 
+        .office-user-toolbar {
+            align-self: flex-start;
+            margin-left: auto;
+        }
+
+        .office-user-menu {
+            position: relative;
+        }
+
+        .office-user-menu summary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 48px;
+            padding: 6px 8px 6px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.48);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            cursor: pointer;
+            list-style: none;
+        }
+
+        .office-user-menu summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .office-user-name {
+            max-width: 220px;
+            overflow: hidden;
+            color: #fff;
+            font-size: 0.92rem;
+            font-weight: 800;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .office-user-avatar {
+            width: 38px;
+            height: 38px;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            border-radius: 999px;
+            background: #f7d982;
+            color: #173c66;
+            font-weight: 950;
+            border: 2px solid rgba(255, 255, 255, 0.82);
+        }
+
+        .office-user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .office-user-dropdown {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            z-index: 20;
+            width: min(280px, calc(100vw - 40px));
+            display: grid;
+            gap: 12px;
+            padding: 14px;
+            border-radius: 18px;
+            border: 1px solid #ded5c8;
+            background: #fcfbf7;
+            color: var(--navy-deep);
+            box-shadow: 0 18px 44px rgba(15, 23, 42, 0.2);
+        }
+
+        .office-user-dropdown strong,
+        .office-user-dropdown span {
+            display: block;
+            overflow-wrap: anywhere;
+        }
+
+        .office-user-dropdown span {
+            margin-top: 3px;
+            color: var(--muted);
+            font-size: 0.84rem;
+            font-weight: 700;
+        }
+
+        .office-user-dropdown form {
+            margin: 0;
+        }
+
+        .office-user-dropdown .topbar-action {
+            width: 100%;
+            justify-content: center;
+            background: var(--navy);
+            color: #fff;
+            border-color: var(--navy);
+        }
+
         .topbar-logo {
             height: 65px;
             width: auto;
@@ -1025,6 +1148,16 @@
 
             .office-action-buttons {
                 justify-content: flex-start;
+            }
+
+            .office-user-toolbar,
+            .office-user-menu,
+            .office-user-menu summary {
+                width: 100%;
+            }
+
+            .office-user-menu summary {
+                justify-content: space-between;
             }
 
             .office-modal-actions {

@@ -84,8 +84,25 @@ class OfficeDashboardController extends Controller
                 );
 
                 $archiveSteps = $this->applyArchiveSort($archiveQuery, $archiveSort)
-                    ->simplePaginate(20, ['*'], 'archive_page')
+                    ->simplePaginate(20, ['clearance_steps.id'], 'archive_page')
                     ->withQueryString();
+                $archiveStepIds = $archiveSteps->getCollection()->pluck('id');
+                $archiveRecords = ClearanceStep::query()
+                    ->with([
+                        'clearance.student.user',
+                        'clearance.student.program',
+                        'officeDesignation.program',
+                    ])
+                    ->whereIn('id', $archiveStepIds)
+                    ->get()
+                    ->keyBy('id');
+
+                $archiveSteps->setCollection(
+                    $archiveStepIds
+                        ->map(fn ($id) => $archiveRecords->get($id))
+                        ->filter()
+                        ->values(),
+                );
             }
         }
 
@@ -221,12 +238,6 @@ class OfficeDashboardController extends Controller
     private function archiveQuery($designationIds)
     {
         return ClearanceStep::query()
-            ->select('clearance_steps.*')
-            ->with([
-                'clearance.student.user',
-                'clearance.student.program',
-                'officeDesignation.program',
-            ])
             ->join('clearances', 'clearance_steps.clearance_id', '=', 'clearances.id')
             ->leftJoin('students', 'clearances.student_id', '=', 'students.id')
             ->leftJoin('users', 'students.user_id', '=', 'users.id')
