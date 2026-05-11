@@ -68,6 +68,7 @@ class StudentRegistrationController extends Controller
                 ],
                 'program_id' => ['required', 'integer', 'exists:programs,id'],
                 'year_level' => ['required', 'integer', 'between:1,4'],
+                'date_of_birth' => ['required', 'date_format:Y-m-d', 'before_or_equal:today', 'after_or_equal:1900-01-01'],
                 'password' => ['required', 'string', 'min:8', 'max:72', 'confirmed'],
             ],
             [
@@ -75,6 +76,10 @@ class StudentRegistrationController extends Controller
                 'student_id_number.size' => 'Student ID must be exactly 7 digits.',
                 'middle_initial.regex' => 'Middle initial must be one letter.',
                 'email.ends_with' => 'Use your LNU institutional email ending in @lnu.edu.ph.',
+                'date_of_birth.required' => 'Birthday is required.',
+                'date_of_birth.date_format' => 'Birthday must use the YYYY-MM-DD format.',
+                'date_of_birth.before_or_equal' => 'Birthday cannot be in the future.',
+                'date_of_birth.after_or_equal' => 'Birthday is outside the supported range.',
                 'password.confirmed' => 'Password confirmation does not match.',
             ],
         );
@@ -95,6 +100,7 @@ class StudentRegistrationController extends Controller
             'email' => filled($data['email'] ?? null) ? strtolower($data['email']) : null,
             'program_id' => $data['program_id'],
             'year_level' => $data['year_level'],
+            'date_of_birth' => $data['date_of_birth'],
             'password' => Hash::make($data['password']),
             'status' => StudentRegistrationRequest::STATUS_PENDING,
         ])->load('program');
@@ -114,6 +120,7 @@ class StudentRegistrationController extends Controller
                 ],
                 'year_level' => $registrationRequest->year_level,
                 'year_level_label' => $registrationRequest->yearLevelLabel(),
+                'date_of_birth' => $registrationRequest->date_of_birth?->toDateString(),
             ],
         ], 202);
     }

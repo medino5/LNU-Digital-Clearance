@@ -10,6 +10,8 @@ Route::get('/registration/options', [StudentRegistrationController::class, 'opti
     ->name('api.registration.options');
 Route::post('/register', [StudentRegistrationController::class, 'store'])
     ->name('api.register');
+Route::post('/forgot-password', [StudentAuthController::class, 'resetForgottenPassword'])
+    ->name('api.forgot-password.reset');
 
 Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
     Route::post('/logout', [StudentAuthController::class, 'logout'])->name('api.logout');

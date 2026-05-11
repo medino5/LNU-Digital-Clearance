@@ -63,6 +63,7 @@ class UatStudentSeeder extends Seeder
                             'user_id' => $user->id,
                             'program_id' => $program->id,
                             'year_level' => $yearLevel,
+                            'date_of_birth' => $this->dateOfBirthFor($studentNumber),
                         ]
                     );
 
@@ -125,5 +126,14 @@ class UatStudentSeeder extends Seeder
                 default => null,
             },
         ];
+    }
+
+    protected function dateOfBirthFor(int $studentNumber): string
+    {
+        $year = 2001 + ($studentNumber % 8);
+        $month = 1 + ($studentNumber % 12);
+        $day = 1 + ($studentNumber % 28);
+
+        return sprintf('%04d-%02d-%02d', $year, $month, $day);
     }
 }

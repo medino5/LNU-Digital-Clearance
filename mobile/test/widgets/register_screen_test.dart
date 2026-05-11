@@ -22,6 +22,7 @@ void main() {
       expect(find.text('Submit for Approval'), findsOneWidget);
       expect(find.text('First Name'), findsOneWidget);
       expect(find.text('Student ID'), findsOneWidget);
+      expect(find.text('Birthday'), findsOneWidget);
       expect(find.text('Academic Profile'), findsOneWidget);
       expect(find.text('Program'), findsOneWidget);
       expect(find.text('Already have an account? Sign In'), findsOneWidget);
@@ -63,12 +64,10 @@ void main() {
       await tester.enterText(find.byType(TextFormField).at(1), 'dela cruz');
       await tester.enterText(find.byType(TextFormField).at(2), 'ñ');
       await tester.enterText(find.byType(TextFormField).at(3), '2407777');
-      await tester.enterText(
-        find.byType(TextFormField).at(4),
-        'nina@lnu.edu.ph',
-      );
       tester.testTextInput.hide();
       await tester.pumpAndSettle();
+
+      await _selectBirthday(tester);
 
       final programDropdown = find.byKey(
         const Key('registration-program-dropdown'),
@@ -90,8 +89,8 @@ void main() {
       await tester.tap(find.text('2nd Year').last);
       await tester.pumpAndSettle();
 
+      await tester.enterText(find.byType(TextFormField).at(4), 'password');
       await tester.enterText(find.byType(TextFormField).at(5), 'password');
-      await tester.enterText(find.byType(TextFormField).at(6), 'password');
       tester.testTextInput.hide();
       await tester.pumpAndSettle();
 
@@ -114,6 +113,11 @@ void main() {
       expect(registrationService.lastRequest?.middleInitial, 'ñ');
       expect(registrationService.lastRequest?.programId, 1);
       expect(registrationService.lastRequest?.yearLevel, 2);
+      final expectedBirthYear = DateTime.now().year - 12;
+      expect(
+        registrationService.lastRequest?.dateOfBirth,
+        '$expectedBirthYear-01-01',
+      );
     });
 
     testWidgets('shows validation when names contain unsupported characters', (
@@ -166,5 +170,35 @@ Future<void> _readAndAcceptPrivacyStatement(WidgetTester tester) async {
   }
 
   await tester.tap(find.byKey(const Key('privacy-agree-button')));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _selectBirthday(WidgetTester tester) async {
+  final yearDropdown = find.byKey(
+    const Key('registration-birth-year-dropdown'),
+  );
+  await tester.ensureVisible(yearDropdown);
+  await tester.pumpAndSettle();
+  await tester.tap(yearDropdown);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text((DateTime.now().year - 12).toString()).last);
+  await tester.pumpAndSettle();
+
+  final monthDropdown = find.byKey(
+    const Key('registration-birth-month-dropdown'),
+  );
+  await tester.ensureVisible(monthDropdown);
+  await tester.pumpAndSettle();
+  await tester.tap(monthDropdown);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('01').last);
+  await tester.pumpAndSettle();
+
+  final dayDropdown = find.byKey(const Key('registration-birth-day-dropdown'));
+  await tester.ensureVisible(dayDropdown);
+  await tester.pumpAndSettle();
+  await tester.tap(dayDropdown);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('01').last);
   await tester.pumpAndSettle();
 }

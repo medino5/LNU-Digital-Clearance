@@ -23,6 +23,7 @@ class StudentRegistrationRequest extends Model
         'email',
         'program_id',
         'year_level',
+        'date_of_birth',
         'password',
         'status',
         'reviewed_by',
@@ -36,6 +37,7 @@ class StudentRegistrationRequest extends Model
     ];
 
     protected $casts = [
+        'date_of_birth' => 'date',
         'reviewed_at' => 'datetime',
     ];
 

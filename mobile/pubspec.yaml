@@ -69,6 +69,8 @@ flutter:
   assets:
     - assets/branding/lnu_digital_clearance_logo.png
     - assets/branding/lnu_digital_clearance_logo_compact.png
+    - assets/branding/mobile_login_logo.png
+    - assets/branding/lnu_school_seal.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

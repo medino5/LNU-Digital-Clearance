@@ -57,6 +57,7 @@ class _AppShellState extends State<AppShell> {
 
   static const Color _navy = Color(0xFF183A63);
   static const Color _gold = Color(0xFFD1A33B);
+  static const String _schoolSealAsset = 'assets/branding/lnu_school_seal.png';
 
   @override
   void initState() {
@@ -479,6 +480,12 @@ class _AppShellState extends State<AppShell> {
     return message;
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    precacheImage(const AssetImage(_schoolSealAsset), context);
+  }
+
   Widget _buildTopBar() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
@@ -495,6 +502,16 @@ class _AppShellState extends State<AppShell> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            ClipOval(
+              child: Image.asset(
+                _schoolSealAsset,
+                width: 48,
+                height: 48,
+                fit: BoxFit.cover,
+                cacheWidth: 144,
+              ),
+            ),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -4,6 +4,7 @@ import '../core/session_expired_exception.dart';
 import '../features/shell/app_shell.dart';
 import '../services/auth_service.dart';
 import '../services/registration_service.dart';
+import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -35,9 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   static const Color _navy = Color(0xFF183A63);
   static const Color _gold = Color(0xFFD1A33B);
-  static const Color _paper = Color(0xFFF8F4EA);
-  static const String _logoAsset =
-      'assets/branding/lnu_digital_clearance_logo_compact.png';
+  static const String _logoAsset = 'assets/branding/mobile_login_logo.png';
 
   @override
   void initState() {
@@ -153,6 +152,20 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  Future<void> _openForgotPassword() async {
+    final message = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => ForgotPasswordScreen(authService: _authService),
+      ),
+    );
+
+    if (!mounted || message == null) return;
+
+    setState(() {
+      _notice = message;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -173,30 +186,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Center(
-                      child: Container(
-                        width: 126,
-                        height: 126,
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: _paper,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFE7D7AE)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
-                              blurRadius: 22,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: Image.asset(
-                          _logoAsset,
-                          fit: BoxFit.contain,
-                          cacheWidth: 256,
-                        ),
+                      child: Image.asset(
+                        _logoAsset,
+                        height: 172,
+                        fit: BoxFit.contain,
+                        cacheWidth: 420,
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 14),
                     const Text(
                       'LNU Student Clearance Portal',
                       textAlign: TextAlign.center,
@@ -319,6 +316,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 14),
+                    TextButton(
+                      onPressed: _isLoading ? null : _openForgotPassword,
+                      child: const Text(
+                        'Forgot password?',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
                     Wrap(
                       alignment: WrapAlignment.center,
                       crossAxisAlignment: WrapCrossAlignment.center,

@@ -18,7 +18,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _lastNameController = TextEditingController();
   final _middleInitialController = TextEditingController();
   final _studentIdController = TextEditingController();
-  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -29,6 +28,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   RegistrationProgram? _selectedProgram;
   RegistrationYearLevel? _selectedYearLevel;
   String _selectedExtension = '';
+  int? _selectedBirthYear;
+  int? _selectedBirthMonth;
+  int? _selectedBirthDay;
   String? _error;
   bool _isLoadingOptions = true;
   bool _isSubmitting = false;
@@ -54,9 +56,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   static final RegExp _supportedMiddleInitialPattern = RegExp(
     r'^[A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF\u00D1\u00F1]$',
     unicode: true,
-  );
-  static final RegExp _emailPattern = RegExp(
-    r'^[A-Za-z0-9._%+-]+@lnu\.edu\.ph$',
   );
   static const String _privacyStatement = '''
 LNU Data Privacy Statement
@@ -98,7 +97,6 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
     _lastNameController.dispose();
     _middleInitialController.dispose();
     _studentIdController.dispose();
-    _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -155,9 +153,10 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
           middleInitial: _middleInitialController.text.trim(),
           lastName: _lastNameController.text.trim(),
           nameExtension: _selectedExtension,
-          email: _emailController.text.trim().toLowerCase(),
+          email: '',
           programId: _selectedProgram!.id,
           yearLevel: _selectedYearLevel!.value,
+          dateOfBirth: _birthDateValue!,
           password: _passwordController.text,
           passwordConfirmation: _confirmPasswordController.text,
         ),
@@ -350,18 +349,33 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
                       ),
                       validator: _validateStudentId,
                     ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      textCapitalization: TextCapitalization.none,
-                      style: _inputTextStyle(),
-                      decoration: _inputDecoration(
-                        label: 'LNU Institutional Email (optional)',
-                        hint: 'name@lnu.edu.ph',
-                        icon: Icons.mail_outline,
-                      ),
-                      validator: _validateEmail,
+                    const SizedBox(height: 16),
+                    _BirthdayFields(
+                      selectedYear: _selectedBirthYear,
+                      selectedMonth: _selectedBirthMonth,
+                      selectedDay: _selectedBirthDay,
+                      years: _birthYearOptions,
+                      months: _monthOptions,
+                      days: _birthDayOptions,
+                      inputTextStyle: _inputTextStyle(),
+                      decorationBuilder: _inputDecoration,
+                      onYearChanged: (year) {
+                        setState(() {
+                          _selectedBirthYear = year;
+                          _normalizeSelectedBirthDay();
+                        });
+                      },
+                      onMonthChanged: (month) {
+                        setState(() {
+                          _selectedBirthMonth = month;
+                          _normalizeSelectedBirthDay();
+                        });
+                      },
+                      onDayChanged: (day) {
+                        setState(() {
+                          _selectedBirthDay = day;
+                        });
+                      },
                     ),
                     const SizedBox(height: 24),
                     _SectionTitle(
@@ -614,6 +628,43 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
     );
   }
 
+  List<int> get _birthYearOptions {
+    final currentYear = DateTime.now().year;
+    return List<int>.generate(70, (index) => currentYear - 12 - index);
+  }
+
+  List<int> get _monthOptions => List<int>.generate(12, (index) => index + 1);
+
+  List<int> get _birthDayOptions {
+    final year = _selectedBirthYear ?? 2000;
+    final month = _selectedBirthMonth ?? 1;
+    final lastDay = DateTime(year, month + 1, 0).day;
+    return List<int>.generate(lastDay, (index) => index + 1);
+  }
+
+  String? get _birthDateValue {
+    final year = _selectedBirthYear;
+    final month = _selectedBirthMonth;
+    final day = _selectedBirthDay;
+
+    if (year == null || month == null || day == null) {
+      return null;
+    }
+
+    return '${year.toString().padLeft(4, '0')}-'
+        '${month.toString().padLeft(2, '0')}-'
+        '${day.toString().padLeft(2, '0')}';
+  }
+
+  void _normalizeSelectedBirthDay() {
+    final selectedDay = _selectedBirthDay;
+    if (selectedDay == null) return;
+
+    if (!_birthDayOptions.contains(selectedDay)) {
+      _selectedBirthDay = null;
+    }
+  }
+
   InputDecoration _passwordDecoration({
     required String label,
     required bool obscure,
@@ -710,20 +761,6 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
     return null;
   }
 
-  String? _validateEmail(String? value) {
-    final normalized = value?.trim().toLowerCase() ?? '';
-
-    if (normalized.isEmpty) {
-      return null;
-    }
-
-    if (!_emailPattern.hasMatch(normalized)) {
-      return 'Use your LNU institutional email ending in @lnu.edu.ph.';
-    }
-
-    return null;
-  }
-
   String? _validatePassword(String? value) {
     final password = value ?? '';
 
@@ -801,6 +838,136 @@ class _HeaderCard extends StatelessWidget {
             height: 1.35,
             fontWeight: FontWeight.w600,
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BirthdayFields extends StatelessWidget {
+  const _BirthdayFields({
+    required this.selectedYear,
+    required this.selectedMonth,
+    required this.selectedDay,
+    required this.years,
+    required this.months,
+    required this.days,
+    required this.inputTextStyle,
+    required this.decorationBuilder,
+    required this.onYearChanged,
+    required this.onMonthChanged,
+    required this.onDayChanged,
+  });
+
+  final int? selectedYear;
+  final int? selectedMonth;
+  final int? selectedDay;
+  final List<int> years;
+  final List<int> months;
+  final List<int> days;
+  final TextStyle inputTextStyle;
+  final InputDecoration Function({
+    required String label,
+    required IconData icon,
+    String? hint,
+  })
+  decorationBuilder;
+  final ValueChanged<int?> onYearChanged;
+  final ValueChanged<int?> onMonthChanged;
+  final ValueChanged<int?> onDayChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            'Birthday',
+            style: TextStyle(
+              color: Color(0xFF16385F),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        Row(
+          children: [
+            Expanded(
+              flex: 11,
+              child: DropdownButtonFormField<int>(
+                key: const Key('registration-birth-year-dropdown'),
+                initialValue: selectedYear,
+                isExpanded: true,
+                items: years
+                    .map(
+                      (year) => DropdownMenuItem(
+                        value: year,
+                        child: Text(year.toString()),
+                      ),
+                    )
+                    .toList(),
+                onChanged: onYearChanged,
+                style: inputTextStyle,
+                decoration: decorationBuilder(
+                  label: 'Year',
+                  icon: Icons.cake_outlined,
+                ),
+                validator: (value) =>
+                    value == null ? 'Select birth year.' : null,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 10,
+              child: DropdownButtonFormField<int>(
+                key: const Key('registration-birth-month-dropdown'),
+                initialValue: selectedMonth,
+                isExpanded: true,
+                items: months
+                    .map(
+                      (month) => DropdownMenuItem(
+                        value: month,
+                        child: Text(month.toString().padLeft(2, '0')),
+                      ),
+                    )
+                    .toList(),
+                onChanged: onMonthChanged,
+                style: inputTextStyle,
+                decoration: decorationBuilder(
+                  label: 'Month',
+                  icon: Icons.calendar_month_outlined,
+                ),
+                validator: (value) =>
+                    value == null ? 'Select birth month.' : null,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 9,
+              child: DropdownButtonFormField<int>(
+                key: const Key('registration-birth-day-dropdown'),
+                initialValue: selectedDay,
+                isExpanded: true,
+                items: days
+                    .map(
+                      (day) => DropdownMenuItem(
+                        value: day,
+                        child: Text(day.toString().padLeft(2, '0')),
+                      ),
+                    )
+                    .toList(),
+                onChanged: onDayChanged,
+                style: inputTextStyle,
+                decoration: decorationBuilder(
+                  label: 'Day',
+                  icon: Icons.today_outlined,
+                ),
+                validator: (value) =>
+                    value == null ? 'Select birth day.' : null,
+              ),
+            ),
+          ],
         ),
       ],
     );

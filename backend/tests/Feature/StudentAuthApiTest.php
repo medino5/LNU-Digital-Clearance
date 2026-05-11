@@ -75,9 +75,9 @@ class StudentAuthApiTest extends TestCase
             'middle_initial' => 'ñ',
             'last_name' => 'dela cruz',
             'name_extension' => 'Jr',
-            'email' => 'nina.delacruz@lnu.edu.ph',
             'program_id' => $program->id,
             'year_level' => 2,
+            'date_of_birth' => '2005-05-21',
             'password' => 'password',
             'password_confirmation' => 'password',
         ])
@@ -94,7 +94,7 @@ class StudentAuthApiTest extends TestCase
             'middle_initial' => 'Ñ',
             'last_name' => 'dela cruz',
             'name_extension' => 'Jr',
-            'email' => 'nina.delacruz@lnu.edu.ph',
+            'email' => null,
             'status' => StudentRegistrationRequest::STATUS_PENDING,
         ]);
 
@@ -108,6 +108,7 @@ class StudentAuthApiTest extends TestCase
 
         $registrationRequest = StudentRegistrationRequest::where('student_id_number', '2407777')->firstOrFail();
         $this->assertTrue(Hash::check('password', $registrationRequest->password));
+        $this->assertSame('2005-05-21', $registrationRequest->date_of_birth->toDateString());
     }
 
     public function test_admin_can_approve_mobile_registration_request_and_create_student_account(): void
@@ -123,6 +124,7 @@ class StudentAuthApiTest extends TestCase
             'email' => 'ana.santos@lnu.edu.ph',
             'program_id' => $program->id,
             'year_level' => 3,
+            'date_of_birth' => '2004-08-12',
             'password' => Hash::make('password'),
             'status' => StudentRegistrationRequest::STATUS_PENDING,
         ]);
@@ -142,6 +144,11 @@ class StudentAuthApiTest extends TestCase
             'program_id' => $program->id,
             'year_level' => 3,
         ]);
+
+        $this->assertSame(
+            '2004-08-12',
+            Student::where('student_id_number', '2408888')->firstOrFail()->date_of_birth->toDateString(),
+        );
 
         $this->assertDatabaseHas('users', [
             'username' => '2408888',
@@ -193,9 +200,9 @@ class StudentAuthApiTest extends TestCase
             'student_id_number' => '2405555',
             'first_name' => 'Juan',
             'last_name' => 'Reyes',
-            'email' => 'juan.reyes@lnu.edu.ph',
             'program_id' => $program->id,
             'year_level' => 1,
+            'date_of_birth' => '2006-01-30',
             'password' => 'password',
             'password_confirmation' => 'password',
         ])
@@ -216,6 +223,7 @@ class StudentAuthApiTest extends TestCase
             'email' => 'bad@example.com',
             'program_id' => $program->id,
             'year_level' => 5,
+            'date_of_birth' => now()->addDay()->format('Y-m-d'),
             'password' => 'password',
             'password_confirmation' => 'different',
         ])
@@ -226,6 +234,7 @@ class StudentAuthApiTest extends TestCase
                 'middle_initial',
                 'email',
                 'year_level',
+                'date_of_birth',
                 'password',
             ]);
     }
@@ -352,5 +361,43 @@ class StudentAuthApiTest extends TestCase
         $student->user->refresh();
 
         $this->assertTrue(Hash::check('new-password', $student->user->password));
+    }
+
+    public function test_student_can_reset_forgotten_password_with_student_id_and_birthday(): void
+    {
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        $student->update(['date_of_birth' => '2005-03-14']);
+
+        $this->postJson('/api/forgot-password', [
+            'student_id_number' => '2302314',
+            'date_of_birth' => '2005-03-14',
+            'password' => 'fresh-password',
+            'password_confirmation' => 'fresh-password',
+        ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Password reset successful. You can now sign in.');
+
+        $student->user->refresh();
+
+        $this->assertTrue(Hash::check('fresh-password', $student->user->password));
+    }
+
+    public function test_forgot_password_rejects_wrong_birthday(): void
+    {
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        $student->update(['date_of_birth' => '2005-03-14']);
+
+        $this->postJson('/api/forgot-password', [
+            'student_id_number' => '2302314',
+            'date_of_birth' => '2005-03-15',
+            'password' => 'fresh-password',
+            'password_confirmation' => 'fresh-password',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['student_id_number']);
+
+        $student->user->refresh();
+
+        $this->assertTrue(Hash::check('password', $student->user->password));
     }
 }

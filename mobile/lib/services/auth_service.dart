@@ -165,6 +165,40 @@ class AuthService {
     return message;
   }
 
+  Future<String> resetForgottenPassword({
+    required String studentIdNumber,
+    required String dateOfBirth,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    final response = await _apiClient.post(
+      '/forgot-password',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'student_id_number': studentIdNumber.trim(),
+        'date_of_birth': dateOfBirth,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      }),
+    );
+
+    final message = _extractMessage(
+      response.body,
+      response.statusCode == 200
+          ? 'Password reset successful. You can now sign in.'
+          : 'Unable to reset password.',
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(message);
+    }
+
+    return message;
+  }
+
   Future<String?> getToken() async {
     return _tokenStore.readToken();
   }
@@ -222,8 +256,19 @@ class AuthService {
     try {
       final payload = jsonDecode(body);
 
-      if (payload is Map<String, dynamic> && payload['message'] is String) {
-        return payload['message'] as String;
+      if (payload is Map<String, dynamic>) {
+        final errors = payload['errors'];
+
+        if (errors is Map && errors.isNotEmpty) {
+          final first = errors.values.first;
+          if (first is List && first.isNotEmpty) {
+            return first.first.toString();
+          }
+        }
+
+        if (payload['message'] is String) {
+          return payload['message'] as String;
+        }
       }
     } catch (_) {
       // Ignore JSON parsing failures and use the fallback.

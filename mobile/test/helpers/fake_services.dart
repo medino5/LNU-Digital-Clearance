@@ -27,6 +27,7 @@ class FakeAuthService extends AuthService {
   int logoutCalls = 0;
   int profilePhotoUploadCalls = 0;
   int changePasswordCalls = 0;
+  int resetForgottenPasswordCalls = 0;
 
   @override
   Future<Map<String, dynamic>> getProfile() async {
@@ -73,6 +74,17 @@ class FakeAuthService extends AuthService {
   }) async {
     changePasswordCalls += 1;
     return 'Password updated successfully.';
+  }
+
+  @override
+  Future<String> resetForgottenPassword({
+    required String studentIdNumber,
+    required String dateOfBirth,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    resetForgottenPasswordCalls += 1;
+    return 'Password reset successful. You can now sign in.';
   }
 
   @override

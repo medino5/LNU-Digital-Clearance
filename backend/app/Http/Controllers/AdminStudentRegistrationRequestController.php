@@ -101,6 +101,7 @@ class AdminStudentRegistrationRequestController extends Controller
                     'student_id_number' => $registrationRequest->student_id_number,
                     'program_id' => $registrationRequest->program_id,
                     'year_level' => $registrationRequest->year_level,
+                    'date_of_birth' => $registrationRequest->date_of_birth,
                 ]);
 
                 $registrationRequest->update([

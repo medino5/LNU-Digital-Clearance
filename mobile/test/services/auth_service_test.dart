@@ -103,5 +103,41 @@ void main() {
         expect(message, 'Password updated successfully.');
       },
     );
+
+    test(
+      'resetForgottenPassword posts student ID birthday and new password',
+      () async {
+        final authService = AuthService(
+          apiClient: ApiClient(
+            client: MockClient((request) async {
+              expect(request.url.path, '/api/forgot-password');
+
+              final payload = jsonDecode(request.body) as Map<String, dynamic>;
+              expect(payload['student_id_number'], '2302314');
+              expect(payload['date_of_birth'], '2005-03-14');
+              expect(payload['password'], 'fresh-password');
+              expect(payload['password_confirmation'], 'fresh-password');
+
+              return http.Response(
+                jsonEncode({
+                  'message': 'Password reset successful. You can now sign in.',
+                }),
+                200,
+                headers: {'content-type': 'application/json'},
+              );
+            }),
+          ),
+        );
+
+        final message = await authService.resetForgottenPassword(
+          studentIdNumber: '2302314',
+          dateOfBirth: '2005-03-14',
+          password: 'fresh-password',
+          passwordConfirmation: 'fresh-password',
+        );
+
+        expect(message, 'Password reset successful. You can now sign in.');
+      },
+    );
   });
 }

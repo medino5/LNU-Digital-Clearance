@@ -50,55 +50,53 @@ void main() {
       },
     );
 
-    test(
-      'register posts the same payload expected by the backend API',
-      () async {
-        final service = RegistrationService(
-          apiClient: ApiClient(
-            client: MockClient((request) async {
-              expect(request.url.path, '/api/register');
+    test('register posts the same payload expected by the backend API', () async {
+      final service = RegistrationService(
+        apiClient: ApiClient(
+          client: MockClient((request) async {
+            expect(request.url.path, '/api/register');
 
-              final payload = jsonDecode(request.body) as Map<String, dynamic>;
-              expect(payload['student_id_number'], '2407777');
-              expect(payload['first_name'], 'niña');
-              expect(payload['middle_initial'], 'ñ');
-              expect(payload['email'], 'nina@lnu.edu.ph');
-              expect(payload['program_id'], 7);
-              expect(payload['year_level'], 2);
+            final payload = jsonDecode(request.body) as Map<String, dynamic>;
+            expect(payload['student_id_number'], '2407777');
+            expect(payload['first_name'], 'niña');
+            expect(payload['middle_initial'], 'ñ');
+            expect(payload['program_id'], 7);
+            expect(payload['year_level'], 2);
+            expect(payload['date_of_birth'], '2005-05-21');
 
-              return http.Response(
-                jsonEncode({
-                  'message':
-                      'Registration submitted. Please wait for admin approval before signing in.',
-                }),
-                202,
-                headers: {'content-type': 'application/json'},
-              );
-            }),
-          ),
-        );
+            return http.Response(
+              jsonEncode({
+                'message':
+                    'Registration submitted. Please wait for admin approval before signing in.',
+              }),
+              202,
+              headers: {'content-type': 'application/json'},
+            );
+          }),
+        ),
+      );
 
-        final message = await service.register(
-          const RegistrationRequest(
-            studentIdNumber: '2407777',
-            firstName: 'niña',
-            middleInitial: 'ñ',
-            lastName: 'dela cruz',
-            nameExtension: '',
-            email: 'nina@lnu.edu.ph',
-            programId: 7,
-            yearLevel: 2,
-            password: 'password',
-            passwordConfirmation: 'password',
-          ),
-        );
+      final message = await service.register(
+        const RegistrationRequest(
+          studentIdNumber: '2407777',
+          firstName: 'niña',
+          middleInitial: 'ñ',
+          lastName: 'dela cruz',
+          nameExtension: '',
+          email: '',
+          programId: 7,
+          yearLevel: 2,
+          dateOfBirth: '2005-05-21',
+          password: 'password',
+          passwordConfirmation: 'password',
+        ),
+      );
 
-        expect(
-          message,
-          'Registration submitted. Please wait for admin approval before signing in.',
-        );
-      },
-    );
+      expect(
+        message,
+        'Registration submitted. Please wait for admin approval before signing in.',
+      );
+    });
 
     test('register surfaces the first validation error from Laravel', () async {
       final service = RegistrationService(
@@ -129,6 +127,7 @@ void main() {
             email: '',
             programId: 1,
             yearLevel: 1,
+            dateOfBirth: '2005-05-21',
             password: 'password',
             passwordConfirmation: 'password',
           ),

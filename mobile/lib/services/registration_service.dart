@@ -89,6 +89,7 @@ class RegistrationRequest {
     required this.email,
     required this.programId,
     required this.yearLevel,
+    required this.dateOfBirth,
     required this.password,
     required this.passwordConfirmation,
   });
@@ -101,6 +102,7 @@ class RegistrationRequest {
   final String email;
   final int programId;
   final int yearLevel;
+  final String dateOfBirth;
   final String password;
   final String passwordConfirmation;
 
@@ -114,6 +116,7 @@ class RegistrationRequest {
       'email': email.isEmpty ? null : email,
       'program_id': programId,
       'year_level': yearLevel,
+      'date_of_birth': dateOfBirth,
       'password': password,
       'password_confirmation': passwordConfirmation,
     };

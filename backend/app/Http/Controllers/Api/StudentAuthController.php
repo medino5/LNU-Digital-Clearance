@@ -8,6 +8,7 @@ use App\Support\ProfilePhotoStorage;
 use App\Support\StudentClearancePayloadBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class StudentAuthController extends Controller
 {
@@ -115,6 +116,42 @@ class StudentAuthController extends Controller
 
         return response()->json([
             'message' => 'Password updated successfully.',
+        ]);
+    }
+
+    public function resetForgottenPassword(Request $request)
+    {
+        $data = $request->validate([
+            'student_id_number' => ['required', 'string', 'regex:/^\d{7}$/'],
+            'date_of_birth' => ['required', 'date_format:Y-m-d'],
+            'password' => ['required', 'string', 'min:8', 'max:72', 'confirmed'],
+        ], [
+            'student_id_number.regex' => 'Student ID must be exactly 7 digits.',
+            'date_of_birth.required' => 'Birthday is required.',
+            'date_of_birth.date_format' => 'Birthday must use the YYYY-MM-DD format.',
+            'password.min' => 'Password must be at least 8 characters.',
+            'password.max' => 'Password must not exceed 72 characters.',
+            'password.confirmed' => 'Password confirmation does not match.',
+        ]);
+
+        $student = Student::with('user')
+            ->where('student_id_number', $data['student_id_number'])
+            ->whereDate('date_of_birth', $data['date_of_birth'])
+            ->first();
+
+        if (!$student || !$student->user || !$student->user->isStudent()) {
+            throw ValidationException::withMessages([
+                'student_id_number' => ['No student account matches that student ID and birthday.'],
+            ]);
+        }
+
+        $student->user->forceFill([
+            'password' => Hash::make($data['password']),
+        ])->save();
+        $student->user->tokens()->delete();
+
+        return response()->json([
+            'message' => 'Password reset successful. You can now sign in.',
         ]);
     }
 }
