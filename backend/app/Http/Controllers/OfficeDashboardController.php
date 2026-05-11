@@ -54,7 +54,7 @@ class OfficeDashboardController extends Controller
         $pendingSteps = collect();
         $archiveSteps = collect();
         $pendingCount = 0;
-        $archiveCount = 0;
+        $archiveCount = 'History';
 
         if ($hasActiveDesignation) {
             $baseQuery = ClearanceStep::query()
@@ -70,14 +70,6 @@ class OfficeDashboardController extends Controller
                 ->where('clearance_steps.status', ClearanceStep::STATUS_AWAITING_ACTION)
                 ->count();
 
-            $archiveBaseQuery = (clone $baseQuery)
-                ->whereIn('clearance_steps.status', [
-                    ClearanceStep::STATUS_APPROVED,
-                    ClearanceStep::STATUS_FLAGGED,
-                ]);
-
-            $archiveCount = (clone $archiveBaseQuery)->count();
-
             if ($tab === 'active') {
                 $pendingSteps = (clone $baseQuery)
                     ->where('clearance_steps.status', ClearanceStep::STATUS_AWAITING_ACTION)
@@ -86,7 +78,7 @@ class OfficeDashboardController extends Controller
                     ->withQueryString();
             } else {
                 $archiveQuery = $this->applyArchiveFilters(
-                    $archiveBaseQuery,
+                    $this->archiveQuery($officeDesignations->pluck('id')),
                     $archiveSearch,
                     $archiveStatus,
                 );
@@ -213,41 +205,41 @@ class OfficeDashboardController extends Controller
             $query->where(function ($query) use ($searchLike) {
                 $query->where('clearance_steps.office_label', 'like', $searchLike)
                     ->orWhere('clearance_steps.remarks', 'like', $searchLike)
-                    ->orWhereHas('clearance', function ($clearanceQuery) use ($searchLike) {
-                        $clearanceQuery
-                            ->where('reference_number', 'like', $searchLike)
-                            ->orWhereHas('student', function ($studentQuery) use ($searchLike) {
-                                $studentQuery
-                                    ->where('student_id_number', 'like', $searchLike)
-                                    ->orWhereHas('program', function ($programQuery) use ($searchLike) {
-                                        $programQuery
-                                            ->where('code', 'like', $searchLike)
-                                            ->orWhere('name', 'like', $searchLike);
-                                    })
-                                    ->orWhereHas('user', function ($userQuery) use ($searchLike) {
-                                        $userQuery
-                                            ->where('name', 'like', $searchLike)
-                                            ->orWhere('first_name', 'like', $searchLike)
-                                            ->orWhere('last_name', 'like', $searchLike);
-                                    });
-                            });
-                    });
+                    ->orWhere('clearances.reference_number', 'like', $searchLike)
+                    ->orWhere('students.student_id_number', 'like', $searchLike)
+                    ->orWhere('programs.code', 'like', $searchLike)
+                    ->orWhere('programs.name', 'like', $searchLike)
+                    ->orWhere('users.name', 'like', $searchLike)
+                    ->orWhere('users.first_name', 'like', $searchLike)
+                    ->orWhere('users.last_name', 'like', $searchLike);
             });
         }
 
         return $query;
     }
 
+    private function archiveQuery($designationIds)
+    {
+        return ClearanceStep::query()
+            ->select('clearance_steps.*')
+            ->with([
+                'clearance.student.user',
+                'clearance.student.program',
+                'officeDesignation.program',
+            ])
+            ->join('clearances', 'clearance_steps.clearance_id', '=', 'clearances.id')
+            ->leftJoin('students', 'clearances.student_id', '=', 'students.id')
+            ->leftJoin('users', 'students.user_id', '=', 'users.id')
+            ->leftJoin('programs', 'students.program_id', '=', 'programs.id')
+            ->whereIn('clearance_steps.office_designation_id', $designationIds)
+            ->whereIn('clearance_steps.status', [
+                ClearanceStep::STATUS_APPROVED,
+                ClearanceStep::STATUS_FLAGGED,
+            ]);
+    }
+
     private function applyArchiveSort($query, string $sort)
     {
-        if (in_array($sort, ['student_asc', 'student_id_asc', 'program_asc'], true)) {
-            $query
-                ->join('clearances', 'clearance_steps.clearance_id', '=', 'clearances.id')
-                ->join('students', 'clearances.student_id', '=', 'students.id')
-                ->join('users', 'students.user_id', '=', 'users.id')
-                ->leftJoin('programs', 'students.program_id', '=', 'programs.id');
-        }
-
         return match ($sort) {
             'processed_asc' => $query
                 ->orderBy('clearance_steps.signed_at')
