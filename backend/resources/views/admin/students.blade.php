@@ -36,7 +36,13 @@
             </div>
 
             <form method="GET" action="{{ route('admin.students.index') }}" class="student-filter-bar">
-                <input type="text" name="student_search" value="{{ $studentSearch }}" placeholder="Search by name or ID">
+                <input
+                    type="text"
+                    name="student_search"
+                    value="{{ $studentSearch }}"
+                    placeholder="Search by name or ID"
+                    maxlength="80"
+                >
 
                 <select name="student_program">
                     <option value="">Program</option>
@@ -531,6 +537,7 @@
                                 type="text"
                                 name="delete_confirmation"
                                 autocomplete="off"
+                                maxlength="32"
                                 required
                             >
                             <x-field-error field="delete_confirmation" bag="studentDelete" />

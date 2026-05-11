@@ -121,6 +121,17 @@ class AdminControllerValidationTest extends TestCase
             ->assertDontSee('Bryan');
     }
 
+    public function test_student_search_rejects_overlong_input_before_querying(): void
+    {
+        $this->actingAs($this->admin)
+            ->from(route('admin.students.index'))
+            ->get(route('admin.students.index', [
+                'student_search' => str_repeat('A', 81),
+            ]))
+            ->assertRedirect(route('admin.students.index'))
+            ->assertSessionHasErrors('student_search');
+    }
+
     public function test_students_page_orders_by_student_number(): void
     {
         $program = Program::factory()->create();
@@ -361,6 +372,17 @@ class AdminControllerValidationTest extends TestCase
             ->assertDontSee('Library Office');
     }
 
+    public function test_office_account_search_rejects_overlong_input_before_querying(): void
+    {
+        $this->actingAs($this->admin)
+            ->from(route('admin.office-accounts.index'))
+            ->get(route('admin.office-accounts.index', [
+                'office_search' => str_repeat('A', 101),
+            ]))
+            ->assertRedirect(route('admin.office-accounts.index'))
+            ->assertSessionHasErrors('office_search');
+    }
+
     public function test_office_accounts_page_filters_university_wide_accounts(): void
     {
         $program = Program::factory()->create(['code' => 'BSIT']);
@@ -553,6 +575,17 @@ class AdminControllerValidationTest extends TestCase
             ->assertSessionHas('error', 'Program cannot be deleted while students are assigned to it.');
 
         $this->assertDatabaseHas('programs', ['code' => 'BSEC']);
+    }
+
+    public function test_registration_request_search_rejects_overlong_input_before_querying(): void
+    {
+        $this->actingAs($this->admin)
+            ->from(route('admin.registration-requests.index'))
+            ->get(route('admin.registration-requests.index', [
+                'search' => str_repeat('A', 101),
+            ]))
+            ->assertRedirect(route('admin.registration-requests.index'))
+            ->assertSessionHasErrors('search');
     }
 
     public function test_program_delete_is_not_allowed_while_registration_requests_exist(): void

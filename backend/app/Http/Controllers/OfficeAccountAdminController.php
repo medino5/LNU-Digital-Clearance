@@ -14,6 +14,14 @@ class OfficeAccountAdminController extends Controller
 {
     public function index(Request $request)
     {
+        $request->validate([
+            'office_search' => ['nullable', 'string', 'max:100'],
+            'office_program' => ['nullable'],
+            'office_type' => ['nullable', Rule::in(array_keys(OfficeAccount::typeOptions()))],
+        ], [
+            'office_search.max' => 'Office account search must be 100 characters or fewer.',
+        ]);
+
         $officeSearch = trim((string) $request->query('office_search', ''));
         $officeProgramId = $request->query('office_program');
         $officeType = $request->query('office_type');

@@ -61,7 +61,8 @@ class AdminClearanceReportExportTest extends TestCase
             ]));
 
         $response->assertOk()
-            ->assertSee('Office Signing Performance')
+            ->assertSee('Analytics Dashboard')
+            ->assertSee('Requests by Signer / Office')
             ->assertSee('Program Flow')
             ->assertSee('BSIT - Bachelor of Science in Information Technology');
 

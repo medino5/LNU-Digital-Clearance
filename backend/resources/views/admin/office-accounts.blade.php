@@ -41,6 +41,7 @@
                     name="office_search"
                     value="{{ $officeSearch }}"
                     placeholder="Search by name, username, or scope"
+                    maxlength="100"
                 >
 
                 <select name="office_program">

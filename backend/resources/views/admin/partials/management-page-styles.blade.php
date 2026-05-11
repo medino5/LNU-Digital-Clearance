@@ -17,6 +17,7 @@
         background: linear-gradient(135deg, #fbf7ef 0%, #fffdf8 100%);
         border: 1px solid #e8dfd1;
         box-shadow: 0 12px 28px rgba(24, 58, 99, 0.05);
+        min-width: 0;
     }
 
     .admin-page-header h1,
@@ -26,6 +27,7 @@
         font-size: clamp(1.55rem, 2vw, 2.15rem);
         line-height: 1.08;
         letter-spacing: -0.03em;
+        overflow-wrap: anywhere;
     }
 
     .admin-page-header p,
@@ -89,6 +91,7 @@
     .management-card-header h2 {
         margin: 0;
         color: #173c66;
+        overflow-wrap: anywhere;
     }
 
     .management-card-kicker {
@@ -164,6 +167,7 @@
     .management-table td {
         vertical-align: middle;
         background: #fff;
+        overflow-wrap: anywhere;
     }
 
     .management-table tbody tr:hover td {
@@ -208,6 +212,7 @@
         font-weight: 700;
         color: #183a63;
         line-height: 1.35;
+        overflow-wrap: anywhere;
     }
 
     .org-pill {
@@ -267,6 +272,7 @@
         background: #fffdf8;
         border: 1px solid #e4dacd;
         box-shadow: 0 24px 70px rgba(14, 39, 66, 0.24);
+        overflow-x: hidden;
     }
 
     .management-modal-header {
@@ -281,6 +287,7 @@
     .management-modal-header h2 {
         margin: 0;
         color: #173c66;
+        overflow-wrap: anywhere;
     }
 
     .modal-close-button {

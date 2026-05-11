@@ -14,6 +14,17 @@ class AdminStudentRegistrationRequestController extends Controller
 {
     public function index(Request $request)
     {
+        $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', 'in:' . implode(',', [
+                StudentRegistrationRequest::STATUS_PENDING,
+                StudentRegistrationRequest::STATUS_APPROVED,
+                StudentRegistrationRequest::STATUS_REJECTED,
+            ])],
+        ], [
+            'search.max' => 'Registration request search must be 100 characters or fewer.',
+        ]);
+
         $status = in_array($request->query('status'), [
             StudentRegistrationRequest::STATUS_PENDING,
             StudentRegistrationRequest::STATUS_APPROVED,

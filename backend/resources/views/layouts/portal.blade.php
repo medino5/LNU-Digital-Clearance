@@ -21,6 +21,10 @@
 
         * { box-sizing: border-box; }
 
+        *, *::before, *::after {
+            min-width: 0;
+        }
+
         body {
             margin: 0;
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -166,10 +170,12 @@
             color: var(--danger);
             font-size: 13px;
             line-height: 1.4;
+            overflow-wrap: anywhere;
         }
 
         input, select, textarea {
             width: 100%;
+            max-width: 100%;
             border: 1px solid #cfc7b7;
             border-radius: 12px;
             padding: 11px 13px;
@@ -178,7 +184,11 @@
             color: var(--ink);
         }
 
-        textarea { min-height: 88px; resize: vertical; }
+        textarea {
+            min-height: 88px;
+            resize: vertical;
+            overflow-wrap: anywhere;
+        }
 
         table { width: 100%; border-collapse: collapse; }
 
@@ -216,6 +226,7 @@
             border-radius: 18px;
             padding: 14px 16px;
             border: 1px solid transparent;
+            overflow-wrap: anywhere;
         }
 
         .callout.success { background: #eef9f2; color: var(--success); border-color: #bfe5cb; }
@@ -236,7 +247,11 @@
         .muted { color: var(--muted); }
         .divider { height: 1px; background: var(--line); margin: 8px 0 18px; }
         .actions-inline { display: flex; flex-wrap: wrap; gap: 10px; }
-        .mini { font-size: 13px; color: var(--muted); }
+        .mini {
+            font-size: 13px;
+            color: var(--muted);
+            overflow-wrap: anywhere;
+        }
         /* New: section-based dashboard information architecture styles */
         /* Updated: stronger separation between major dashboard sections */
         .dashboard-section {

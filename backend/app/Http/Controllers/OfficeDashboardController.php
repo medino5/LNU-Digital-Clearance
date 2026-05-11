@@ -21,6 +21,14 @@ class OfficeDashboardController extends Controller
             abort(403, 'Unauthorized.');
         }
 
+        $request->validate([
+            'archive_search' => ['nullable', 'string', 'max:120'],
+            'archive_status' => ['nullable', 'in:' . ClearanceStep::STATUS_APPROVED . ',' . ClearanceStep::STATUS_FLAGGED],
+            'archive_sort' => ['nullable', 'in:processed_desc,processed_asc,student_asc,student_id_asc,program_asc'],
+        ], [
+            'archive_search.max' => 'Archive search must be 120 characters or fewer.',
+        ]);
+
         $tab = $request->query('tab') === 'archive' ? 'archive' : 'active';
         $archiveSearch = trim((string) $request->query('archive_search', ''));
         $archiveStatus = in_array($request->query('archive_status'), [
@@ -125,13 +133,14 @@ class OfficeDashboardController extends Controller
             [
                 'action' => ['required', 'in:approve,flag,undo_approval,undo_flag'],
                 'confirm_action' => ['nullable','string'],
-                'remarks' => ['nullable', 'string', 'required_if:action,flag'],
+                'remarks' => ['nullable', 'string', 'max:500', 'required_if:action,flag'],
                 'step_id' => ['nullable', 'integer'],
                 'return_tab' => ['nullable', 'in:active,archive'],
             ],
             $this->officeDashboardUrl(),
             [
                 'remarks.required_if' => 'Reject reason is required before rejecting this clearance step.',
+                'remarks.max' => 'Remarks must be 500 characters or fewer.',
             ],
         );
 

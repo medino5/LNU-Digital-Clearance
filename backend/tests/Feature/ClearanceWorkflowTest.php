@@ -501,6 +501,27 @@ class ClearanceWorkflowTest extends TestCase
             ->assertSee('Rejected');
     }
 
+    public function test_office_archive_rejects_overlong_search_before_querying(): void
+    {
+        $clearance = $this->startClearanceForSeededStudent();
+
+        $step = $clearance->steps->firstWhere(
+            'office_label',
+            'DIGITS Academic Organization Treasurer'
+        );
+        $officeUser = $step->officeDesignation->activeUsers->first();
+        $this->assertNotNull($officeUser);
+
+        $this->actingAs($officeUser)
+            ->from(route('office.dashboard', ['tab' => 'archive']))
+            ->get(route('office.dashboard', [
+                'tab' => 'archive',
+                'archive_search' => str_repeat('A', 121),
+            ]))
+            ->assertRedirect(route('office.dashboard', ['tab' => 'archive']))
+            ->assertSessionHasErrors('archive_search');
+    }
+
     public function test_office_user_can_undo_a_flagged_step_and_reopen_the_clearance(): void
     {
         $clearance = $this->startClearanceForSeededStudent();

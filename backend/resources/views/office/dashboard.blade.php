@@ -1,7 +1,9 @@
 ﻿@extends('layouts.portal', ['title' => 'Office Dashboard'])
 
 @section('page')
-    @php($validationErrors = collect($errors->getBags())->flatMap(fn ($bag) => $bag->all()))
+    @php
+        $validationErrors = collect($errors->getBags())->flatMap(fn ($bag) => $bag->all());
+    @endphp
 
     <div class="topbar">
         <div class="topbar-left">
@@ -80,22 +82,30 @@
 
                     <div class="list office-list">
                         @forelse($pendingSteps as $step)
-                            @php($student = $step->clearance->student)
+                            @php
+                                $student = $step->clearance->student;
+                                $studentName = $student?->displayName() ?: 'Student record unavailable';
+                                $studentId = $student?->student_id_number ?: 'No ID';
+                                $programCode = $student?->program?->code ?: 'No program';
+                                $yearLevel = $student?->yearLevelLabel() ?: 'No year level';
+                                $studentMeta = $studentId . ' | ' . $programCode . ' | ' . $yearLevel;
+                                $studentPhoto = $student?->user?->profilePhotoUrl();
+                            @endphp
 
                             <div class="record office-record pending-record">
                                 <div class="record-top">
                                     <div class="office-student-identity">
                                         <div class="office-student-avatar">
-                                            @if($student->user->profilePhotoUrl())
-                                                <img src="{{ $student->user->profilePhotoUrl() }}" alt="{{ $student->displayName() }} profile picture">
+                                            @if($studentPhoto)
+                                                <img src="{{ $studentPhoto }}" alt="{{ $studentName }} profile picture">
                                             @else
-                                                <span>{{ strtoupper(substr($student->displayName(), 0, 1)) }}</span>
+                                                <span>{{ strtoupper(substr($studentName, 0, 1)) }}</span>
                                             @endif
                                         </div>
                                         <div>
-                                            <strong class="record-name">{{ $student->displayName() }}</strong>
+                                            <strong class="record-name">{{ $studentName }}</strong>
                                             <div class="mini">
-                                                {{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}
+                                                {{ $studentMeta }}
                                             </div>
                                         </div>
                                     </div>
@@ -108,8 +118,8 @@
                                                 type="button"
                                                 class="button ghost detail-trigger"
                                                 data-modal-step-id="{{ $step->id }}"
-                                                data-modal-student-name="{{ $student->displayName() }}"
-                                                data-modal-student-meta="{{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}"
+                                                data-modal-student-name="{{ $studentName }}"
+                                                data-modal-student-meta="{{ $studentMeta }}"
                                                 data-modal-step-status="Awaiting Action"
                                                 data-modal-clearance-status="{{ ucwords(str_replace('_', ' ', $step->clearance->status)) }}"
                                                 data-modal-last-processed="{{ optional($step->signed_at)->format('M d, Y h:i A') ?? '-' }}"
@@ -121,8 +131,9 @@
                                             </button>
 
                                             <a
-                                                href="{{ route('office.students.show', $student) }}"
+                                                href="{{ $student ? route('office.students.show', $student) : '#' }}"
                                                 class="button profile-link"
+                                                aria-disabled="{{ $student ? 'false' : 'true' }}"
                                             >
                                                 View Profile
                                             </a>
@@ -131,7 +142,7 @@
                                                 type="button"
                                                 class="button approve-trigger"
                                                 data-step-id="{{ $step->id }}"
-                                                data-student-name="{{ $student->displayName() }}"
+                                                data-student-name="{{ $studentName }}"
                                                 data-step-action="{{ route('office.steps.process', $step) }}"
                                             >
                                                 Approve
@@ -141,7 +152,7 @@
                                                 type="button"
                                                 class="button warn flag-trigger"
                                                 data-step-id="{{ $step->id }}"
-                                                data-student-name="{{ $student->displayName() }}"
+                                                data-student-name="{{ $studentName }}"
                                                 data-step-action="{{ route('office.steps.process', $step) }}"
                                             >
                                                 Reject
@@ -200,6 +211,7 @@
                                 name="archive_search"
                                 value="{{ $archiveSearch }}"
                                 placeholder="Name, student ID, program, note, reference"
+                                maxlength="120"
                             >
                         </label>
 
@@ -229,22 +241,30 @@
 
                     <div class="list office-list">
                         @forelse($archiveSteps as $step)
-                            @php($student = $step->clearance->student)
+                            @php
+                                $student = $step->clearance->student;
+                                $studentName = $student?->displayName() ?: 'Student record unavailable';
+                                $studentId = $student?->student_id_number ?: 'No ID';
+                                $programCode = $student?->program?->code ?: 'No program';
+                                $yearLevel = $student?->yearLevelLabel() ?: 'No year level';
+                                $studentMeta = $studentId . ' | ' . $programCode . ' | ' . $yearLevel;
+                                $studentPhoto = $student?->user?->profilePhotoUrl();
+                            @endphp
 
                             <div class="record office-record processed-record">
                                 <div class="record-top">
                                     <div class="office-student-identity">
                                         <div class="office-student-avatar">
-                                            @if($student->user->profilePhotoUrl())
-                                                <img src="{{ $student->user->profilePhotoUrl() }}" alt="{{ $student->displayName() }} profile picture">
+                                            @if($studentPhoto)
+                                                <img src="{{ $studentPhoto }}" alt="{{ $studentName }} profile picture">
                                             @else
-                                                <span>{{ strtoupper(substr($student->displayName(), 0, 1)) }}</span>
+                                                <span>{{ strtoupper(substr($studentName, 0, 1)) }}</span>
                                             @endif
                                         </div>
                                         <div>
-                                            <strong class="record-name">{{ $student->displayName() }}</strong>
+                                            <strong class="record-name">{{ $studentName }}</strong>
                                             <div class="mini">
-                                                {{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}
+                                                {{ $studentMeta }}
                                             </div>
                                         </div>
                                     </div>
@@ -259,8 +279,8 @@
                                                 type="button"
                                                 class="button ghost detail-trigger"
                                                 data-modal-step-id="{{ $step->id }}"
-                                                data-modal-student-name="{{ $student->displayName() }}"
-                                                data-modal-student-meta="{{ $student->student_id_number }} | {{ $student->program->code }} | {{ $student->yearLevelLabel() }}"
+                                                data-modal-student-name="{{ $studentName }}"
+                                                data-modal-student-meta="{{ $studentMeta }}"
                                                 data-modal-step-status="{{ $step->status === 'flagged' ? 'Rejected' : 'Approved' }}"
                                                 data-modal-clearance-status="{{ ucwords(str_replace('_', ' ', $step->clearance->status)) }}"
                                                 data-modal-last-processed="{{ optional($step->signed_at)->format('M d, Y h:i A') ?? '-' }}"
@@ -272,8 +292,9 @@
                                             </button>
 
                                             <a
-                                                href="{{ route('office.students.show', $student) }}"
+                                                href="{{ $student ? route('office.students.show', $student) : '#' }}"
                                                 class="button profile-link"
+                                                aria-disabled="{{ $student ? 'false' : 'true' }}"
                                             >
                                                 View Profile
                                             </a>
@@ -283,7 +304,7 @@
                                                     type="button"
                                                     class="button ghost undo-trigger"
                                                     data-step-id="{{ $step->id }}"
-                                                    data-student-name="{{ $student->displayName() }}"
+                                                    data-student-name="{{ $studentName }}"
                                                     data-step-action="{{ route('office.steps.process', $step) }}"
                                                 >
                                                     Undo Approval
@@ -293,7 +314,7 @@
                                                     type="button"
                                                     class="button ghost undo-flag-trigger"
                                                     data-step-id="{{ $step->id }}"
-                                                    data-student-name="{{ $student->displayName() }}"
+                                                    data-student-name="{{ $studentName }}"
                                                     data-step-action="{{ route('office.steps.process', $step) }}"
                                                 >
                                                     Undo Rejection
@@ -674,12 +695,17 @@
             font-size: 1.08rem;
             margin-bottom: 4px;
             color: var(--navy-deep);
+            overflow-wrap: anywhere;
         }
 
         .office-student-identity {
             display: flex;
             align-items: center;
             gap: 12px;
+            min-width: 0;
+        }
+
+        .office-student-identity > div:last-child {
             min-width: 0;
         }
 
@@ -729,6 +755,7 @@
 
         .record-meta p {
             margin: 0;
+            overflow-wrap: anywhere;
         }
 
         .button.ghost,
@@ -756,6 +783,11 @@
         .profile-link {
             background: #edf4ff;
             border-color: rgba(22, 56, 95, 0.18);
+        }
+
+        .profile-link[aria-disabled="true"] {
+            pointer-events: none;
+            opacity: 0.55;
         }
 
         .approve-trigger {

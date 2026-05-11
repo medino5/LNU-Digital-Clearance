@@ -455,7 +455,8 @@ class AdminManagementTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.analytics.index'))
             ->assertOk()
-            ->assertSee('Office Signing Performance')
+            ->assertSee('Analytics Dashboard')
+            ->assertSee('Requests by Signer / Office')
             ->assertSee('Program Flow');
     }
 

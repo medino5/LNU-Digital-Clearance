@@ -1,33 +1,62 @@
 @extends('layouts.portal', [
     'title' => 'Analytics',
-    'subtitle' => 'Review clearance performance and identify operational bottlenecks.',
+    'subtitle' => 'Review clearance activity, signing speed, and operational bottlenecks.',
 ])
 
 @section('page')
-    <div class="admin-page management-page analytics-page">
+    @php
+        $timelineMax = max(1, (int) ($requestsOverTime->max('requests') ?? 0));
+        $officeMax = max(1, (int) ($officePerformance->max('total_steps') ?? 0));
+        $programMax = max(1, (int) ($programPerformance->max('total_count') ?? 0));
+        $statusItems = collect($statusDistribution);
+        $completedPercent = (float) ($statusItems->firstWhere('label', 'Completed')['percent'] ?? 0);
+        $pendingPercent = (float) ($statusItems->firstWhere('label', 'Pending')['percent'] ?? 0);
+        $flaggedPercent = (float) ($statusItems->firstWhere('label', 'Flagged')['percent'] ?? 0);
+        $donutGradient = $totals['requests'] > 0
+            ? 'conic-gradient(#25b86b 0 ' . $completedPercent . '%, #f59f32 ' . $completedPercent . '% ' . ($completedPercent + $pendingPercent) . '%, #ef4444 ' . ($completedPercent + $pendingPercent) . '% 100%)'
+            : 'conic-gradient(#e5e7eb 0 100%)';
+    @endphp
+
+    <div class="admin-page analytics-dashboard-page">
         @include('admin.partials.page-feedback')
 
-        <section class="admin-page-header management-header">
+        <section class="analytics-hero">
             <div>
-                <h1>Analytics</h1>
+                <span class="analytics-kicker">Performance</span>
+                <h1>Analytics Dashboard</h1>
+                <p>{{ $scopeLabel }}</p>
             </div>
 
-            <a
-                href="{{ route('admin.analytics.export', request()->query()) }}"
-                class="management-primary-action"
-            >
-                Download Analytics Report
-            </a>
-        </section>
+            <form method="GET" action="{{ route('admin.analytics.index') }}" class="analytics-scope-form" data-analytics-filter-form>
+                <label>
+                    Scope
+                    <select name="scope" data-analytics-scope>
+                        @foreach($scopeOptions as $value => $label)
+                            <option value="{{ $value }}" @selected($selectedScope === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </label>
 
-        <section class="admin-section-card management-card">
-            <div class="management-card-header">
-                <div>
-                    <div class="eyebrow">Report Filters</div>
-                </div>
-            </div>
+                <label>
+                    School Year
+                    <select name="academic_year">
+                        @foreach($academicYears as $academicYear)
+                            <option value="{{ $academicYear }}" @selected($selectedAcademicYear === $academicYear)>
+                                {{ $academicYear }}
+                            </option>
+                        @endforeach
+                    </select>
+                </label>
 
-            <form method="GET" action="{{ route('admin.analytics.index') }}" class="analytics-filter-grid management-filter-grid">
+                <label data-semester-field>
+                    Semester
+                    <select name="semester_term" data-semester-select>
+                        @foreach($semesterTerms as $value => $label)
+                            <option value="{{ $value }}" @selected($selectedSemesterTerm === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </label>
+
                 <label>
                     Program
                     <select name="program_code">
@@ -40,218 +69,844 @@
                     </select>
                 </label>
 
-                <label>
-                    Academic Year
-                    <select name="academic_year">
-                        <option value="">All academic years</option>
-                        @foreach($academicYears as $academicYear)
-                            <option value="{{ $academicYear }}" @selected($selectedAcademicYear === $academicYear)>
-                                {{ $academicYear }}
-                            </option>
-                        @endforeach
-                    </select>
-                </label>
-
-                <label>
-                    Semester
-                    <select name="semester_id">
-                        <option value="">All semesters</option>
-                        @foreach($semesters as $semester)
-                            <option value="{{ $semester->id }}" @selected((int) $selectedSemesterId === (int) $semester->id)>
-                                {{ $semester->label }}
-                            </option>
-                        @endforeach
-                    </select>
-                </label>
-
-                <button type="submit" class="button">Apply Filters</button>
-                <a href="{{ route('admin.analytics.index') }}" class="button secondary management-secondary-action">Reset</a>
+                <button type="submit">Apply</button>
+                <a href="{{ route('admin.analytics.export', request()->query()) }}">Download Analytics Report</a>
             </form>
         </section>
 
-        <section class="analytics-summary-grid">
-            @foreach($summary as $label => $value)
-                <article class="analytics-metric-card">
-                    <span>{{ $label }}</span>
-                    <strong>{{ $value }}</strong>
+        <section class="analytics-metric-grid">
+            @foreach($summary as $metric)
+                <article class="analytics-metric analytics-tone-{{ $metric['tone'] }}">
+                    <div class="analytics-metric-icon">{{ strtoupper(substr($metric['label'], 0, 1)) }}</div>
+                    <div>
+                        <span>{{ $metric['label'] }}</span>
+                        <strong>{{ $metric['value'] }}</strong>
+                        <small>{{ $metric['detail'] }}</small>
+                    </div>
                 </article>
             @endforeach
         </section>
 
-        <section class="analytics-grid">
-            <article class="admin-section-card management-card">
-                <div class="management-card-header">
-                    <div>
-                        <div class="eyebrow">Office Signing Performance</div>
-                        <h2>Office signing time</h2>
-                    </div>
+        <section class="analytics-main-grid">
+            <article class="analytics-panel analytics-wide-panel">
+                <div class="analytics-panel-heading">
+                    <h2>Clearance Requests Over Time</h2>
+                    <span>{{ $scopeLabel }}</span>
                 </div>
 
-                @if($officePerformance->isEmpty())
-                    <div class="empty-state">No approved office steps found for the selected filters.</div>
+                @if($requestsOverTime->isEmpty())
+                    <div class="analytics-empty">No clearance requests found for this filter.</div>
                 @else
-                    <div class="management-table-wrap">
-                        <table class="management-table analytics-table">
-                            <thead>
-                                <tr>
-                                    <th>Office</th>
-                                    <th>Type</th>
-                                    <th>Signed Steps</th>
-                                    <th>Average</th>
-                                    <th>Longest</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($officePerformance as $office)
-                                    <tr>
-                                        <td>
-                                            <div class="table-main-text">{{ $office['office_label'] }}</div>
-                                        </td>
-                                        <td>{{ $office['office_type'] }}</td>
-                                        <td>{{ number_format($office['signed_steps']) }}</td>
-                                        <td><strong>{{ $office['avg_signing_time_label'] }}</strong></td>
-                                        <td>{{ $office['max_signing_time_label'] }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                    <div class="analytics-time-chart">
+                        @foreach($requestsOverTime as $point)
+                            @php
+                                $requestHeight = max(8, ($point['requests'] / $timelineMax) * 100);
+                                $completedHeight = max(6, ($point['completed'] / $timelineMax) * 100);
+                            @endphp
+                            <div class="analytics-time-column">
+                                <div class="analytics-bar-stack">
+                                    <span class="analytics-bar analytics-bar-requests" style="height: {{ $requestHeight }}%"></span>
+                                    <span class="analytics-bar analytics-bar-completed" style="height: {{ $completedHeight }}%"></span>
+                                </div>
+                                <strong>{{ number_format($point['requests']) }}</strong>
+                                <small>{{ $point['label'] }}</small>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="analytics-legend">
+                        <span><i class="legend-blue"></i>Requests</span>
+                        <span><i class="legend-green"></i>Completed</span>
                     </div>
                 @endif
             </article>
 
-            <article class="admin-section-card management-card">
-                <div class="management-card-header">
-                    <div>
-                        <div class="eyebrow">Program Flow</div>
-                        <h2>Student wait time by program</h2>
+            <article class="analytics-panel">
+                <div class="analytics-panel-heading">
+                    <h2>Clearance Status Distribution</h2>
+                </div>
+
+                <div class="analytics-donut-wrap">
+                    <div class="analytics-donut" style="--donut: {{ $donutGradient }}">
+                        <strong>{{ number_format($totals['requests']) }}</strong>
+                        <span>Total</span>
                     </div>
+
+                    <div class="analytics-status-list">
+                        @foreach($statusDistribution as $status)
+                            <div>
+                                <span style="--status-color: {{ $status['color'] }}"></span>
+                                <p>{{ $status['label'] }}</p>
+                                <strong>{{ $status['percent'] }}% ({{ number_format($status['count']) }})</strong>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <section class="analytics-secondary-grid">
+            <article class="analytics-panel">
+                <div class="analytics-panel-heading">
+                    <h2>Requests by Signer / Office</h2>
+                </div>
+
+                @if($officePerformance->isEmpty())
+                    <div class="analytics-empty">No office steps found for this filter.</div>
+                @else
+                    <div class="analytics-bar-list">
+                        @foreach($officePerformance as $office)
+                            <div class="analytics-horizontal-row">
+                                <div>
+                                    <strong>{{ $office['office_label'] }}</strong>
+                                    <span>{{ $office['office_type'] }}</span>
+                                </div>
+                                <div class="analytics-horizontal-track">
+                                    <span style="width: {{ max(3, ($office['total_steps'] / $officeMax) * 100) }}%"></span>
+                                </div>
+                                <small>{{ number_format($office['total_steps']) }}</small>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </article>
+
+            <article class="analytics-panel">
+                <div class="analytics-panel-heading">
+                    <h2>Average Clearance Time</h2>
+                </div>
+
+                <div class="analytics-average-card">
+                    <div class="analytics-clock">T</div>
+                    <strong>{{ $totals['avg_completion_label'] }}</strong>
+                    <span>Based on completed clearances in the selected scope.</span>
+                </div>
+
+                @if($requestsOverTime->isNotEmpty())
+                    <div class="analytics-mini-trend">
+                        @foreach($requestsOverTime as $point)
+                            <div>
+                                <span>{{ $point['label'] }}</span>
+                                <strong>{{ $point['avg_time_label'] }}</strong>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </article>
+
+            <article class="analytics-panel">
+                <div class="analytics-panel-heading">
+                    <h2>Clearance Completion Rate</h2>
+                </div>
+
+                <div class="analytics-rate">
+                    <div class="analytics-rate-gauge" style="--rate: {{ min(100, max(0, $totals['completion_rate'])) }}%">
+                        <strong>{{ number_format($totals['completion_rate'], 1) }}%</strong>
+                    </div>
+                    <span>{{ number_format($totals['completed']) }} of {{ number_format($totals['requests']) }} requests completed.</span>
+                </div>
+            </article>
+        </section>
+
+        <section class="analytics-bottom-grid">
+            <article class="analytics-panel">
+                <div class="analytics-panel-heading">
+                    <h2>Bottleneck Signer Analytics</h2>
+                </div>
+
+                @if($bottleneckSigners->isEmpty())
+                    <div class="analytics-empty">No bottleneck data found for this filter.</div>
+                @else
+                    <div class="analytics-bottleneck-list">
+                        @foreach($bottleneckSigners as $index => $office)
+                            <div>
+                                <span>{{ $index + 1 }}</span>
+                                <div>
+                                    <strong>{{ $office['office_label'] }}</strong>
+                                    <small>{{ $office['pending_steps'] }} pending, {{ $office['flagged_steps'] }} flagged, avg {{ $office['avg_signing_time_label'] }}</small>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </article>
+
+            <article class="analytics-panel">
+                <div class="analytics-panel-heading">
+                    <h2>Program Flow</h2>
                 </div>
 
                 @if($programPerformance->isEmpty())
-                    <div class="empty-state">No clearance data found for the selected filters.</div>
+                    <div class="analytics-empty">No program activity found for this filter.</div>
                 @else
-                    <div class="program-flow-list">
+                    <div class="analytics-program-list">
                         @foreach($programPerformance as $program)
-                            <article class="program-flow-card">
+                            <div>
                                 <div>
                                     <strong>{{ $program['program_code'] }}</strong>
                                     <span>{{ $program['program_name'] }}</span>
                                 </div>
-                                <div class="program-flow-stats">
-                                    <span>Completed: {{ number_format($program['completed_count']) }}</span>
-                                    <span>Active: {{ number_format($program['in_progress_count']) }}</span>
-                                    <span>Flagged: {{ number_format($program['flagged_count']) }}</span>
-                                    <span>Avg: {{ $program['avg_completion_time_label'] }}</span>
+                                <div class="analytics-program-track">
+                                    <span style="width: {{ max(3, ($program['total_count'] / $programMax) * 100) }}%"></span>
                                 </div>
-                            </article>
+                                <small>{{ number_format($program['total_count']) }} requests</small>
+                            </div>
                         @endforeach
                     </div>
                 @endif
             </article>
         </section>
-    </div>
 
-    @include('admin.partials.management-page-styles')
+        <section class="analytics-panel analytics-insights-panel">
+            <div class="analytics-panel-heading">
+                <h2>Recent Insights</h2>
+            </div>
+
+            <div class="analytics-insight-grid">
+                @foreach($recentInsights as $insight)
+                    <article class="analytics-insight analytics-tone-{{ $insight['tone'] }}">
+                        <strong>{{ $insight['title'] }}</strong>
+                        <span>{{ $insight['body'] }}</span>
+                    </article>
+                @endforeach
+            </div>
+        </section>
+    </div>
 
     @push('styles')
     <style>
-        .analytics-filter-grid {
-            grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) minmax(180px, 1fr) auto auto;
-        }
-
-        .analytics-summary-grid {
+        .analytics-dashboard-page {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 14px;
+            gap: 18px;
         }
 
-        .analytics-metric-card {
+        .analytics-hero,
+        .analytics-panel,
+        .analytics-metric {
+            border: 1px solid rgba(23, 60, 102, 0.1);
+            background: rgba(255, 255, 255, 0.94);
+            box-shadow: 0 18px 42px rgba(23, 60, 102, 0.07);
+        }
+
+        .analytics-hero {
             display: grid;
-            gap: 10px;
-            padding: 18px;
-            border-radius: 18px;
-            background: linear-gradient(135deg, #ffffff 0%, #fffaf0 100%);
-            border: 1px solid #e4dacd;
-            box-shadow: 0 10px 24px rgba(24, 58, 99, 0.05);
+            grid-template-columns: minmax(260px, 1fr) auto;
+            gap: 20px;
+            align-items: start;
+            padding: 22px;
+            border-radius: 24px;
+            background:
+                radial-gradient(circle at top left, rgba(241, 190, 72, 0.2), transparent 32%),
+                linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
         }
 
-        .analytics-metric-card span {
+        .analytics-kicker {
+            color: #c9921f;
+            font-size: 0.74rem;
+            font-weight: 900;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+        }
+
+        .analytics-hero h1 {
+            margin: 6px 0 4px;
+            color: #0b1f44;
+            font-size: clamp(1.7rem, 3vw, 2.35rem);
+            line-height: 1;
+        }
+
+        .analytics-hero p {
+            margin: 0;
             color: #667085;
-            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .analytics-scope-form {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(130px, 1fr)) auto auto;
+            gap: 10px;
+            align-items: end;
+            min-width: min(100%, 780px);
+        }
+
+        .analytics-scope-form label {
+            display: grid;
+            gap: 5px;
+            color: #475467;
+            font-size: 0.72rem;
             font-weight: 900;
             letter-spacing: 0.08em;
             text-transform: uppercase;
         }
 
-        .analytics-metric-card strong {
+        .analytics-scope-form select,
+        .analytics-scope-form button,
+        .analytics-scope-form a {
+            min-height: 42px;
+            border-radius: 14px;
+            font: inherit;
+            font-weight: 850;
+        }
+
+        .analytics-scope-form select {
+            width: 100%;
+            border: 1px solid #d6deeb;
+            background: #fff;
+            color: #102a51;
+            padding: 0 12px;
+        }
+
+        .analytics-scope-form button,
+        .analytics-scope-form a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 16px;
+            border: 0;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .analytics-scope-form button {
+            color: #fff;
+            background: #173c66;
+        }
+
+        .analytics-scope-form a {
             color: #173c66;
-            font-size: clamp(1.2rem, 2vw, 1.7rem);
-            line-height: 1.15;
+            background: #f6ecd1;
         }
 
-        .analytics-grid {
+        .analytics-metric-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
-            gap: 18px;
-            align-items: start;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
         }
 
-        .analytics-table {
-            min-width: 760px;
-        }
-
-        .program-flow-list {
+        .analytics-metric {
             display: grid;
-            gap: 12px;
+            grid-template-columns: auto 1fr;
+            gap: 14px;
+            align-items: center;
+            padding: 18px;
+            border-radius: 22px;
         }
 
-        .program-flow-card {
+        .analytics-metric-icon {
+            width: 56px;
+            height: 56px;
             display: grid;
-            gap: 12px;
-            padding: 15px;
-            border-radius: 16px;
-            background: #ffffff;
-            border: 1px solid #e4dacd;
+            place-items: center;
+            border-radius: 18px;
+            font-size: 1.2rem;
+            font-weight: 950;
         }
 
-        .program-flow-card strong {
-            color: #173c66;
-            font-size: 1.05rem;
-        }
-
-        .program-flow-card span {
+        .analytics-metric span,
+        .analytics-metric small {
+            display: block;
             color: #667085;
+        }
+
+        .analytics-metric span {
+            font-weight: 850;
+        }
+
+        .analytics-metric strong {
+            display: block;
+            margin: 5px 0;
+            color: #0b1f44;
+            font-size: clamp(1.6rem, 3vw, 2.25rem);
+            line-height: 1;
+        }
+
+        .analytics-metric small {
+            font-weight: 700;
             line-height: 1.35;
         }
 
-        .program-flow-card > div:first-child {
+        .analytics-tone-blue .analytics-metric-icon,
+        .analytics-insight.analytics-tone-blue {
+            background: #e8f1ff;
+            color: #0f62fe;
+        }
+
+        .analytics-tone-green .analytics-metric-icon,
+        .analytics-insight.analytics-tone-green {
+            background: #e7f8ef;
+            color: #108548;
+        }
+
+        .analytics-tone-purple .analytics-metric-icon,
+        .analytics-insight.analytics-tone-purple {
+            background: #efe8ff;
+            color: #6f42c1;
+        }
+
+        .analytics-tone-orange .analytics-metric-icon,
+        .analytics-insight.analytics-tone-orange {
+            background: #fff3df;
+            color: #c56b00;
+        }
+
+        .analytics-main-grid,
+        .analytics-secondary-grid,
+        .analytics-bottom-grid {
             display: grid;
-            gap: 3px;
+            gap: 16px;
+            align-items: stretch;
         }
 
-        .program-flow-stats {
+        .analytics-main-grid {
+            grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.65fr);
+        }
+
+        .analytics-secondary-grid {
+            grid-template-columns: minmax(0, 1fr) minmax(300px, 0.75fr) minmax(300px, 0.75fr);
+        }
+
+        .analytics-bottom-grid {
+            grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.2fr);
+        }
+
+        .analytics-panel {
+            padding: 20px;
+            border-radius: 24px;
+            overflow: hidden;
+        }
+
+        .analytics-panel-heading {
             display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
+            justify-content: space-between;
+            gap: 14px;
+            align-items: start;
+            margin-bottom: 18px;
         }
 
-        .program-flow-stats span {
-            display: inline-flex;
-            padding: 7px 10px;
-            border-radius: 999px;
-            background: #f8f4ea;
-            color: #173c66;
-            font-size: 0.78rem;
+        .analytics-panel-heading h2 {
+            margin: 0;
+            color: #0b1f44;
+            font-size: 1.05rem;
+        }
+
+        .analytics-panel-heading span {
+            color: #667085;
+            font-size: 0.82rem;
+            font-weight: 750;
+        }
+
+        .analytics-time-chart {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+            gap: 16px;
+            align-items: end;
+            min-height: 260px;
+            padding: 12px 4px 0;
+            border-bottom: 1px solid #e8eef7;
+        }
+
+        .analytics-time-column {
+            display: grid;
+            gap: 8px;
+            justify-items: center;
+            min-height: 240px;
+        }
+
+        .analytics-bar-stack {
+            display: flex;
+            gap: 5px;
+            align-items: end;
+            justify-content: center;
+            height: 170px;
+            width: 100%;
+        }
+
+        .analytics-bar {
+            width: 18px;
+            min-height: 8px;
+            border-radius: 999px 999px 6px 6px;
+        }
+
+        .analytics-bar-requests {
+            background: linear-gradient(180deg, #0f62fe, #8ab7ff);
+        }
+
+        .analytics-bar-completed {
+            background: linear-gradient(180deg, #25b86b, #98e8bd);
+        }
+
+        .analytics-time-column strong {
+            color: #0f62fe;
+            font-size: 0.9rem;
+        }
+
+        .analytics-time-column small {
+            color: #667085;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .analytics-legend {
+            display: flex;
+            gap: 18px;
+            margin-top: 15px;
+            color: #475467;
             font-weight: 800;
         }
 
-        @media (max-width: 1180px) {
-            .analytics-grid,
-            .analytics-summary-grid,
-            .analytics-filter-grid {
+        .analytics-legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .analytics-legend i,
+        .analytics-status-list span {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+        }
+
+        .legend-blue {
+            background: #0f62fe;
+        }
+
+        .legend-green {
+            background: #25b86b;
+        }
+
+        .analytics-donut-wrap {
+            display: grid;
+            grid-template-columns: 190px 1fr;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .analytics-donut {
+            width: 190px;
+            aspect-ratio: 1;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: var(--donut);
+            position: relative;
+        }
+
+        .analytics-donut::after {
+            content: "";
+            position: absolute;
+            inset: 44px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: inset 0 0 0 1px #e7edf5;
+        }
+
+        .analytics-donut strong,
+        .analytics-donut span {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .analytics-donut strong {
+            align-self: end;
+            color: #0b1f44;
+            font-size: 1.55rem;
+        }
+
+        .analytics-donut span {
+            align-self: start;
+            color: #667085;
+            font-weight: 800;
+        }
+
+        .analytics-status-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .analytics-status-list div {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 4px 10px;
+            align-items: center;
+        }
+
+        .analytics-status-list span {
+            grid-row: span 2;
+            background: var(--status-color);
+        }
+
+        .analytics-status-list p,
+        .analytics-status-list strong {
+            margin: 0;
+        }
+
+        .analytics-status-list p {
+            color: #0b1f44;
+            font-weight: 850;
+        }
+
+        .analytics-status-list strong {
+            color: #667085;
+            font-size: 0.85rem;
+        }
+
+        .analytics-bar-list,
+        .analytics-program-list,
+        .analytics-bottleneck-list,
+        .analytics-mini-trend,
+        .analytics-insight-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .analytics-horizontal-row {
+            display: grid;
+            grid-template-columns: minmax(130px, 0.75fr) minmax(120px, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .analytics-horizontal-row strong,
+        .analytics-program-list strong {
+            display: block;
+            color: #0b1f44;
+            font-size: 0.92rem;
+        }
+
+        .analytics-horizontal-row span,
+        .analytics-program-list span,
+        .analytics-horizontal-row small,
+        .analytics-program-list small {
+            color: #667085;
+            font-size: 0.8rem;
+            font-weight: 750;
+        }
+
+        .analytics-horizontal-track,
+        .analytics-program-track {
+            height: 12px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: #eef3f9;
+        }
+
+        .analytics-horizontal-track span,
+        .analytics-program-track span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #0f62fe, #25b86b);
+        }
+
+        .analytics-average-card {
+            display: grid;
+            gap: 7px;
+            justify-items: start;
+            padding: 14px;
+            border-radius: 18px;
+            background: #f6f9fe;
+            color: #0b1f44;
+        }
+
+        .analytics-clock {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            border-radius: 14px;
+            background: #e6f6ff;
+            color: #0172ce;
+            font-weight: 950;
+        }
+
+        .analytics-average-card strong {
+            font-size: 1.9rem;
+            line-height: 1;
+        }
+
+        .analytics-average-card span {
+            color: #667085;
+            font-weight: 750;
+            line-height: 1.35;
+        }
+
+        .analytics-mini-trend {
+            margin-top: 12px;
+        }
+
+        .analytics-mini-trend div {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 9px 0;
+            border-bottom: 1px solid #edf2f7;
+            color: #667085;
+            font-weight: 750;
+        }
+
+        .analytics-mini-trend strong {
+            color: #0b1f44;
+        }
+
+        .analytics-rate {
+            display: grid;
+            place-items: center;
+            gap: 15px;
+            min-height: 230px;
+            text-align: center;
+        }
+
+        .analytics-rate-gauge {
+            width: 190px;
+            height: 98px;
+            display: grid;
+            place-items: end center;
+            padding-bottom: 12px;
+            border-radius: 190px 190px 0 0;
+            background:
+                radial-gradient(circle at 50% 100%, #fff 0 54%, transparent 55%),
+                conic-gradient(from 270deg at 50% 100%, #25b86b 0 var(--rate), #e7edf5 var(--rate) 100%);
+        }
+
+        .analytics-rate-gauge strong {
+            color: #0b1f44;
+            font-size: 1.8rem;
+        }
+
+        .analytics-rate > span {
+            color: #667085;
+            font-weight: 800;
+        }
+
+        .analytics-bottleneck-list div,
+        .analytics-program-list > div,
+        .analytics-insight {
+            border: 1px solid #edf2f7;
+            background: #fbfdff;
+        }
+
+        .analytics-bottleneck-list > div {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            border-radius: 16px;
+        }
+
+        .analytics-bottleneck-list > div > span {
+            width: 30px;
+            height: 30px;
+            display: grid;
+            place-items: center;
+            border-radius: 999px;
+            background: #fff3df;
+            color: #c56b00;
+            font-weight: 950;
+        }
+
+        .analytics-bottleneck-list strong {
+            display: block;
+            color: #0b1f44;
+        }
+
+        .analytics-bottleneck-list small {
+            color: #667085;
+            font-weight: 750;
+        }
+
+        .analytics-program-list > div {
+            display: grid;
+            grid-template-columns: minmax(160px, 1fr) minmax(150px, 1.2fr) auto;
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            border-radius: 16px;
+        }
+
+        .analytics-insight-grid {
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+
+        .analytics-insight {
+            padding: 14px;
+            border-radius: 18px;
+        }
+
+        .analytics-insight strong {
+            display: block;
+            color: #0b1f44;
+            margin-bottom: 6px;
+        }
+
+        .analytics-insight span {
+            color: #475467;
+            font-weight: 750;
+            line-height: 1.4;
+        }
+
+        .analytics-empty {
+            padding: 28px;
+            border: 1px dashed #d6deeb;
+            border-radius: 18px;
+            color: #667085;
+            background: #fbfdff;
+            text-align: center;
+            font-weight: 800;
+        }
+
+        @media (max-width: 1320px) {
+            .analytics-hero,
+            .analytics-main-grid,
+            .analytics-secondary-grid,
+            .analytics-bottom-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .analytics-scope-form,
+            .analytics-insight-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 900px) {
+            .analytics-metric-grid,
+            .analytics-donut-wrap,
+            .analytics-program-list > div,
+            .analytics-horizontal-row,
+            .analytics-scope-form,
+            .analytics-insight-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .analytics-donut {
+                margin: 0 auto;
             }
         }
     </style>
+    @endpush
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const scopeSelect = document.querySelector('[data-analytics-scope]');
+            const semesterField = document.querySelector('[data-semester-field]');
+            const semesterSelect = document.querySelector('[data-semester-select]');
+
+            if (!scopeSelect || !semesterField || !semesterSelect) {
+                return;
+            }
+
+            const syncSemester = () => {
+                const showSemester = scopeSelect.value === 'school_year_semester';
+                semesterField.hidden = !showSemester;
+                semesterSelect.disabled = !showSemester;
+            };
+
+            scopeSelect.addEventListener('change', syncSemester);
+            syncSemester();
+        });
+    </script>
     @endpush
 @endsection

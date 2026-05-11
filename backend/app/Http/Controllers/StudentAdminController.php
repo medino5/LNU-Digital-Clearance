@@ -14,6 +14,14 @@ class StudentAdminController extends Controller
 {
     public function index(Request $request)
     {
+        $request->validate([
+            'student_search' => ['nullable', 'string', 'max:80'],
+            'student_program' => ['nullable', 'integer', 'exists:programs,id'],
+            'student_year_level' => ['nullable', 'integer', 'between:1,4'],
+        ], [
+            'student_search.max' => 'Search text must be 80 characters or fewer.',
+        ]);
+
         $studentSearch = trim((string) $request->query('student_search', ''));
         $studentProgramId = $request->query('student_program');
         $studentYearLevel = $request->query('student_year_level');

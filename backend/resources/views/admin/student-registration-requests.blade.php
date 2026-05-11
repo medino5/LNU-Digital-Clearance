@@ -39,6 +39,7 @@
                         name="search"
                         value="{{ $search }}"
                         placeholder="Name, ID, email, or program"
+                        maxlength="100"
                     >
                 </label>
 
