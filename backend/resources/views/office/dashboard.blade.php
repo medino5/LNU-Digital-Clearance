@@ -265,87 +265,77 @@
                         <a href="{{ route('office.dashboard', ['tab' => 'archive']) }}" class="button ghost">Reset</a>
                     </form>
 
+                    @if($archiveLoadError)
+                        <div class="callout error">{{ $archiveLoadError }}</div>
+                    @endif
+
                     <div class="list office-list">
                         @forelse($archiveSteps as $step)
-                            @php
-                                $clearance = $step->clearance;
-                                $student = $clearance?->student;
-                                $studentName = $student?->displayName() ?: 'Student record unavailable';
-                                $studentId = $student?->student_id_number ?: 'No ID';
-                                $programCode = $student?->program?->code ?: 'No program';
-                                $yearLevel = $student?->yearLevelLabel() ?: 'No year level';
-                                $studentMeta = $studentId . ' | ' . $programCode . ' | ' . $yearLevel;
-                                $studentPhoto = $student?->user?->profilePhotoUrl();
-                                $clearanceStatus = $clearance?->status
-                                    ? ucwords(str_replace('_', ' ', $clearance->status))
-                                    : 'Unavailable';
-                            @endphp
-
                             <div class="record office-record processed-record">
                                 <div class="record-top">
                                     <div class="office-student-identity">
                                         <div class="office-student-avatar">
-                                            @if($studentPhoto)
-                                                <img src="{{ $studentPhoto }}" alt="{{ $studentName }} profile picture">
+                                            @if($step['student_photo'])
+                                                <img src="{{ $step['student_photo'] }}" alt="{{ $step['student_name'] }} profile picture">
                                             @else
-                                                <span>{{ strtoupper(substr($studentName, 0, 1)) }}</span>
+                                                <span>{{ $step['student_initial'] }}</span>
                                             @endif
                                         </div>
                                         <div>
-                                            <strong class="record-name">{{ $studentName }}</strong>
+                                            <strong class="record-name">{{ $step['student_name'] }}</strong>
                                             <div class="mini">
-                                                {{ $studentMeta }}
+                                                {{ $step['student_meta'] }}
                                             </div>
                                         </div>
                                     </div>
 
                                     <div class="record-actions">
-                                        <span class="badge {{ $step->status }}">
-                                            {{ $step->status === 'flagged' ? 'Rejected' : 'Approved' }}
+                                        <span class="badge {{ $step['status'] }}">
+                                            {{ $step['status_label'] }}
                                         </span>
 
                                         <div class="office-action-buttons">
                                             <button
                                                 type="button"
                                                 class="button ghost detail-trigger"
-                                                data-modal-step-id="{{ $step->id }}"
-                                                data-modal-student-name="{{ $studentName }}"
-                                                data-modal-student-meta="{{ $studentMeta }}"
-                                                data-modal-step-status="{{ $step->status === 'flagged' ? 'Rejected' : 'Approved' }}"
-                                                data-modal-clearance-status="{{ $clearanceStatus }}"
-                                                data-modal-last-processed="{{ optional($step->signed_at)->format('M d, Y h:i A') ?? '-' }}"
-                                                data-modal-designation="{{ $step->office_label ?: '-' }}"
-                                                data-modal-note-label="{{ $step->status === 'flagged' ? 'Reject Reason' : 'Processed Note' }}"
-                                                data-modal-previous-note="{{ $step->remarks ?: '-' }}"
+                                                data-modal-step-id="{{ $step['id'] }}"
+                                                data-modal-student-name="{{ $step['student_name'] }}"
+                                                data-modal-student-meta="{{ $step['student_meta'] }}"
+                                                data-modal-step-status="{{ $step['status_label'] }}"
+                                                data-modal-clearance-status="{{ $step['clearance_status'] }}"
+                                                data-modal-last-processed="{{ $step['last_processed'] }}"
+                                                data-modal-designation="{{ $step['office_label'] }}"
+                                                data-modal-note-label="{{ $step['note_label'] }}"
+                                                data-modal-previous-note="{{ $step['remarks'] }}"
                                             >
                                                 View
                                             </button>
 
                                             <a
-                                                href="{{ $student ? route('office.students.show', $student) : '#' }}"
+                                                href="{{ $step['student_profile_url'] }}"
                                                 class="button profile-link"
-                                                aria-disabled="{{ $student ? 'false' : 'true' }}"
+                                                aria-disabled="{{ $step['student_profile_disabled'] ? 'true' : 'false' }}"
                                             >
                                                 View Profile
                                             </a>
 
-                                            @if($step->status === 'approved')
+                                            @if($step['status'] === 'approved')
                                                 <button
                                                     type="button"
                                                     class="button ghost undo-trigger"
-                                                    data-step-id="{{ $step->id }}"
-                                                    data-student-name="{{ $studentName }}"
-                                                    data-step-action="{{ route('office.steps.process', $step) }}"
+                                                    data-step-id="{{ $step['id'] }}"
+                                                    data-student-name="{{ $step['student_name'] }}"
+                                                    data-step-action="{{ $step['process_url'] }}"
                                                 >
                                                     Undo Approval
                                                 </button>
-                                            @elseif($step->status === 'flagged')
+                                            @elseif($step['status'] === 'flagged')
                                                 <button
                                                     type="button"
                                                     class="button ghost undo-flag-trigger"
-                                                    data-step-id="{{ $step->id }}"
-                                                    data-student-name="{{ $studentName }}"
-                                                    data-step-action="{{ route('office.steps.process', $step) }}"
+                                                    data-step-id="{{ $step['id'] }}"
+                                                    data-student-name="{{ $step['student_name'] }}"
+                                                    data-step-action="{{ $step['process_url'] }}"
                                                 >
                                                     Undo Rejection
                                                 </button>
@@ -357,22 +347,22 @@
                                 <div class="record-meta">
                                     <p class="mini">
                                         <strong>Designation:</strong>
-                                        {{ $step->office_label ?: '-' }}
+                                        {{ $step['office_label'] }}
                                     </p>
 
                                     <p class="mini">
                                         <strong>Processed:</strong>
-                                        {{ optional($step->signed_at)->format('M d, Y h:i A') ?? 'Pending timestamp' }}
+                                        {{ $step['processed_label'] }}
                                     </p>
 
                                     <p class="mini">
-                                        <strong>{{ $step->status === 'flagged' ? 'Reject Reason' : 'Remarks' }}:</strong>
-                                        {{ $step->remarks ?: '-' }}
+                                        <strong>{{ $step['meta_note_label'] }}:</strong>
+                                        {{ $step['remarks'] }}
                                     </p>
 
                                     <p class="mini">
                                         <strong>Student clearance status:</strong>
-                                        {{ $clearanceStatus }}
+                                        {{ $step['clearance_status'] }}
                                     </p>
                                 </div>
                             </div>

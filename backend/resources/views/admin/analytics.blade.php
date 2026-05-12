@@ -277,6 +277,7 @@
         .analytics-dashboard-page {
             display: grid;
             gap: 18px;
+            min-width: 0;
         }
 
         .analytics-hero,
@@ -285,11 +286,12 @@
             border: 1px solid rgba(23, 60, 102, 0.1);
             background: rgba(255, 255, 255, 0.94);
             box-shadow: 0 18px 42px rgba(23, 60, 102, 0.07);
+            min-width: 0;
         }
 
         .analytics-hero {
             display: grid;
-            grid-template-columns: minmax(260px, 1fr) auto;
+            grid-template-columns: minmax(260px, 1fr) minmax(360px, auto);
             gap: 20px;
             align-items: start;
             padding: 22px;
@@ -322,10 +324,12 @@
 
         .analytics-scope-form {
             display: grid;
-            grid-template-columns: repeat(4, minmax(130px, 1fr)) auto auto;
+            grid-template-columns: repeat(3, minmax(140px, 1fr));
             gap: 10px;
             align-items: end;
-            min-width: min(100%, 780px);
+            justify-self: end;
+            width: min(100%, 780px);
+            min-width: 0;
         }
 
         .analytics-scope-form label {
@@ -336,6 +340,7 @@
             font-weight: 900;
             letter-spacing: 0.08em;
             text-transform: uppercase;
+            min-width: 0;
         }
 
         .analytics-scope-form select,
@@ -364,6 +369,10 @@
             border: 0;
             text-decoration: none;
             cursor: pointer;
+            min-width: 0;
+            text-align: center;
+            white-space: normal;
+            line-height: 1.15;
         }
 
         .analytics-scope-form button {
@@ -454,6 +463,7 @@
             display: grid;
             gap: 16px;
             align-items: stretch;
+            min-width: 0;
         }
 
         .analytics-main-grid {
@@ -576,7 +586,7 @@
 
         .analytics-donut-wrap {
             display: grid;
-            grid-template-columns: 190px 1fr;
+            grid-template-columns: minmax(160px, 190px) minmax(0, 1fr);
             gap: 20px;
             align-items: center;
         }
@@ -662,7 +672,7 @@
 
         .analytics-horizontal-row {
             display: grid;
-            grid-template-columns: minmax(130px, 0.75fr) minmax(120px, 1fr) auto;
+            grid-template-columns: minmax(0, 0.75fr) minmax(120px, 1fr) auto;
             gap: 12px;
             align-items: center;
         }
@@ -672,6 +682,7 @@
             display: block;
             color: #0b1f44;
             font-size: 0.92rem;
+            overflow-wrap: anywhere;
         }
 
         .analytics-horizontal-row span,
@@ -681,6 +692,7 @@
             color: #667085;
             font-size: 0.8rem;
             font-weight: 750;
+            overflow-wrap: anywhere;
         }
 
         .analytics-horizontal-track,
@@ -814,15 +826,17 @@
         .analytics-bottleneck-list small {
             color: #667085;
             font-weight: 750;
+            overflow-wrap: anywhere;
         }
 
         .analytics-program-list > div {
             display: grid;
-            grid-template-columns: minmax(160px, 1fr) minmax(150px, 1.2fr) auto;
+            grid-template-columns: minmax(0, 1fr) minmax(140px, 1.2fr) auto;
             gap: 12px;
             align-items: center;
             padding: 12px;
             border-radius: 16px;
+            min-width: 0;
         }
 
         .analytics-insight-grid {

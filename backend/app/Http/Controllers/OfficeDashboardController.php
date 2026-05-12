@@ -7,6 +7,7 @@ use App\Services\ClearanceWorkflowService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use RuntimeException;
+use Throwable;
 
 class OfficeDashboardController extends Controller
 {
@@ -55,6 +56,7 @@ class OfficeDashboardController extends Controller
         $archiveSteps = collect();
         $pendingCount = 0;
         $archiveCount = 'History';
+        $archiveLoadError = null;
 
         if ($hasActiveDesignation) {
             $baseQuery = ClearanceStep::query()
@@ -77,34 +79,26 @@ class OfficeDashboardController extends Controller
                     ->simplePaginate(20, ['*'], 'pending_page')
                     ->withQueryString();
             } else {
-                $archiveNeedsJoins = $archiveSearch !== ''
-                    || in_array($archiveSort, ['student_asc', 'student_id_asc', 'program_asc'], true);
-                $archiveQuery = $this->applyArchiveFilters(
-                    $this->archiveQuery($officeDesignations->pluck('id'), $archiveNeedsJoins),
-                    $archiveSearch,
-                    $archiveStatus,
-                );
+                try {
+                    $archiveNeedsJoins = $archiveSearch !== ''
+                        || in_array($archiveSort, ['student_asc', 'student_id_asc', 'program_asc'], true);
+                    $archiveQuery = $this->applyArchiveFilters(
+                        $this->archiveQuery($officeDesignations->pluck('id'), $archiveNeedsJoins),
+                        $archiveSearch,
+                        $archiveStatus,
+                    );
 
-                $archiveSteps = $this->applyArchiveSort($archiveQuery, $archiveSort)
-                    ->simplePaginate(20, ['clearance_steps.id'], 'archive_page')
-                    ->withQueryString();
-                $archiveStepIds = $archiveSteps->getCollection()->pluck('id');
-                $archiveRecords = ClearanceStep::query()
-                    ->with([
-                        'clearance.student.user',
-                        'clearance.student.program',
-                        'officeDesignation.program',
-                    ])
-                    ->whereIn('id', $archiveStepIds)
-                    ->get()
-                    ->keyBy('id');
+                    $archiveSteps = $this->applyArchiveSort($archiveQuery, $archiveSort)
+                        ->simplePaginate(20, ['clearance_steps.id'], 'archive_page')
+                        ->withQueryString();
 
-                $archiveSteps->setCollection(
-                    $archiveStepIds
-                        ->map(fn ($id) => $archiveRecords->get($id))
-                        ->filter()
-                        ->values(),
-                );
+                    $archiveSteps = $this->hydrateArchiveRows($archiveSteps);
+                } catch (Throwable $exception) {
+                    report($exception);
+
+                    $archiveSteps = collect();
+                    $archiveLoadError = 'Archive history could not be loaded right now. Try applying a narrower search or reload the page.';
+                }
             }
         }
 
@@ -120,6 +114,7 @@ class OfficeDashboardController extends Controller
             'archiveSearch' => $archiveSearch,
             'archiveStatus' => $archiveStatus,
             'archiveSort' => $archiveSort,
+            'archiveLoadError' => $archiveLoadError,
         ]);
     }
 
@@ -279,5 +274,82 @@ class OfficeDashboardController extends Controller
                 ->orderByDesc('clearance_steps.signed_at')
                 ->orderByDesc('clearance_steps.updated_at'),
         };
+    }
+
+    private function hydrateArchiveRows($archiveSteps)
+    {
+        $archiveStepIds = $archiveSteps->getCollection()
+            ->pluck('id')
+            ->filter()
+            ->values();
+
+        if ($archiveStepIds->isEmpty()) {
+            $archiveSteps->setCollection(collect());
+
+            return $archiveSteps;
+        }
+
+        $archiveRecords = ClearanceStep::query()
+            ->with([
+                'clearance.student.user',
+                'clearance.student.program',
+                'officeDesignation.program',
+            ])
+            ->whereIn('id', $archiveStepIds)
+            ->get()
+            ->keyBy('id');
+
+        $archiveSteps->setCollection(
+            $archiveStepIds
+                ->map(fn ($id) => $archiveRecords->get($id))
+                ->filter()
+                ->map(fn (ClearanceStep $step) => $this->archiveStepRow($step))
+                ->values(),
+        );
+
+        return $archiveSteps;
+    }
+
+    private function archiveStepRow(ClearanceStep $step): array
+    {
+        $clearance = $step->clearance;
+        $student = $clearance?->student;
+        $studentName = $student?->displayName() ?: 'Student record unavailable';
+        $studentId = $student?->student_id_number ?: 'No ID';
+        $programCode = $student?->program?->code ?: 'No program';
+        $yearLevel = $student?->yearLevelLabel() ?: 'No year level';
+        $studentPhoto = $student?->user?->profilePhotoUrl();
+        $isRejected = $step->status === ClearanceStep::STATUS_FLAGGED;
+
+        return [
+            'id' => $step->id,
+            'status' => $step->status,
+            'status_label' => $isRejected ? 'Rejected' : 'Approved',
+            'student_name' => $studentName,
+            'student_initial' => $this->nameInitial($studentName),
+            'student_meta' => $studentId . ' | ' . $programCode . ' | ' . $yearLevel,
+            'student_photo' => $studentPhoto,
+            'student_profile_url' => $student ? route('office.students.show', $student) : '#',
+            'student_profile_disabled' => ! $student,
+            'clearance_status' => $clearance?->status
+                ? ucwords(str_replace('_', ' ', $clearance->status))
+                : 'Unavailable',
+            'last_processed' => $step->signed_at?->format('M d, Y h:i A') ?? '-',
+            'processed_label' => $step->signed_at?->format('M d, Y h:i A') ?? 'Pending timestamp',
+            'office_label' => $step->office_label ?: '-',
+            'note_label' => $isRejected ? 'Reject Reason' : 'Processed Note',
+            'meta_note_label' => $isRejected ? 'Reject Reason' : 'Remarks',
+            'remarks' => $step->remarks ?: '-',
+            'process_url' => route('office.steps.process', $step),
+        ];
+    }
+
+    private function nameInitial(string $name): string
+    {
+        $firstCharacter = function_exists('mb_substr')
+            ? mb_substr($name, 0, 1)
+            : substr($name, 0, 1);
+
+        return strtoupper($firstCharacter ?: '?');
     }
 }

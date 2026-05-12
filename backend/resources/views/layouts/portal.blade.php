@@ -437,8 +437,14 @@
             flex-direction: column;
             padding: 18px 14px;
             overflow-y: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
             z-index: 1000;
             box-shadow: 8px 0 24px rgba(14, 39, 66, 0.18);
+        }
+
+        .admin-sidebar::-webkit-scrollbar {
+            display: none;
         }
 
         .sidebar-header {
