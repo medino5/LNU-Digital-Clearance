@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../core/session_expired_exception.dart';
 import '../features/shell/app_shell.dart';
@@ -92,15 +93,21 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     FocusScope.of(context).unfocus();
 
+    final studentId = _studentIdController.text.trim();
+
+    if (!RegExp(r'^\d{7}$').hasMatch(studentId)) {
+      setState(() {
+        _notice = 'Student ID must be exactly 7 digits.';
+      });
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      await _authService.login(
-        _studentIdController.text,
-        _passwordController.text,
-      );
+      await _authService.login(studentId, _passwordController.text);
 
       if (!mounted) return;
 
@@ -186,11 +193,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Center(
-                      child: Image.asset(
-                        _logoAsset,
-                        height: 172,
-                        fit: BoxFit.contain,
-                        cacheWidth: 420,
+                      child: RepaintBoundary(
+                        child: Image.asset(
+                          _logoAsset,
+                          height: 172,
+                          fit: BoxFit.contain,
+                          cacheWidth: 360,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -248,8 +257,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextField(
                       controller: _studentIdController,
                       keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.next,
+                      enableSuggestions: false,
+                      autocorrect: false,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(7),
+                      ],
                       decoration: InputDecoration(
                         labelText: 'Student ID',
+                        counterText: '',
                         filled: true,
                         fillColor: const Color(0xFFF8F4EA),
                         border: OutlineInputBorder(
@@ -262,6 +279,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
+                      textInputAction: TextInputAction.done,
+                      enableSuggestions: false,
+                      autocorrect: false,
+                      onSubmitted: (_) {
+                        if (!_isLoading) {
+                          _handleLogin();
+                        }
+                      },
                       decoration: InputDecoration(
                         labelText: 'Password',
                         suffixIcon: IconButton(

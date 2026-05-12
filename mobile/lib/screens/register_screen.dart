@@ -38,6 +38,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _hasReadPrivacyStatement = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  late final List<int> _birthYearOptions;
+  late final List<int> _monthOptions;
+  late final List<DropdownMenuItem<int>> _birthYearItems;
+  late final List<DropdownMenuItem<int>> _monthItems;
+  List<DropdownMenuItem<int>> _birthDayItems = const [];
+  List<DropdownMenuItem<RegistrationProgram>> _programItems = const [];
+  List<DropdownMenuItem<RegistrationYearLevel>> _yearLevelItems = const [];
+  List<DropdownMenuItem<String>> _extensionItems = const [
+    DropdownMenuItem(value: '', child: Text('No suffix')),
+  ];
 
   static const Color _navy = Color(0xFF16385F);
   static const Color _paper = Color(0xFFFCFBF7);
@@ -82,7 +92,33 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
   @override
   void initState() {
     super.initState();
-    _loadOptions();
+    final currentYear = DateTime.now().year;
+    _birthYearOptions = List<int>.generate(
+      70,
+      (index) => currentYear - 12 - index,
+      growable: false,
+    );
+    _monthOptions = List<int>.generate(12, (index) => index + 1);
+    _birthYearItems = _birthYearOptions
+        .map(
+          (year) => DropdownMenuItem(value: year, child: Text(year.toString())),
+        )
+        .toList(growable: false);
+    _monthItems = _monthOptions
+        .map(
+          (month) => DropdownMenuItem(
+            value: month,
+            child: Text(month.toString().padLeft(2, '0')),
+          ),
+        )
+        .toList(growable: false);
+    _birthDayItems = _buildBirthDayItems();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadOptions();
+      }
+    });
   }
 
   @override
@@ -110,6 +146,9 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
 
       setState(() {
         _options = options;
+        _programItems = _buildProgramItems(options.programs);
+        _yearLevelItems = _buildYearLevelItems(options.yearLevels);
+        _extensionItems = _buildExtensionItems(options.nameExtensions);
         _isLoadingOptions = false;
         _error = options.programs.isEmpty
             ? 'Academic options are temporarily unavailable. Please try again later.'
@@ -354,9 +393,9 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
                       selectedYear: _selectedBirthYear,
                       selectedMonth: _selectedBirthMonth,
                       selectedDay: _selectedBirthDay,
-                      years: _birthYearOptions,
-                      months: _monthOptions,
-                      days: _birthDayOptions,
+                      yearItems: _birthYearItems,
+                      monthItems: _monthItems,
+                      dayItems: _birthDayItems,
                       inputTextStyle: _inputTextStyle(),
                       decorationBuilder: _inputDecoration,
                       onYearChanged: (year) {
@@ -392,17 +431,7 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
                       key: const Key('registration-program-dropdown'),
                       initialValue: _selectedProgram,
                       isExpanded: true,
-                      items: _options.programs
-                          .map(
-                            (program) => DropdownMenuItem(
-                              value: program,
-                              child: Text(
-                                '${program.code} - ${program.name}',
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          )
-                          .toList(),
+                      items: _programItems,
                       onChanged: canUseAcademicOptions
                           ? (program) {
                               setState(() {
@@ -428,14 +457,7 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
                       key: const Key('registration-year-level-dropdown'),
                       initialValue: _selectedYearLevel,
                       isExpanded: true,
-                      items: _options.yearLevels
-                          .map(
-                            (yearLevel) => DropdownMenuItem(
-                              value: yearLevel,
-                              child: Text(yearLevel.label),
-                            ),
-                          )
-                          .toList(),
+                      items: _yearLevelItems,
                       onChanged:
                           canUseAcademicOptions && _selectedProgram != null
                           ? (yearLevel) {
@@ -607,13 +629,7 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
       key: const Key('registration-suffix-dropdown'),
       initialValue: _selectedExtension,
       isExpanded: true,
-      items: [
-        const DropdownMenuItem(value: '', child: Text('No suffix')),
-        ..._options.nameExtensions.map(
-          (extension) =>
-              DropdownMenuItem(value: extension, child: Text(extension)),
-        ),
-      ],
+      items: _extensionItems,
       onChanged: (value) {
         setState(() {
           _selectedExtension = value ?? '';
@@ -628,18 +644,59 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
     );
   }
 
-  List<int> get _birthYearOptions {
-    final currentYear = DateTime.now().year;
-    return List<int>.generate(70, (index) => currentYear - 12 - index);
-  }
-
-  List<int> get _monthOptions => List<int>.generate(12, (index) => index + 1);
-
   List<int> get _birthDayOptions {
     final year = _selectedBirthYear ?? 2000;
     final month = _selectedBirthMonth ?? 1;
     final lastDay = DateTime(year, month + 1, 0).day;
     return List<int>.generate(lastDay, (index) => index + 1);
+  }
+
+  List<DropdownMenuItem<int>> _buildBirthDayItems() {
+    return _birthDayOptions
+        .map(
+          (day) => DropdownMenuItem(
+            value: day,
+            child: Text(day.toString().padLeft(2, '0')),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  List<DropdownMenuItem<RegistrationProgram>> _buildProgramItems(
+    List<RegistrationProgram> programs,
+  ) {
+    return programs
+        .map(
+          (program) => DropdownMenuItem(
+            value: program,
+            child: Text(
+              '${program.code} - ${program.name}',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  List<DropdownMenuItem<RegistrationYearLevel>> _buildYearLevelItems(
+    List<RegistrationYearLevel> yearLevels,
+  ) {
+    return yearLevels
+        .map(
+          (yearLevel) =>
+              DropdownMenuItem(value: yearLevel, child: Text(yearLevel.label)),
+        )
+        .toList(growable: false);
+  }
+
+  List<DropdownMenuItem<String>> _buildExtensionItems(List<String> extensions) {
+    return [
+      const DropdownMenuItem(value: '', child: Text('No suffix')),
+      ...extensions.map(
+        (extension) =>
+            DropdownMenuItem(value: extension, child: Text(extension)),
+      ),
+    ];
   }
 
   String? get _birthDateValue {
@@ -658,11 +715,12 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
 
   void _normalizeSelectedBirthDay() {
     final selectedDay = _selectedBirthDay;
-    if (selectedDay == null) return;
 
-    if (!_birthDayOptions.contains(selectedDay)) {
+    if (selectedDay != null && !_birthDayOptions.contains(selectedDay)) {
       _selectedBirthDay = null;
     }
+
+    _birthDayItems = _buildBirthDayItems();
   }
 
   InputDecoration _passwordDecoration({
@@ -849,9 +907,9 @@ class _BirthdayFields extends StatelessWidget {
     required this.selectedYear,
     required this.selectedMonth,
     required this.selectedDay,
-    required this.years,
-    required this.months,
-    required this.days,
+    required this.yearItems,
+    required this.monthItems,
+    required this.dayItems,
     required this.inputTextStyle,
     required this.decorationBuilder,
     required this.onYearChanged,
@@ -862,9 +920,9 @@ class _BirthdayFields extends StatelessWidget {
   final int? selectedYear;
   final int? selectedMonth;
   final int? selectedDay;
-  final List<int> years;
-  final List<int> months;
-  final List<int> days;
+  final List<DropdownMenuItem<int>> yearItems;
+  final List<DropdownMenuItem<int>> monthItems;
+  final List<DropdownMenuItem<int>> dayItems;
   final TextStyle inputTextStyle;
   final InputDecoration Function({
     required String label,
@@ -899,14 +957,7 @@ class _BirthdayFields extends StatelessWidget {
                 key: const Key('registration-birth-year-dropdown'),
                 initialValue: selectedYear,
                 isExpanded: true,
-                items: years
-                    .map(
-                      (year) => DropdownMenuItem(
-                        value: year,
-                        child: Text(year.toString()),
-                      ),
-                    )
-                    .toList(),
+                items: yearItems,
                 onChanged: onYearChanged,
                 style: inputTextStyle,
                 decoration: decorationBuilder(
@@ -924,14 +975,7 @@ class _BirthdayFields extends StatelessWidget {
                 key: const Key('registration-birth-month-dropdown'),
                 initialValue: selectedMonth,
                 isExpanded: true,
-                items: months
-                    .map(
-                      (month) => DropdownMenuItem(
-                        value: month,
-                        child: Text(month.toString().padLeft(2, '0')),
-                      ),
-                    )
-                    .toList(),
+                items: monthItems,
                 onChanged: onMonthChanged,
                 style: inputTextStyle,
                 decoration: decorationBuilder(
@@ -949,14 +993,7 @@ class _BirthdayFields extends StatelessWidget {
                 key: const Key('registration-birth-day-dropdown'),
                 initialValue: selectedDay,
                 isExpanded: true,
-                items: days
-                    .map(
-                      (day) => DropdownMenuItem(
-                        value: day,
-                        child: Text(day.toString().padLeft(2, '0')),
-                      ),
-                    )
-                    .toList(),
+                items: dayItems,
                 onChanged: onDayChanged,
                 style: inputTextStyle,
                 decoration: decorationBuilder(

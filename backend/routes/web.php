@@ -37,6 +37,8 @@ Route::prefix('admin')
     ->middleware(['auth', 'role:admin'])
     ->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+        Route::get('/dashboard/snapshots', [AdminDashboardController::class, 'snapshots'])
+            ->name('admin.dashboard.snapshots');
         Route::get('/programs', [ProgramAdminController::class, 'index'])->name('admin.programs.index');
         Route::get('/semesters', [SemesterAdminController::class, 'index'])->name('admin.semesters.index');
         Route::get('/routing', [AdminOfficeDesignationController::class, 'index'])->name('admin.routing.index');

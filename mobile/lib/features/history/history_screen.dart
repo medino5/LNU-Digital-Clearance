@@ -25,23 +25,52 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   String _selectedAcademicYear = '';
+  List<Map<String, dynamic>> _allHistory = const [];
+  List<String> _academicYears = const [];
 
   @override
-  Widget build(BuildContext context) {
-    final allHistory = (widget.payload?['history'] as List? ?? const [])
+  void initState() {
+    super.initState();
+    _syncHistoryPayload();
+  }
+
+  @override
+  void didUpdateWidget(covariant HistoryScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (!identical(oldWidget.payload, widget.payload)) {
+      _syncHistoryPayload();
+    }
+  }
+
+  void _syncHistoryPayload() {
+    final history = (widget.payload?['history'] as List? ?? const [])
         .whereType<Map>()
         .map((item) => item.cast<String, dynamic>())
-        .toList();
-    final academicYears =
-        allHistory
+        .toList(growable: false);
+
+    final years =
+        history
             .map((record) => record['academic_year']?.toString() ?? '')
             .where((year) => year.isNotEmpty)
             .toSet()
             .toList()
           ..sort((a, b) => b.compareTo(a));
+
+    _allHistory = history;
+    _academicYears = years;
+
+    if (_selectedAcademicYear.isNotEmpty &&
+        !_academicYears.contains(_selectedAcademicYear)) {
+      _selectedAcademicYear = '';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final history = _selectedAcademicYear.isEmpty
-        ? allHistory
-        : allHistory
+        ? _allHistory
+        : _allHistory
               .where(
                 (record) =>
                     record['academic_year']?.toString() ==
@@ -51,43 +80,70 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
-      child: ListView(
+      child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
-        children: [
-          _IntroCard(
-            totalCount: history.length,
-            academicYears: academicYears,
-            selectedAcademicYear: _selectedAcademicYear,
-            onAcademicYearChanged: (value) {
-              setState(() {
-                _selectedAcademicYear = value ?? '';
-              });
-            },
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+            sliver: SliverToBoxAdapter(
+              child: _IntroCard(
+                totalCount: history.length,
+                academicYears: _academicYears,
+                selectedAcademicYear: _selectedAcademicYear,
+                onAcademicYearChanged: (value) {
+                  setState(() {
+                    _selectedAcademicYear = value ?? '';
+                  });
+                },
+              ),
+            ),
           ),
-          const SizedBox(height: 14),
+          const SliverToBoxAdapter(child: SizedBox(height: 14)),
           if (widget.isLoading)
-            const _StateCard(
-              icon: Icons.history_rounded,
-              title: 'Loading clearance history',
-              message: 'Checking previous semester records...',
-              showSpinner: true,
+            const SliverPadding(
+              padding: EdgeInsets.fromLTRB(18, 0, 18, 28),
+              sliver: SliverToBoxAdapter(
+                child: _StateCard(
+                  icon: Icons.history_rounded,
+                  title: 'Loading clearance history',
+                  message: 'Checking previous semester records...',
+                  showSpinner: true,
+                ),
+              ),
             )
           else if (widget.error != null)
-            _StateCard(
-              icon: Icons.wifi_off_rounded,
-              title: 'History unavailable',
-              message: widget.error!,
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 28),
+              sliver: SliverToBoxAdapter(
+                child: _StateCard(
+                  icon: Icons.wifi_off_rounded,
+                  title: 'History unavailable',
+                  message: widget.error!,
+                ),
+              ),
             )
           else if (history.isEmpty)
-            const _StateCard(
-              icon: Icons.inventory_2_outlined,
-              title: 'No clearance history yet',
-              message:
-                  'Completed and previous clearance records will appear here once available.',
+            const SliverPadding(
+              padding: EdgeInsets.fromLTRB(18, 0, 18, 28),
+              sliver: SliverToBoxAdapter(
+                child: _StateCard(
+                  icon: Icons.inventory_2_outlined,
+                  title: 'No clearance history yet',
+                  message:
+                      'Completed and previous clearance records will appear here once available.',
+                ),
+              ),
             )
           else
-            ...history.map(_HistoryCard.new),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 28),
+              sliver: SliverList.builder(
+                itemCount: history.length,
+                itemBuilder: (context, index) {
+                  return RepaintBoundary(child: _HistoryCard(history[index]));
+                },
+              ),
+            ),
         ],
       ),
     );

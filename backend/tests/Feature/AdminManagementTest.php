@@ -368,12 +368,13 @@ class AdminManagementTest extends TestCase
             ->assertSee('Create Student')
             ->assertSee('Create Office Account')
             ->assertSee('Assign Holders')
-            ->assertSee('Download Report')
+            ->assertSee('Go to Download Reports')
+            ->assertSee('Directory Setup')
+            ->assertSee('Term Activity')
             ->assertSee('Clearances Per Semester')
             ->assertSee('Clearance Status Distribution')
-            ->assertSee('No clearance data yet')
-            ->assertSee('There are no recorded clearances for this section yet.')
-            ->assertSee('There are no clearance records to display yet.');
+            ->assertSee('All school years')
+            ->assertSee('All semesters');
 
         $this->actingAs($admin)
             ->get(route('admin.students.index'))
@@ -384,6 +385,48 @@ class AdminManagementTest extends TestCase
             ->get(route('admin.office-accounts.index'))
             ->assertOk()
             ->assertSee('Search by name, username, or scope');
+    }
+
+    public function test_admin_dashboard_snapshot_endpoint_filters_by_academic_year_and_semester(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+        $student = Student::with('program')->where('student_id_number', '2302314')->firstOrFail();
+        $secondStudent = Student::factory()->create([
+            'program_id' => $student->program_id,
+            'year_level' => 2,
+        ]);
+        $targetSemester = Semester::factory()->create([
+            'label' => '1st Semester 2025-2026',
+            'academic_year' => '2025-2026',
+        ]);
+        $otherSemester = Semester::factory()->create([
+            'label' => '2nd Semester 2023-2024',
+            'academic_year' => '2023-2024',
+        ]);
+
+        \App\Models\Clearance::factory()->forStudentAndSemester($student, $targetSemester)->create([
+            'status' => \App\Models\Clearance::STATUS_COMPLETED,
+            'completed_at' => now(),
+            'reference_number' => 'CLR-FILTER-0001',
+        ]);
+
+        \App\Models\Clearance::factory()->forStudentAndSemester($secondStudent, $otherSemester)->create([
+            'status' => \App\Models\Clearance::STATUS_FLAGGED,
+            'reference_number' => 'CLR-FILTER-0002',
+        ]);
+
+        $this->actingAs($admin)
+            ->getJson(route('admin.dashboard.snapshots', [
+                'academic_year' => '2025-2026',
+                'semester_id' => $targetSemester->id,
+            ]))
+            ->assertOk()
+            ->assertJsonPath('snapshotScopeLabel', '1st Semester 2025-2026')
+            ->assertJsonPath('snapshotStats.activity.1.label', 'Students With Clearances')
+            ->assertJsonPath('snapshotStats.activity.1.value', 1)
+            ->assertJsonPath('snapshotStats.activity.3.value', 1)
+            ->assertJsonPath('snapshotStats.activity.4.value', 0)
+            ->assertJsonPath('statusChart.2.count', 1);
     }
 
     public function test_admin_dashboard_renders_real_chart_data_when_clearances_exist(): void

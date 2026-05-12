@@ -24,7 +24,7 @@
                         </span>
                         <span class="quick-action-content">
                             <span class="quick-action-label">Create Student</span>
-                            <span class="quick-action-copy">Open the students page to add and manage student accounts.</span>
+                            <span class="quick-action-copy">Add or update student accounts.</span>
                         </span>
                     </a>
 
@@ -37,7 +37,7 @@
                         </span>
                         <span class="quick-action-content">
                             <span class="quick-action-label">Review Requests</span>
-                            <span class="quick-action-copy">Approve or reject mobile account registrations before login is allowed.</span>
+                            <span class="quick-action-copy">Approve mobile registrations.</span>
                         </span>
                     </a>
 
@@ -51,7 +51,7 @@
                         </span>
                         <span class="quick-action-content">
                             <span class="quick-action-label">Create Office Account</span>
-                            <span class="quick-action-copy">Open the office accounts page for staff account setup.</span>
+                            <span class="quick-action-copy">Set up staff signers.</span>
                         </span>
                     </a>
 
@@ -66,87 +66,75 @@
                         </span>
                         <span class="quick-action-content">
                             <span class="quick-action-label">Assign Holders</span>
-                            <span class="quick-action-copy">Open routing to review eligible users and update designation holders.</span>
+                            <span class="quick-action-copy">Update designation holders.</span>
                         </span>
                     </a>
 
                     <a href="{{ route('admin.clearance-history.index') }}" class="quick-action-card">
                         <span class="quick-action-icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M12 3v12"/>
-                                <path d="M7 10l5 5 5-5"/>
-                                <path d="M5 21h14"/>
+                                <path d="M5 4h14v16H5z"/>
+                                <path d="M8 8h8"/>
+                                <path d="M8 12h8"/>
+                                <path d="M8 16h5"/>
                             </svg>
                         </span>
                         <span class="quick-action-content">
-                            <span class="quick-action-label">Download Report</span>
-                            <span class="quick-action-copy">Open report filters and download the completed clearance workbook.</span>
+                            <span class="quick-action-label">Go to Download Reports</span>
+                            <span class="quick-action-copy">Choose report filters.</span>
                         </span>
                     </a>
                 </div>
             </div>
         </section>
 
-        <section class="admin-section-card">
-            <div>
-                <h1>System Snapshots</h1>
+        <section class="admin-section-card dashboard-snapshots" data-dashboard-snapshots>
+            <div class="snapshot-header">
+                <div>
+                    <h1>System Snapshots</h1>
+                    <p class="section-copy compact-copy" data-snapshot-scope>{{ $snapshotScopeLabel }}</p>
+                </div>
+
+                <div class="snapshot-filter-bar" aria-label="Snapshot filters">
+                    <label>
+                        <span>School Year</span>
+                        <select data-snapshot-academic-year>
+                            <option value="">All school years</option>
+                            @foreach($academicYears as $academicYear)
+                                <option value="{{ $academicYear }}">{{ $academicYear }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+
+                    <label>
+                        <span>Semester</span>
+                        <select data-snapshot-semester>
+                            <option value="">All semesters</option>
+                            @foreach($semesterOptions as $semester)
+                                <option value="{{ $semester->id }}" data-academic-year="{{ $semester->academic_year }}">
+                                    {{ $semester->label }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </label>
+                </div>
             </div>
 
-            <div class="grid-3">
-                <div class="stat-card stat-tile">
-                    <div class="eyebrow">Programs</div>
-                    <div class="metric-circle">
-                        <span>{{ $programCount }}</span>
+            <div class="snapshot-groups">
+                <div class="snapshot-group">
+                    <div class="snapshot-group-heading">
+                        <span>Directory Setup</span>
+                        <small>Mostly stable</small>
                     </div>
+                    <div class="snapshot-grid" data-snapshot-group="stable"></div>
                 </div>
 
-                <div class="stat-card stat-tile">
-                    <div class="eyebrow">Semesters</div>
-                    <div class="metric-circle">
-                        <span>{{ $semesterCount }}</span>
+                <div class="snapshot-group">
+                    <div class="snapshot-group-heading">
+                        <span>Term Activity</span>
+                        <small>Changes by selected school year or semester</small>
                     </div>
-                </div>
-
-                <div class="stat-card stat-tile">
-                    <div class="eyebrow">Students</div>
-                    <div class="metric-circle">
-                        <span>{{ $studentCount }}</span>
-                    </div>
-                </div>
-
-                <div class="stat-card stat-tile">
-                    <div class="eyebrow">Pending Registrations</div>
-                    <div class="metric-circle">
-                        <span>{{ $pendingRegistrationRequestCount }}</span>
-                    </div>
-                </div>
-
-                <div class="stat-card stat-tile">
-                    <div class="eyebrow">Office Accounts</div>
-                    <div class="metric-circle">
-                        <span>{{ $officeAccountCount }}</span>
-                    </div>
-                </div>
-
-                <div class="stat-card stat-tile">
-                    <div class="eyebrow">Completed Clearances</div>
-                    <div class="metric-circle">
-                        <span>{{ $completedClearanceCount }}</span>
-                    </div>
-                </div>
-
-                <div class="stat-card stat-tile">
-                    <div class="eyebrow">Active Clearances</div>
-                    <div class="metric-circle">
-                        <span>{{ $activeClearanceCount }}</span>
-                    </div>
-                </div>
-
-                <div class="stat-card stat-tile">
-                    <div class="eyebrow">Routing Designations</div>
-                    <div class="metric-circle">
-                        <span>{{ $designationCount }}</span>
-                    </div>
+                    <div class="snapshot-grid activity-grid" data-snapshot-group="activity"></div>
                 </div>
             </div>
         </section>
@@ -157,44 +145,11 @@
                     <div>
                         <div class="eyebrow">Clearances Per Semester</div>
                         <h2 class="chart-title">Clearances Per Semester</h2>
-                        <p class="section-copy compact-copy">Live counts from recorded clearances across your configured semesters.</p>
+                        <p class="section-copy compact-copy">Updates when the snapshot filters change.</p>
                     </div>
                 </div>
 
-                @if($semesterChartHasData)
-                    <div class="semester-chart" role="img" aria-label="Bar chart showing clearance counts per semester">
-                        @foreach($clearancesPerSemester as $semesterPoint)
-                            @php
-                                $heightRatio = $semesterPoint['count'] > 0
-                                    ? max(($semesterPoint['count'] / $semesterChartMax) * 100, 8)
-                                    : 0;
-                            @endphp
-
-                            <div class="semester-bar-group">
-                                <div class="semester-bar-value">{{ $semesterPoint['count'] }}</div>
-                                <div class="semester-bar-track">
-                                    <div
-                                        class="semester-bar-fill"
-                                        style="height: {{ $heightRatio }}%;"
-                                        title="{{ $semesterPoint['label'] }}: {{ $semesterPoint['count'] }} clearance{{ $semesterPoint['count'] === 1 ? '' : 's' }}"
-                                    ></div>
-                                </div>
-                                <div class="semester-bar-label">{{ $semesterPoint['label'] }}</div>
-                            </div>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="chart-empty-state">
-                        <h5 class="fw-semibold">No clearance data yet</h5>
-                        <p class="text-muted mb-3">
-                            There are no recorded clearances for this section yet.
-                        </p>
-
-                        <a href="{{ route('admin.students.index') }}" class="btn btn-primary btn-sm">
-                            Start by adding students
-                        </a>
-                    </div>
-                @endif
+                <div data-semester-chart></div>
             </div>
 
             <div class="admin-section-card chart-panel">
@@ -202,67 +157,11 @@
                     <div>
                         <div class="eyebrow">Clearance Status Distribution</div>
                         <h2 class="chart-title">Clearance Status Distribution</h2>
-                        <p class="section-copy compact-copy">Current breakdown of in-progress, flagged, and completed clearances.</p>
+                        <p class="section-copy compact-copy">Filtered breakdown of in-progress, flagged, and completed clearances.</p>
                     </div>
                 </div>
 
-                @if($statusChartHasData)
-                    @php
-                        $statusSegments = [];
-                        $statusOffset = 0;
-                    @endphp
-
-                    @foreach($statusChart as $statusPoint)
-                        @php
-                            $percentage = round(($statusPoint['count'] / $statusChartTotal) * 100, 2);
-                            $statusSegments[] = $statusPoint['color'] . ' ' . $statusOffset . '% ' . ($statusOffset + $percentage) . '%';
-                            $statusOffset += $percentage;
-                        @endphp
-                    @endforeach
-
-                    <div class="status-chart-layout">
-                        <div
-                            class="status-donut"
-                            style="background: conic-gradient({{ implode(', ', $statusSegments) }});"
-                            role="img"
-                            aria-label="Donut chart showing clearance status distribution"
-                        >
-                            <div class="status-donut-hole">
-                                <span class="status-donut-total">{{ $statusChartTotal }}</span>
-                                <span class="status-donut-caption">Total</span>
-                            </div>
-                        </div>
-
-                        <div class="status-legend">
-                            @foreach($statusChart as $statusPoint)
-                                @php
-                                    $statusPercentage = $statusChartTotal > 0
-                                        ? round(($statusPoint['count'] / $statusChartTotal) * 100)
-                                        : 0;
-                                @endphp
-
-                                <div class="status-legend-item">
-                                    <span class="status-dot" style="background-color: {{ $statusPoint['color'] }};"></span>
-                                    <div class="status-legend-copy">
-                                        <strong>{{ $statusPoint['label'] }}</strong>
-                                        <span>{{ $statusPoint['count'] }} clearance{{ $statusPoint['count'] === 1 ? '' : 's' }} ({{ $statusPercentage }}%)</span>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @else
-                    <div class="chart-empty-state">
-                        <h5 class="fw-semibold">No clearance data yet</h5>
-                        <p class="text-muted mb-3">
-                            There are no clearance records to display yet.
-                        </p>
-
-                        <a href="{{ route('admin.students.index') }}" class="btn btn-primary btn-sm">
-                            Start by adding students
-                        </a>
-                    </div>
-                @endif
+                <div data-status-chart></div>
             </div>
         </section>
     </div>
@@ -354,22 +253,95 @@
             max-width: 60ch;
         }
 
-        .grid-3 {
+        .snapshot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 18px;
+        }
+
+        .snapshot-filter-bar {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .snapshot-filter-bar label {
             display: grid;
-            grid-template-columns: repeat(4, minmax(160px, 1fr));
-            justify-content: center;
+            gap: 5px;
+            min-width: 180px;
+            color: #173c66;
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .snapshot-filter-bar select {
+            min-height: 42px;
+            border-radius: 12px;
+            border: 1px solid #d8cbb9;
+            background: #fff;
+            color: #183a63;
+            padding: 0 38px 0 12px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            box-shadow: 0 8px 18px rgba(24, 58, 99, 0.05);
+        }
+
+        .dashboard-snapshots.is-loading {
+            opacity: 0.72;
+        }
+
+        .snapshot-groups {
+            display: grid;
             gap: 16px;
+        }
+
+        .snapshot-group {
+            display: grid;
+            gap: 10px;
+        }
+
+        .snapshot-group-heading {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            color: #173c66;
+            font-weight: 800;
+        }
+
+        .snapshot-group-heading small {
+            color: #64748b;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .snapshot-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(170px, 1fr));
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .snapshot-grid.activity-grid {
+            grid-template-columns: repeat(5, minmax(150px, 1fr));
         }
 
         .stat-tile {
             display: grid;
             justify-items: center;
             text-align: center;
-            gap: 4px;
-            padding: 14px 12px;
-            background: rgba(255, 255, 255, 0.75);
+            gap: 6px;
+            padding: 15px 12px;
+            background: linear-gradient(180deg, #ffffff 0%, #faf7f0 100%);
             border: 1px solid #e4dacd;
             border-radius: 16px;
+            min-height: 132px;
+            box-shadow: 0 10px 24px rgba(24, 58, 99, 0.07);
         }
 
         .stat-tile .eyebrow {
@@ -379,8 +351,8 @@
         }
 
         .metric-circle {
-            width: 64px;
-            height: 64px;
+            width: 68px;
+            height: 68px;
             border-radius: 50%;
             display: grid;
             place-items: center;
@@ -394,6 +366,12 @@
 
         .metric-circle span {
             line-height: 1;
+        }
+
+        .stat-hint {
+            color: #64748b;
+            font-size: 0.78rem;
+            font-weight: 700;
         }
 
         .dashboard-chart-grid {
@@ -458,8 +436,9 @@
         .semester-bar-fill {
             width: 100%;
             border-radius: 999px;
-            background: linear-gradient(180deg, #285892 0%, #173c66 100%);
-            box-shadow: 0 8px 18px rgba(23, 60, 102, 0.18);
+            background: linear-gradient(180deg, #d2a83d 0%, #285892 54%, #173c66 100%);
+            box-shadow: 0 8px 18px rgba(23, 60, 102, 0.2);
+            transition: height 0.22s ease;
         }
 
         .semester-bar-label {
@@ -484,7 +463,7 @@
             display: grid;
             place-items: center;
             margin: 0 auto;
-            box-shadow: inset 0 0 0 1px rgba(22, 56, 95, 0.08);
+            box-shadow: inset 0 0 0 1px rgba(22, 56, 95, 0.08), 0 18px 36px rgba(24, 58, 99, 0.12);
         }
 
         .status-donut-hole {
@@ -569,7 +548,8 @@
             }
 
             .quick-action-grid,
-            .grid-3 {
+            .snapshot-grid,
+            .snapshot-grid.activity-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
@@ -578,10 +558,24 @@
             .status-chart-layout {
                 grid-template-columns: 1fr;
             }
+
+            .snapshot-header {
+                display: grid;
+            }
+
+            .snapshot-filter-bar {
+                justify-content: stretch;
+            }
+
+            .snapshot-filter-bar label {
+                min-width: min(100%, 240px);
+                flex: 1 1 180px;
+            }
         }
 
         @media (max-width: 720px) {
-            .grid-3 {
+            .snapshot-grid,
+            .snapshot-grid.activity-grid {
                 grid-template-columns: 1fr;
             }
 
@@ -646,8 +640,263 @@
 @endsection
 
 @push('scripts')
+@php
+    $initialSnapshotPayload = [
+        'snapshotScopeLabel' => $snapshotScopeLabel,
+        'snapshotStats' => $snapshotStats,
+        'clearancesPerSemester' => $clearancesPerSemester,
+        'semesterChartHasData' => $semesterChartHasData,
+        'semesterChartMax' => $semesterChartMax,
+        'statusChart' => $statusChart,
+        'statusChartTotal' => $statusChartTotal,
+        'statusChartHasData' => $statusChartHasData,
+    ];
+@endphp
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+    const snapshotRoot = document.querySelector("[data-dashboard-snapshots]");
+    const stableGroup = document.querySelector('[data-snapshot-group="stable"]');
+    const activityGroup = document.querySelector('[data-snapshot-group="activity"]');
+    const semesterChart = document.querySelector("[data-semester-chart]");
+    const statusChart = document.querySelector("[data-status-chart]");
+    const scopeLabel = document.querySelector("[data-snapshot-scope]");
+    const academicYearFilter = document.querySelector("[data-snapshot-academic-year]");
+    const semesterFilter = document.querySelector("[data-snapshot-semester]");
+    const snapshotEndpoint = @json(route('admin.dashboard.snapshots'));
+    const initialSnapshot = @json($initialSnapshotPayload);
+    let snapshotController = null;
+
+    function formatNumber(value) {
+        return new Intl.NumberFormat().format(Number(value || 0));
+    }
+
+    function renderStats(container, stats) {
+        if (!container) return;
+
+        container.replaceChildren(...(stats || []).map((stat) => {
+            const card = document.createElement("div");
+            card.className = "stat-card stat-tile";
+
+            const label = document.createElement("div");
+            label.className = "eyebrow";
+            label.textContent = stat.label;
+
+            const metric = document.createElement("div");
+            metric.className = "metric-circle";
+            const value = document.createElement("span");
+            value.textContent = formatNumber(stat.value);
+            metric.appendChild(value);
+
+            const hint = document.createElement("div");
+            hint.className = "stat-hint";
+            hint.textContent = stat.hint || "";
+
+            card.append(label, metric, hint);
+            return card;
+        }));
+    }
+
+    function renderSemesterChart(payload) {
+        if (!semesterChart) return;
+
+        const points = payload.clearancesPerSemester || [];
+        if (!payload.semesterChartHasData) {
+            semesterChart.innerHTML = `
+                <div class="chart-empty-state">
+                    <h5 class="fw-semibold">No clearance data yet</h5>
+                    <p class="text-muted mb-3">No clearances match the selected period.</p>
+                    <a href="{{ route('admin.students.index') }}" class="btn btn-primary btn-sm">Start by adding students</a>
+                </div>
+            `;
+            return;
+        }
+
+        const max = Math.max(Number(payload.semesterChartMax || 1), 1);
+        const wrapper = document.createElement("div");
+        wrapper.className = "semester-chart";
+        wrapper.setAttribute("role", "img");
+        wrapper.setAttribute("aria-label", "Bar chart showing clearance counts per semester");
+
+        points.forEach((point) => {
+            const count = Number(point.count || 0);
+            const height = count > 0 ? Math.max((count / max) * 100, 8) : 0;
+            const group = document.createElement("div");
+            group.className = "semester-bar-group";
+
+            const value = document.createElement("div");
+            value.className = "semester-bar-value";
+            value.textContent = formatNumber(count);
+
+            const track = document.createElement("div");
+            track.className = "semester-bar-track";
+
+            const fill = document.createElement("div");
+            fill.className = "semester-bar-fill";
+            fill.style.height = `${height}%`;
+            fill.title = `${point.label}: ${formatNumber(count)} clearance${count === 1 ? "" : "s"}`;
+            track.appendChild(fill);
+
+            const label = document.createElement("div");
+            label.className = "semester-bar-label";
+            label.textContent = point.label;
+
+            group.append(value, track, label);
+            wrapper.appendChild(group);
+        });
+
+        semesterChart.replaceChildren(wrapper);
+    }
+
+    function renderStatusChart(payload) {
+        if (!statusChart) return;
+
+        const points = payload.statusChart || [];
+        const total = Number(payload.statusChartTotal || 0);
+        if (!payload.statusChartHasData || total === 0) {
+            statusChart.innerHTML = `
+                <div class="chart-empty-state">
+                    <h5 class="fw-semibold">No clearance data yet</h5>
+                    <p class="text-muted mb-3">No status records match the selected period.</p>
+                    <a href="{{ route('admin.students.index') }}" class="btn btn-primary btn-sm">Start by adding students</a>
+                </div>
+            `;
+            return;
+        }
+
+        let offset = 0;
+        const segments = points.map((point) => {
+            const percentage = total > 0 ? (Number(point.count || 0) / total) * 100 : 0;
+            const segment = `${point.color} ${offset}% ${offset + percentage}%`;
+            offset += percentage;
+            return segment;
+        });
+
+        const layout = document.createElement("div");
+        layout.className = "status-chart-layout";
+
+        const donut = document.createElement("div");
+        donut.className = "status-donut";
+        donut.style.background = `conic-gradient(${segments.join(", ")})`;
+        donut.setAttribute("role", "img");
+        donut.setAttribute("aria-label", "Donut chart showing clearance status distribution");
+
+        const hole = document.createElement("div");
+        hole.className = "status-donut-hole";
+        const totalText = document.createElement("span");
+        totalText.className = "status-donut-total";
+        totalText.textContent = formatNumber(total);
+        const caption = document.createElement("span");
+        caption.className = "status-donut-caption";
+        caption.textContent = "Total";
+        hole.append(totalText, caption);
+        donut.appendChild(hole);
+
+        const legend = document.createElement("div");
+        legend.className = "status-legend";
+
+        points.forEach((point) => {
+            const count = Number(point.count || 0);
+            const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+            const item = document.createElement("div");
+            item.className = "status-legend-item";
+
+            const dot = document.createElement("span");
+            dot.className = "status-dot";
+            dot.style.backgroundColor = point.color;
+
+            const copy = document.createElement("div");
+            copy.className = "status-legend-copy";
+            const label = document.createElement("strong");
+            label.textContent = point.label;
+            const detail = document.createElement("span");
+            detail.textContent = `${formatNumber(count)} clearance${count === 1 ? "" : "s"} (${percentage}%)`;
+            copy.append(label, detail);
+            item.append(dot, copy);
+            legend.appendChild(item);
+        });
+
+        layout.append(donut, legend);
+        statusChart.replaceChildren(layout);
+    }
+
+    function renderSnapshot(payload) {
+        if (scopeLabel) {
+            scopeLabel.textContent = payload.snapshotScopeLabel || "All records";
+        }
+
+        renderStats(stableGroup, payload.snapshotStats?.stable);
+        renderStats(activityGroup, payload.snapshotStats?.activity);
+        renderSemesterChart(payload);
+        renderStatusChart(payload);
+    }
+
+    function syncSemesterOptions() {
+        if (!academicYearFilter || !semesterFilter) return;
+
+        const selectedYear = academicYearFilter.value;
+        Array.from(semesterFilter.options).forEach((option) => {
+            if (!option.value) {
+                option.hidden = false;
+                option.disabled = false;
+                return;
+            }
+
+            const matchesYear = !selectedYear || option.dataset.academicYear === selectedYear;
+            option.hidden = !matchesYear;
+            option.disabled = !matchesYear;
+        });
+
+        const selectedOption = semesterFilter.selectedOptions[0];
+        if (selectedOption && selectedOption.disabled) {
+            semesterFilter.value = "";
+        }
+    }
+
+    async function loadSnapshot() {
+        if (!academicYearFilter || !semesterFilter) return;
+
+        syncSemesterOptions();
+
+        if (snapshotController) {
+            snapshotController.abort();
+        }
+
+        snapshotController = new AbortController();
+        const params = new URLSearchParams();
+        if (academicYearFilter.value) {
+            params.set("academic_year", academicYearFilter.value);
+        }
+        if (semesterFilter.value) {
+            params.set("semester_id", semesterFilter.value);
+        }
+
+        snapshotRoot?.classList.add("is-loading");
+
+        try {
+            const response = await fetch(`${snapshotEndpoint}?${params.toString()}`, {
+                headers: { "Accept": "application/json" },
+                signal: snapshotController.signal,
+            });
+
+            if (!response.ok) {
+                throw new Error("Snapshot request failed");
+            }
+
+            renderSnapshot(await response.json());
+        } catch (error) {
+            if (error.name !== "AbortError") {
+                renderSnapshot(initialSnapshot);
+            }
+        } finally {
+            snapshotRoot?.classList.remove("is-loading");
+        }
+    }
+
+    renderSnapshot(initialSnapshot);
+    syncSemesterOptions();
+    academicYearFilter?.addEventListener("change", loadSnapshot);
+    semesterFilter?.addEventListener("change", loadSnapshot);
+
     document.querySelectorAll("form").forEach(form => {
         form.addEventListener("submit", function () {
             const btn = form.querySelector("button[type=submit]");
