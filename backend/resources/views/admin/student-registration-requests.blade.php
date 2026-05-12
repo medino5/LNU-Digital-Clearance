@@ -39,7 +39,7 @@
                         name="search"
                         value="{{ $search }}"
                         placeholder="Name, ID, email, or program"
-                        maxlength="100"
+                        maxlength="50"
                     >
                 </label>
 
@@ -133,13 +133,6 @@
                                         onsubmit="return confirm('Reject this student registration request?');"
                                     >
                                         @csrf
-                                        <input
-                                            type="text"
-                                            name="review_note"
-                                            placeholder="Reason for rejection"
-                                            maxlength="500"
-                                            required
-                                        >
                                         <button type="submit" class="warn" data-loading-button data-loading-text="Rejecting...">
                                             Reject
                                         </button>
@@ -222,13 +215,23 @@
 
             .registration-reject-form {
                 display: flex;
-                flex: 1 1 360px;
-                grid-template-columns: none;
+                flex: 0 0 auto;
                 gap: 10px;
             }
 
-            .registration-reject-form input {
-                min-width: 220px;
+            .registration-request-actions button {
+                min-width: 150px;
+                height: 40px;
+                padding: 0 16px;
+                border-radius: 12px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                font-size: 13px;
+                font-weight: 700;
+                line-height: 1;
+                box-sizing: border-box;
             }
 
             .badge.pending {

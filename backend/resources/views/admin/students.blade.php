@@ -41,7 +41,7 @@
                     name="student_search"
                     value="{{ $studentSearch }}"
                     placeholder="Search by name or ID"
-                    maxlength="80"
+                    maxlength="50"
                 >
 
                 <select name="student_program">
@@ -168,7 +168,7 @@
                     <div class="field-grid">
                         <label>
                             First Name
-                            <input type="text" name="first_name" value="{{ $shouldOpenCreate ? old('first_name') : '' }}" maxlength="60" required>
+                            <input type="text" name="first_name" value="{{ $shouldOpenCreate ? old('first_name') : '' }}" maxlength="40" required>
                             @if($shouldOpenCreate)
                                 <x-field-error field="first_name" bag="studentCreate" />
                             @endif
@@ -176,7 +176,7 @@
 
                         <label>
                             Last Name
-                            <input type="text" name="last_name" value="{{ $shouldOpenCreate ? old('last_name') : '' }}" maxlength="60" required>
+                            <input type="text" name="last_name" value="{{ $shouldOpenCreate ? old('last_name') : '' }}" maxlength="40" required>
                             @if($shouldOpenCreate)
                                 <x-field-error field="last_name" bag="studentCreate" />
                             @endif
@@ -281,7 +281,8 @@
                                     type="password"
                                     name="password"
                                     id="student-create-password"
-                                    maxlength="72"
+                                    minlength="8"
+                                    maxlength="16"
                                     required
                                 >
 
@@ -353,7 +354,7 @@
                         <div class="field-grid">
                             <label>
                                 First Name
-                                <input type="text" name="first_name" value="{{ $shouldOpenEdit ? old('first_name', $studentNameParts['first_name']) : $studentNameParts['first_name'] }}" maxlength="60" required>
+                                <input type="text" name="first_name" value="{{ $shouldOpenEdit ? old('first_name', $studentNameParts['first_name']) : $studentNameParts['first_name'] }}" maxlength="40" required>
                                 @if($shouldOpenEdit)
                                     <x-field-error field="first_name" bag="studentUpdate" />
                                 @endif
@@ -361,7 +362,7 @@
 
                             <label>
                                 Last Name
-                                <input type="text" name="last_name" value="{{ $shouldOpenEdit ? old('last_name', $studentNameParts['last_name']) : $studentNameParts['last_name'] }}" maxlength="60" required>
+                                <input type="text" name="last_name" value="{{ $shouldOpenEdit ? old('last_name', $studentNameParts['last_name']) : $studentNameParts['last_name'] }}" maxlength="40" required>
                                 @if($shouldOpenEdit)
                                     <x-field-error field="last_name" bag="studentUpdate" />
                                 @endif
@@ -467,7 +468,8 @@
                                         name="password"
                                         id="student-update-password-{{ $student->id }}"
                                         placeholder="Leave blank to keep the current password"
-                                        maxlength="72"
+                                        minlength="8"
+                                        maxlength="16"
                                     >
 
                                     <button
@@ -766,6 +768,29 @@
             display: block;
             min-height: 36px;
             line-height: 1.35;
+        }
+
+        .table-action-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: stretch;
+        }
+
+        .table-action-button {
+            width: 84px;
+            min-width: 84px;
+            height: 36px;
+            padding: 0 12px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1;
+            box-sizing: border-box;
         }
 
         @media (max-width: 1100px) {
