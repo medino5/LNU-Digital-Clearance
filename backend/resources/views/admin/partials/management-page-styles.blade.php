@@ -3,7 +3,8 @@
     .admin-page,
     .management-page {
         display: grid;
-        gap: 14px;
+        gap: 18px;
+        font-size: 0.96rem;
     }
 
     .admin-page-header,
@@ -12,11 +13,12 @@
         justify-content: space-between;
         align-items: flex-start;
         gap: 14px;
-        padding: 16px 18px;
-        border-radius: 18px;
-        background: linear-gradient(135deg, #fbf7ef 0%, #fffdf8 100%);
-        border: 1px solid #e8dfd1;
-        box-shadow: 0 12px 28px rgba(24, 58, 99, 0.05);
+        padding: 8px 2px 16px;
+        border-radius: 0;
+        background: transparent;
+        border: 0;
+        border-bottom: 1px solid rgba(23, 60, 102, 0.12);
+        box-shadow: none;
         min-width: 0;
     }
 
@@ -75,10 +77,10 @@
         display: grid;
         gap: 14px;
         padding: 18px;
-        border-radius: 18px;
-        background: linear-gradient(135deg, #fbf7ef 0%, #fffdf8 100%);
-        border: 1px solid #e8dfd1;
-        box-shadow: 0 12px 28px rgba(24, 58, 99, 0.05);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.54);
+        border: 1px solid rgba(23, 60, 102, 0.1);
+        box-shadow: 0 16px 40px rgba(24, 58, 99, 0.055);
     }
 
     .management-card-header {
@@ -128,9 +130,9 @@
         gap: 10px;
         align-items: center;
         padding: 12px 14px;
-        border-radius: 14px;
-        background: #ffffff;
-        border: 1px solid #e4dacd;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.62);
+        border: 1px solid rgba(23, 60, 102, 0.1);
         color: #183a63;
     }
 
@@ -148,9 +150,9 @@
 
     .management-table-wrap {
         overflow-x: auto;
-        border: 1px solid #e4dacd;
+        border: 1px solid rgba(23, 60, 102, 0.1);
         border-radius: 18px;
-        background: white;
+        background: rgba(255, 255, 255, 0.7);
     }
 
     .management-table {

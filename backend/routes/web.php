@@ -87,6 +87,10 @@ Route::prefix('admin')
 
         Route::get('/office-designations/{officeDesignation}/eligible-users', [AdminOfficeDesignationController::class, 'eligibleUsers'])
             ->name('admin.office-designations.eligible-users');
+        Route::post('/office-designations', [AdminOfficeDesignationController::class, 'store'])
+            ->name('admin.office-designations.store');
+        Route::delete('/office-designations/{officeDesignation}', [AdminOfficeDesignationController::class, 'destroy'])
+            ->name('admin.office-designations.destroy');
         Route::put('/office-designations/{officeDesignation}/assignment', [AdminOfficeDesignationController::class, 'updateAssignment'])
             ->name('admin.office-designations.assignment.update');
     });

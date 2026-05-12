@@ -55,7 +55,7 @@
                         </span>
                     </a>
 
-                    <a href="{{ route('admin.routing.index') }}" class="quick-action-card">
+                    <a href="{{ route('admin.routing.index') }}#designation-create" class="quick-action-card">
                         <span class="quick-action-icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M6 4v16"/>
@@ -65,8 +65,8 @@
                             </svg>
                         </span>
                         <span class="quick-action-content">
-                            <span class="quick-action-label">Assign Holders</span>
-                            <span class="quick-action-copy">Update designation holders.</span>
+                            <span class="quick-action-label">Manage Routing Offices</span>
+                            <span class="quick-action-copy">Create routes and assign holders.</span>
                         </span>
                     </a>
 
@@ -124,7 +124,6 @@
                 <div class="snapshot-group">
                     <div class="snapshot-group-heading">
                         <span>Directory Setup</span>
-                        <small>Mostly stable</small>
                     </div>
                     <div class="snapshot-grid" data-snapshot-group="stable"></div>
                 </div>
@@ -132,7 +131,6 @@
                 <div class="snapshot-group">
                     <div class="snapshot-group-heading">
                         <span>Term Activity</span>
-                        <small>Changes by selected school year or semester</small>
                     </div>
                     <div class="snapshot-grid activity-grid" data-snapshot-group="activity"></div>
                 </div>
@@ -172,17 +170,18 @@
     <style>
         .admin-page {
             display: grid;
-            gap: 14px;
+            gap: 18px;
+            font-size: 0.96rem;
         }
 
         .admin-section-card {
             display: grid;
             gap: 14px;
-            padding: 18px;
-            border-radius: 18px;
-            background: linear-gradient(135deg, #fbf7ef 0%, #fffdf8 100%);
-            border: 1px solid #e8dfd1;
-            box-shadow: 0 12px 28px rgba(24, 58, 99, 0.05);
+            padding: 18px 0;
+            border-radius: 0;
+            background: transparent;
+            border: 0;
+            box-shadow: none;
         }
 
         .dashboard-intro-shell {
@@ -192,38 +191,44 @@
 
         .dashboard-quick-actions {
             display: grid;
-            gap: 14px;
+            grid-template-columns: minmax(190px, 0.45fr) minmax(0, 1fr);
+            gap: 22px;
+            align-items: start;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(23, 60, 102, 0.12);
         }
 
         .quick-action-grid {
             display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px 18px;
             align-items: stretch;
         }
 
         .quick-action-card {
-            min-height: 118px;
             position: relative;
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             gap: 12px;
-            padding: 15px 14px 40px;
-            border-radius: 14px;
+            min-height: 62px;
+            padding: 8px 4px;
+            border-radius: 0;
             text-decoration: none;
             color: #19324d;
-            background: #ffffff;
-            border: 1px solid #e3d9c9;
-            box-shadow: 0 10px 24px rgba(24, 58, 99, 0.08);
+            background: transparent;
+            border: 0;
+            border-bottom: 1px solid rgba(23, 60, 102, 0.1);
+            box-shadow: none;
             cursor: pointer;
-            transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+            transition: color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
         }
 
         .quick-action-card::after {
             content: "Open →";
             position: absolute;
-            right: 16px;
-            bottom: 14px;
+            right: 4px;
+            bottom: 50%;
+            transform: translateY(50%);
             color: #173c66;
             font-size: 0.78rem;
             font-weight: 900;
@@ -231,9 +236,10 @@
         }
 
         .quick-action-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 18px 34px rgba(24, 58, 99, 0.16);
-            border-color: #d4c0a6;
+            transform: translateX(3px);
+            box-shadow: none;
+            border-color: rgba(210, 168, 61, 0.55);
+            color: #0f2f52;
         }
 
         .quick-action-label {
@@ -242,8 +248,8 @@
         }
 
         .quick-action-copy {
-            font-size: 0.92rem;
-            line-height: 1.45;
+            font-size: 0.82rem;
+            line-height: 1.35;
             color: #59657a;
         }
 
@@ -312,6 +318,8 @@
             gap: 12px;
             color: #173c66;
             font-weight: 800;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(23, 60, 102, 0.1);
         }
 
         .snapshot-group-heading small {
@@ -337,11 +345,11 @@
             text-align: center;
             gap: 6px;
             padding: 15px 12px;
-            background: linear-gradient(180deg, #ffffff 0%, #faf7f0 100%);
-            border: 1px solid #e4dacd;
-            border-radius: 16px;
-            min-height: 132px;
-            box-shadow: 0 10px 24px rgba(24, 58, 99, 0.07);
+            background: rgba(255, 255, 255, 0.54);
+            border: 1px solid rgba(23, 60, 102, 0.1);
+            border-radius: 18px;
+            min-height: 120px;
+            box-shadow: 0 14px 34px rgba(24, 58, 99, 0.05);
         }
 
         .stat-tile .eyebrow {
@@ -351,8 +359,8 @@
         }
 
         .metric-circle {
-            width: 68px;
-            height: 68px;
+            width: 58px;
+            height: 58px;
             border-radius: 50%;
             display: grid;
             place-items: center;
@@ -383,6 +391,11 @@
         .chart-panel {
             align-content: start;
             min-height: 100%;
+            padding: 18px;
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.58);
+            border: 1px solid rgba(23, 60, 102, 0.1);
+            box-shadow: 0 18px 42px rgba(24, 58, 99, 0.07);
         }
 
         .chart-panel-header {
@@ -635,6 +648,10 @@
             line-height: 1.45;
             color: #59657a;
         }
+
+        .quick-action-card::after {
+            content: "Open ->";
+        }
     </style>
     @endpush
 @endsection
@@ -665,6 +682,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const snapshotEndpoint = @json(route('admin.dashboard.snapshots'));
     const initialSnapshot = @json($initialSnapshotPayload);
     let snapshotController = null;
+    const snapshotCache = new Map();
 
     function formatNumber(value) {
         return new Intl.NumberFormat().format(Number(value || 0));
@@ -870,6 +888,12 @@ document.addEventListener("DOMContentLoaded", function () {
             params.set("semester_id", semesterFilter.value);
         }
 
+        const cacheKey = params.toString() || "all";
+        if (snapshotCache.has(cacheKey)) {
+            renderSnapshot(snapshotCache.get(cacheKey));
+            return;
+        }
+
         snapshotRoot?.classList.add("is-loading");
 
         try {
@@ -882,7 +906,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 throw new Error("Snapshot request failed");
             }
 
-            renderSnapshot(await response.json());
+            const payload = await response.json();
+            snapshotCache.set(cacheKey, payload);
+            renderSnapshot(payload);
         } catch (error) {
             if (error.name !== "AbortError") {
                 renderSnapshot(initialSnapshot);
@@ -892,6 +918,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    snapshotCache.set("all", initialSnapshot);
     renderSnapshot(initialSnapshot);
     syncSemesterOptions();
     academicYearFilter?.addEventListener("change", loadSnapshot);

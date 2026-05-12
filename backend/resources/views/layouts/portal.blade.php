@@ -927,6 +927,12 @@
                 'keywords' => ['routing', 'route', 'designation', 'designations', 'configuration'],
             ],
             [
+                'title' => 'Create Routing Office',
+                'description' => 'Add VPSD, librarian, adviser, or student-led routing offices.',
+                'url' => route('admin.routing.index') . '#designation-create',
+                'keywords' => ['create routing office', 'add routing office', 'vpsd', 'librarian', 'adviser', 'treasurer'],
+            ],
+            [
                 'title' => 'Assign Designation Holder',
                 'description' => 'Assign eligible users to active office designations.',
                 'url' => route('admin.routing.index') . '#routing-configuration',

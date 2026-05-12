@@ -515,13 +515,19 @@ class AdminControllerValidationTest extends TestCase
             ->assertDontSee('Noteligible');
 
         $this->actingAs($this->admin)
-            ->getJson(route('admin.office-designations.eligible-users', $programDesignation))
+            ->getJson(route('admin.office-designations.eligible-users', [
+                'officeDesignation' => $programDesignation,
+                'search' => 'Paolo',
+            ]))
             ->assertOk()
             ->assertJsonFragment(['label' => 'Student - Paolo Programmatch'])
             ->assertJsonMissing(['label' => 'Student - Rico Noteligible']);
 
         $this->actingAs($this->admin)
-            ->getJson(route('admin.office-designations.eligible-users', $yearDesignation))
+            ->getJson(route('admin.office-designations.eligible-users', [
+                'officeDesignation' => $yearDesignation,
+                'search' => 'Mika',
+            ]))
             ->assertOk()
             ->assertJsonFragment(['label' => 'Student - Mika Yearmatch'])
             ->assertJsonMissing(['label' => 'Student - Rico Noteligible']);

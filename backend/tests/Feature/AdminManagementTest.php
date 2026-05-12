@@ -350,7 +350,8 @@ class AdminManagementTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.routing.index'))
             ->assertOk()
-            ->assertSee('DESIGNATION ASSIGNMENT')
+            ->assertSee('Routing Configuration')
+            ->assertSee('Create Routing Office')
             ->assertSee('Holder Assignment')
             ->assertSee('Search designation')
             ->assertSee('All program scopes')
@@ -367,7 +368,7 @@ class AdminManagementTest extends TestCase
             ->assertSee('Get started')
             ->assertSee('Create Student')
             ->assertSee('Create Office Account')
-            ->assertSee('Assign Holders')
+            ->assertSee('Manage Routing Offices')
             ->assertSee('Go to Download Reports')
             ->assertSee('Directory Setup')
             ->assertSee('Term Activity')
@@ -385,6 +386,31 @@ class AdminManagementTest extends TestCase
             ->get(route('admin.office-accounts.index'))
             ->assertOk()
             ->assertSee('Search by name, username, or scope');
+    }
+
+    public function test_admin_can_create_and_remove_routing_office_from_routing_page(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+        $program = Program::where('code', 'BSIT')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->post(route('admin.office-designations.store'), [
+                'office_type' => \App\Models\OfficeDesignation::TYPE_ACAD_ORG_ADVISER,
+                'program_id' => $program->id,
+                'display_name' => 'BSIT Program Adviser',
+            ])
+            ->assertRedirect(route('admin.routing.index'));
+
+        $designation = \App\Models\OfficeDesignation::where('key', 'bsit-acad-org-adviser')->firstOrFail();
+
+        $this->assertTrue($designation->is_active);
+        $this->assertSame('BSIT Program Adviser', $designation->display_name);
+
+        $this->actingAs($admin)
+            ->delete(route('admin.office-designations.destroy', $designation))
+            ->assertRedirect(route('admin.routing.index'));
+
+        $this->assertFalse($designation->fresh()->is_active);
     }
 
     public function test_admin_dashboard_snapshot_endpoint_filters_by_academic_year_and_semester(): void
@@ -487,7 +513,8 @@ class AdminManagementTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.routing.index'))
             ->assertOk()
-            ->assertSee('DESIGNATION ASSIGNMENT');
+            ->assertSee('Routing Configuration')
+            ->assertSee('Create Routing Office');
 
         $this->actingAs($admin)
             ->get(route('admin.clearance-history.index'))

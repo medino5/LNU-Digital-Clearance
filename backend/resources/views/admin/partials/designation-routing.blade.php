@@ -1,9 +1,72 @@
 <section id="routing-configuration" class="admin-section-card routing-management-card">
     <div class="routing-page-header">
         <div>
-            <h1>DESIGNATION ASSIGNMENT</h1>
-            <p>Manage designation holders, scopes, statuses, and assignments.</p>
+            <h1>Routing Configuration</h1>
         </div>
+    </div>
+
+    <div class="routing-create-panel" id="designation-create">
+        <div class="routing-create-copy">
+            <span class="eyebrow">Routing Offices</span>
+            <h2>Create Routing Office</h2>
+        </div>
+
+        <form method="POST" action="{{ route('admin.office-designations.store') }}" class="routing-create-form">
+            @csrf
+            <input type="hidden" name="_form_key" value="designation-create">
+
+            <label>
+                Designation Type
+                <select name="office_type" data-designation-type required>
+                    @foreach($designationTypeOptions as $value => $label)
+                        <option value="{{ $value }}" @selected(old('office_type') === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+                <x-field-error field="office_type" bag="designationCreate" />
+            </label>
+
+            <label data-designation-program-scope>
+                Program Scope
+                <select name="program_id">
+                    <option value="">Select program</option>
+                    @foreach($programs as $program)
+                        <option value="{{ $program->id }}" @selected((string) old('program_id') === (string) $program->id)>
+                            {{ $program->code }} - {{ $program->name }}
+                        </option>
+                    @endforeach
+                </select>
+                <x-field-error field="program_id" bag="designationCreate" />
+            </label>
+
+            <label data-designation-year-scope>
+                Year Level Scope
+                <select name="year_level">
+                    <option value="">Select year</option>
+                    @foreach([1, 2, 3, 4] as $yearLevel)
+                        <option value="{{ $yearLevel }}" @selected((string) old('year_level') === (string) $yearLevel)>
+                            Year {{ $yearLevel }}
+                        </option>
+                    @endforeach
+                </select>
+                <x-field-error field="year_level" bag="designationCreate" />
+            </label>
+
+            <label>
+                Display Name
+                <input
+                    type="text"
+                    name="display_name"
+                    value="{{ old('display_name') }}"
+                    maxlength="120"
+                    placeholder="Optional custom name"
+                >
+                <x-field-error field="display_name" bag="designationCreate" />
+            </label>
+
+            <button type="submit" data-loading-button data-loading-text="Saving...">
+                Save Routing Office
+            </button>
+        </form>
     </div>
 
     <div class="routing-records-card">
@@ -142,18 +205,33 @@
                             </td>
 
                             <td>
-                                <button
-                                    type="button"
-                                    class="button secondary routing-assign-trigger"
-                                    data-designation-name="{{ $designation->display_name }}"
-                                    data-designation-scope="{{ $scopeLabel }}"
-                                    data-form-key="{{ $designationFormKey }}"
-                                    data-current-user-id="{{ $currentUser?->id }}"
-                                    data-assignment-action="{{ route('admin.office-designations.assignment.update', $designation) }}"
-                                    data-eligible-url="{{ route('admin.office-designations.eligible-users', $designation) }}"
-                                >
-                                    {{ $currentAssignment ? 'Change Holder' : 'Assign Holder' }}
-                                </button>
+                                <div class="routing-row-actions">
+                                    <button
+                                        type="button"
+                                        class="button secondary routing-assign-trigger"
+                                        data-designation-name="{{ $designation->display_name }}"
+                                        data-designation-scope="{{ $scopeLabel }}"
+                                        data-form-key="{{ $designationFormKey }}"
+                                        data-current-user-id="{{ $currentUser?->id }}"
+                                        data-assignment-action="{{ route('admin.office-designations.assignment.update', $designation) }}"
+                                        data-eligible-url="{{ route('admin.office-designations.eligible-users', $designation) }}"
+                                    >
+                                        {{ $currentAssignment ? 'Change Holder' : 'Assign Holder' }}
+                                    </button>
+
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.office-designations.destroy', $designation) }}"
+                                        data-routing-delete-form
+                                        data-routing-delete-name="{{ $designation->display_name }}"
+                                    >
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="button ghost routing-remove-button">
+                                            Remove
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -185,6 +263,16 @@
                 <input type="hidden" name="_form_key" id="routingAssignmentFormKey">
 
                 <label>
+                    Search Eligible Holder
+                    <input
+                        type="search"
+                        id="routingAssignmentSearch"
+                        placeholder="Type a name or student number"
+                        autocomplete="off"
+                    >
+                </label>
+
+                <label>
                     Eligible Holder
                     <select name="user_id" id="routingAssignmentUserSelect" required disabled>
                         <option value="">Loading eligible holders...</option>
@@ -212,10 +300,13 @@
 <style>
     #routing-configuration {
         display: grid;
-        gap: 20px;
-        padding: 20px 28px 28px;
+        gap: 18px;
+        padding: 10px 8px 24px;
         width: 100%;
         max-width: none;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
     }
 
     .routing-page-header {
@@ -224,36 +315,86 @@
         align-items: center;
         gap: 14px;
         width: 100%;
-        padding: 18px;
-        border: 1px solid #e4dacd;
-        border-radius: 18px;
-        background: #fffdf8;
-        box-shadow: 0 12px 28px rgba(24, 58, 99, 0.04);
+        padding: 4px 2px;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
     }
 
     .routing-page-header h1 {
         margin: 0;
         color: #173c66;
-        font-size: 28px;
+        font-size: clamp(1.7rem, 2vw, 2.3rem);
         line-height: 1.1;
         letter-spacing: -0.03em;
     }
 
-    .routing-page-header p {
-        margin: 8px 0 0;
-        color: #5d6b84;
-        font-size: 15px;
+    .routing-create-panel {
+        display: grid;
+        grid-template-columns: minmax(180px, 0.7fr) minmax(0, 2.3fr);
+        gap: 18px;
+        align-items: end;
+        padding: 18px 0 20px;
+        border-bottom: 1px solid rgba(23, 60, 102, 0.12);
+    }
+
+    .routing-create-copy h2 {
+        margin: 4px 0 0;
+        color: #173c66;
+        font-size: 1.25rem;
+    }
+
+    .routing-create-form {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(150px, 1fr)) auto;
+        gap: 10px;
+        align-items: start;
+    }
+
+    .routing-create-form label,
+    .routing-assignment-form label {
+        display: grid;
+        gap: 5px;
+        color: #173c66;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+    }
+
+    .routing-create-form input,
+    .routing-create-form select,
+    .routing-assignment-form input,
+    .routing-assignment-form select {
+        width: 100%;
+        height: 42px;
+        margin: 0;
+        border: 1px solid #d8cdbc;
+        border-radius: 13px;
+        background: rgba(255, 255, 255, 0.88);
+        color: #172033;
+        font-size: 14px;
+        text-transform: none;
+        letter-spacing: normal;
+        font-weight: 600;
+    }
+
+    .routing-create-form button {
+        align-self: end;
+        min-height: 42px;
+        border-radius: 999px;
+        white-space: nowrap;
     }
 
     .routing-records-card {
         display: grid;
         gap: 14px;
         width: 100%;
-        padding: 18px;
-        border: 1px solid #e4dacd;
-        border-radius: 18px;
-        background: #fffdf8;
-        box-shadow: 0 12px 28px rgba(24, 58, 99, 0.04);
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
     }
 
     .routing-records-header {
@@ -287,9 +428,10 @@
 
     .routing-table-wrap {
         overflow-x: auto;
-        border: 1px solid #e4dacd;
-        border-radius: 16px;
-        background: #ffffff;
+        border: 1px solid rgba(23, 60, 102, 0.11);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.72);
+        box-shadow: 0 18px 42px rgba(24, 58, 99, 0.07);
     }
 
     .routing-table {
@@ -420,19 +562,8 @@
     .routing-assignment-form {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
-        gap: 8px;
+        gap: 10px;
         align-items: start;
-    }
-
-    .routing-assignment-form select {
-        width: 100%;
-        height: 42px;
-        margin: 0;
-        border: 1px solid #d8cdbc;
-        border-radius: 13px;
-        background: #ffffff;
-        color: #172033;
-        font-size: 14px;
     }
 
     .routing-assignment-form button {
@@ -482,9 +613,10 @@
         gap: 18px;
         padding: 24px;
         border-radius: 24px;
-        background: #fffdf8;
-        border: 1px solid #e4dacd;
+        background: rgba(255, 253, 248, 0.96);
+        border: 1px solid rgba(228, 218, 205, 0.9);
         box-shadow: 0 24px 70px rgba(14, 39, 66, 0.24);
+        backdrop-filter: blur(18px);
     }
 
     .routing-modal-header,
@@ -515,8 +647,29 @@
         align-items: center;
     }
 
+    .routing-row-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .routing-row-actions .button {
+        min-height: 38px;
+        padding: 8px 13px;
+    }
+
+    .routing-remove-button {
+        color: #9a3412;
+    }
+
     @media (max-width: 1200px) {
         .routing-filter-bar {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .routing-create-panel,
+        .routing-create-form {
             grid-template-columns: 1fr 1fr;
         }
 
@@ -530,9 +683,9 @@
             padding: 16px;
         }
 
-        .routing-page-header,
-        .routing-records-card {
-            padding: 18px;
+        .routing-create-panel,
+        .routing-create-form {
+            grid-template-columns: 1fr;
         }
 
         .routing-page-header h1 {
@@ -577,7 +730,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const assignmentScope = document.getElementById('routingAssignmentScope');
     const assignmentFormKey = document.getElementById('routingAssignmentFormKey');
     const assignmentUserSelect = document.getElementById('routingAssignmentUserSelect');
+    const assignmentSearch = document.getElementById('routingAssignmentSearch');
     const assignmentHelp = document.getElementById('routingAssignmentHelp');
+    const designationTypeSelect = routingSection.querySelector('[data-designation-type]');
+    const designationProgramScope = routingSection.querySelector('[data-designation-program-scope]');
+    const designationYearScope = routingSection.querySelector('[data-designation-year-scope]');
+    let eligibleController = null;
+    let eligibleSearchTimer = null;
+    let activeAssignmentButton = null;
 
     const normalize = function (value) {
         return String(value || '').toLowerCase().trim();
@@ -631,6 +791,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
     applyRoutingFilters();
 
+    const syncDesignationScopeFields = function () {
+        const type = designationTypeSelect?.value || '';
+        const needsProgram = ['acad_org_treasurer', 'acad_org_adviser'].includes(type);
+        const needsYear = type === 'year_level_treasurer';
+
+        if (designationProgramScope) {
+            designationProgramScope.hidden = !needsProgram;
+            designationProgramScope.querySelector('select').disabled = !needsProgram;
+        }
+
+        if (designationYearScope) {
+            designationYearScope.hidden = !needsYear;
+            designationYearScope.querySelector('select').disabled = !needsYear;
+        }
+    };
+
+    designationTypeSelect?.addEventListener('change', syncDesignationScopeFields);
+    syncDesignationScopeFields();
+
+    routingSection.querySelectorAll('[data-routing-delete-form]').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            const name = form.dataset.routingDeleteName || 'this routing office';
+
+            if (!window.confirm('Remove ' + name + ' from new clearance routing? Existing history stays intact.')) {
+                event.preventDefault();
+            }
+        });
+    });
+
     const closeAssignmentModal = function () {
         if (!assignmentModal) {
             return;
@@ -670,24 +859,32 @@ document.addEventListener('DOMContentLoaded', function () {
         assignmentHelp.textContent = users.length + ' eligible holder' + (users.length === 1 ? '' : 's') + ' loaded.';
     };
 
-    const openAssignmentModal = async function (button) {
+    const loadEligibleUsers = async function (button, searchValue = '') {
         if (!assignmentModal || !assignmentForm || !assignmentUserSelect) {
             return;
         }
 
-        assignmentTitle.textContent = button.dataset.designationName || 'Assign Holder';
-        assignmentScope.textContent = button.dataset.designationScope || 'Whole school';
-        assignmentForm.action = button.dataset.assignmentAction;
-        assignmentFormKey.value = button.dataset.formKey || '';
+        if (eligibleController) {
+            eligibleController.abort();
+        }
+
+        eligibleController = new AbortController();
+
+        const url = new URL(button.dataset.eligibleUrl, window.location.origin);
+        if (searchValue.trim()) {
+            url.searchParams.set('search', searchValue.trim());
+        }
+
         assignmentUserSelect.innerHTML = '<option value="">Loading eligible holders...</option>';
         assignmentUserSelect.disabled = true;
-        assignmentHelp.textContent = 'Loading eligible holders...';
-        assignmentModal.hidden = false;
-        document.body.style.overflow = 'hidden';
+        assignmentHelp.textContent = searchValue.trim()
+            ? 'Searching eligible holders...'
+            : 'Loading eligible holders...';
 
         try {
-            const response = await fetch(button.dataset.eligibleUrl, {
+            const response = await fetch(url.toString(), {
                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                signal: eligibleController.signal,
             });
 
             if (!response.ok) {
@@ -696,12 +893,52 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const payload = await response.json();
             setAssignmentOptions(payload.users || [], payload.current_user_id || button.dataset.currentUserId);
+
+            if (payload.requires_search && !searchValue.trim()) {
+                assignmentHelp.textContent = payload.users?.length
+                    ? 'Current holder is shown. Search by name or student number to change it.'
+                    : 'Search by name or student number to find eligible students.';
+            }
         } catch (error) {
+            if (error.name === 'AbortError') {
+                return;
+            }
+
             assignmentUserSelect.innerHTML = '<option value="">Unable to load eligible holders</option>';
             assignmentUserSelect.disabled = true;
             assignmentHelp.textContent = 'Refresh the page and try again.';
         }
     };
+
+    const openAssignmentModal = function (button) {
+        if (!assignmentModal || !assignmentForm || !assignmentUserSelect) {
+            return;
+        }
+
+        activeAssignmentButton = button;
+
+        assignmentTitle.textContent = button.dataset.designationName || 'Assign Holder';
+        assignmentScope.textContent = button.dataset.designationScope || 'Whole school';
+        assignmentForm.action = button.dataset.assignmentAction;
+        assignmentFormKey.value = button.dataset.formKey || '';
+        assignmentSearch.value = '';
+        assignmentModal.hidden = false;
+        document.body.style.overflow = 'hidden';
+        assignmentSearch.focus();
+
+        loadEligibleUsers(button);
+    };
+
+    assignmentSearch?.addEventListener('input', function () {
+        if (!activeAssignmentButton) {
+            return;
+        }
+
+        window.clearTimeout(eligibleSearchTimer);
+        eligibleSearchTimer = window.setTimeout(function () {
+            loadEligibleUsers(activeAssignmentButton, assignmentSearch.value);
+        }, 220);
+    });
 
     routingSection.querySelectorAll('.routing-assign-trigger').forEach(function (button) {
         button.addEventListener('click', function () {
