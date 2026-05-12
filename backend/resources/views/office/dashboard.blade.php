@@ -268,13 +268,17 @@
                     <div class="list office-list">
                         @forelse($archiveSteps as $step)
                             @php
-                                $student = $step->clearance->student;
+                                $clearance = $step->clearance;
+                                $student = $clearance?->student;
                                 $studentName = $student?->displayName() ?: 'Student record unavailable';
                                 $studentId = $student?->student_id_number ?: 'No ID';
                                 $programCode = $student?->program?->code ?: 'No program';
                                 $yearLevel = $student?->yearLevelLabel() ?: 'No year level';
                                 $studentMeta = $studentId . ' | ' . $programCode . ' | ' . $yearLevel;
                                 $studentPhoto = $student?->user?->profilePhotoUrl();
+                                $clearanceStatus = $clearance?->status
+                                    ? ucwords(str_replace('_', ' ', $clearance->status))
+                                    : 'Unavailable';
                             @endphp
 
                             <div class="record office-record processed-record">
@@ -308,7 +312,7 @@
                                                 data-modal-student-name="{{ $studentName }}"
                                                 data-modal-student-meta="{{ $studentMeta }}"
                                                 data-modal-step-status="{{ $step->status === 'flagged' ? 'Rejected' : 'Approved' }}"
-                                                data-modal-clearance-status="{{ ucwords(str_replace('_', ' ', $step->clearance->status)) }}"
+                                                data-modal-clearance-status="{{ $clearanceStatus }}"
                                                 data-modal-last-processed="{{ optional($step->signed_at)->format('M d, Y h:i A') ?? '-' }}"
                                                 data-modal-designation="{{ $step->office_label ?: '-' }}"
                                                 data-modal-note-label="{{ $step->status === 'flagged' ? 'Reject Reason' : 'Processed Note' }}"
@@ -368,7 +372,7 @@
 
                                     <p class="mini">
                                         <strong>Student clearance status:</strong>
-                                        {{ ucwords(str_replace('_', ' ', $step->clearance->status)) }}
+                                        {{ $clearanceStatus }}
                                     </p>
                                 </div>
                             </div>

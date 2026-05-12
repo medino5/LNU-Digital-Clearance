@@ -77,8 +77,10 @@ class OfficeDashboardController extends Controller
                     ->simplePaginate(20, ['*'], 'pending_page')
                     ->withQueryString();
             } else {
+                $archiveNeedsJoins = $archiveSearch !== ''
+                    || in_array($archiveSort, ['student_asc', 'student_id_asc', 'program_asc'], true);
                 $archiveQuery = $this->applyArchiveFilters(
-                    $this->archiveQuery($officeDesignations->pluck('id')),
+                    $this->archiveQuery($officeDesignations->pluck('id'), $archiveNeedsJoins),
                     $archiveSearch,
                     $archiveStatus,
                 );
@@ -235,18 +237,24 @@ class OfficeDashboardController extends Controller
         return $query;
     }
 
-    private function archiveQuery($designationIds)
+    private function archiveQuery($designationIds, bool $withStudentJoins = false)
     {
-        return ClearanceStep::query()
-            ->join('clearances', 'clearance_steps.clearance_id', '=', 'clearances.id')
-            ->leftJoin('students', 'clearances.student_id', '=', 'students.id')
-            ->leftJoin('users', 'students.user_id', '=', 'users.id')
-            ->leftJoin('programs', 'students.program_id', '=', 'programs.id')
+        $query = ClearanceStep::query()
             ->whereIn('clearance_steps.office_designation_id', $designationIds)
             ->whereIn('clearance_steps.status', [
                 ClearanceStep::STATUS_APPROVED,
                 ClearanceStep::STATUS_FLAGGED,
             ]);
+
+        if (! $withStudentJoins) {
+            return $query;
+        }
+
+        return $query
+            ->join('clearances', 'clearance_steps.clearance_id', '=', 'clearances.id')
+            ->leftJoin('students', 'clearances.student_id', '=', 'students.id')
+            ->leftJoin('users', 'students.user_id', '=', 'users.id')
+            ->leftJoin('programs', 'students.program_id', '=', 'programs.id');
     }
 
     private function applyArchiveSort($query, string $sort)
