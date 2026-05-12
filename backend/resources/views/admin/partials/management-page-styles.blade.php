@@ -328,6 +328,38 @@
         border-radius: 14px;
     }
 
+        .table-action-group {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .table-action-group form {
+        margin: 0;
+    }
+
+    .button.danger,
+    button.danger {
+        background: #dc2626;
+        border-color: #dc2626;
+        color: #ffffff;
+    }
+
+    .button.danger:hover,
+    button.danger:hover {
+        background: #b91c1c;
+        border-color: #b91c1c;
+        color: #ffffff;
+    }
+
+    .button.danger:focus,
+    button.danger:focus {
+        outline: 2px solid rgba(220, 38, 38, 0.35);
+        outline-offset: 2px;
+    }
+
     @media (max-width: 720px) {
         .management-header,
         .admin-page-header,

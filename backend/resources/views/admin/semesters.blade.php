@@ -60,13 +60,33 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <button
-                                        type="button"
-                                        class="button secondary table-action-button"
-                                        data-modal-open="semester-edit-{{ $semester->id }}"
-                                    >
-                                        Edit
-                                    </button>
+                                    <div class="table-action-group">
+                                        <button
+                                            type="button"
+                                            class="button secondary table-action-button"
+                                            data-modal-open="semester-edit-{{ $semester->id }}"
+                                        >
+                                            Edit
+                                        </button>
+
+                                        <form
+                                            method="POST"
+                                            action="{{ route('admin.semesters.destroy', $semester) }}"
+                                            onsubmit="return confirm('Delete this semester? This is only allowed if it has no clearance records and is not the active semester.');"
+                                        >
+                                            @csrf
+                                            @method('DELETE')
+
+                                            <button
+                                                type="submit"
+                                                class="button danger table-action-button"
+                                                data-loading-button
+                                                data-loading-text="Deleting..."
+                                            >
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
