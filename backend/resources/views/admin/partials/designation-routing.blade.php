@@ -222,11 +222,11 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 18px;
+        gap: 14px;
         width: 100%;
-        padding: 24px;
+        padding: 18px;
         border: 1px solid #e4dacd;
-        border-radius: 22px;
+        border-radius: 18px;
         background: #fffdf8;
         box-shadow: 0 12px 28px rgba(24, 58, 99, 0.04);
     }
@@ -234,7 +234,7 @@
     .routing-page-header h1 {
         margin: 0;
         color: #173c66;
-        font-size: 34px;
+        font-size: 28px;
         line-height: 1.1;
         letter-spacing: -0.03em;
     }
@@ -242,16 +242,16 @@
     .routing-page-header p {
         margin: 8px 0 0;
         color: #5d6b84;
-        font-size: 17px;
+        font-size: 15px;
     }
 
     .routing-records-card {
         display: grid;
-        gap: 18px;
+        gap: 14px;
         width: 100%;
-        padding: 24px;
+        padding: 18px;
         border: 1px solid #e4dacd;
-        border-radius: 22px;
+        border-radius: 18px;
         background: #fffdf8;
         box-shadow: 0 12px 28px rgba(24, 58, 99, 0.04);
     }

@@ -3,7 +3,7 @@
     .admin-page,
     .management-page {
         display: grid;
-        gap: 18px;
+        gap: 14px;
     }
 
     .admin-page-header,
@@ -11,8 +11,8 @@
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        gap: 18px;
-        padding: 20px 22px;
+        gap: 14px;
+        padding: 16px 18px;
         border-radius: 18px;
         background: linear-gradient(135deg, #fbf7ef 0%, #fffdf8 100%);
         border: 1px solid #e8dfd1;
@@ -24,7 +24,7 @@
     .management-header h1 {
         margin: 0;
         color: #173c66;
-        font-size: clamp(1.55rem, 2vw, 2.15rem);
+        font-size: clamp(1.38rem, 1.8vw, 1.95rem);
         line-height: 1.08;
         letter-spacing: -0.03em;
         overflow-wrap: anywhere;
@@ -73,8 +73,8 @@
     .admin-section-card,
     .management-card {
         display: grid;
-        gap: 18px;
-        padding: 22px;
+        gap: 14px;
+        padding: 18px;
         border-radius: 18px;
         background: linear-gradient(135deg, #fbf7ef 0%, #fffdf8 100%);
         border: 1px solid #e8dfd1;

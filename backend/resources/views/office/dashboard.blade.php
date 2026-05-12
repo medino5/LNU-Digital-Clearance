@@ -374,9 +374,21 @@
                     </div>
 
                     @if(method_exists($archiveSteps, 'hasPages') && $archiveSteps->hasPages())
-                        <div class="pagination-wrapper">
-                            {{ $archiveSteps->links('pagination::bootstrap-5') }}
-                        </div>
+                        <nav class="pagination-wrapper office-simple-pagination" aria-label="Archive pagination">
+                            @if($archiveSteps->onFirstPage())
+                                <span class="button ghost is-disabled" aria-disabled="true">Previous</span>
+                            @else
+                                <a class="button ghost" href="{{ $archiveSteps->previousPageUrl() }}">Previous</a>
+                            @endif
+
+                            <span class="office-page-indicator">Page {{ $archiveSteps->currentPage() }}</span>
+
+                            @if($archiveSteps->hasMorePages())
+                                <a class="button ghost" href="{{ $archiveSteps->nextPageUrl() }}">Next</a>
+                            @else
+                                <span class="button ghost is-disabled" aria-disabled="true">Next</span>
+                            @endif
+                        </nav>
                     @endif
                 </section>
             @endif
@@ -798,6 +810,28 @@
             transform: translateY(-1px);
             box-shadow: 0 6px 14px rgba(16, 24, 40, 0.08);
             border-color: rgba(22, 56, 95, 0.35);
+        }
+
+        .office-simple-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .office-page-indicator {
+            color: var(--muted);
+            font-size: 0.9rem;
+            font-weight: 800;
+        }
+
+        .button.ghost.is-disabled,
+        .button.ghost.is-disabled:hover {
+            pointer-events: none;
+            opacity: 0.48;
+            transform: none;
+            box-shadow: none;
         }
 
         .profile-link {

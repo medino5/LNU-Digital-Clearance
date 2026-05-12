@@ -273,13 +273,13 @@
     <style>
         .admin-page {
             display: grid;
-            gap: 18px;
+            gap: 14px;
         }
 
         .admin-section-card {
             display: grid;
-            gap: 18px;
-            padding: 22px;
+            gap: 14px;
+            padding: 18px;
             border-radius: 18px;
             background: linear-gradient(135deg, #fbf7ef 0%, #fffdf8 100%);
             border: 1px solid #e8dfd1;
@@ -288,28 +288,28 @@
 
         .dashboard-intro-shell {
             display: grid;
-            gap: 18px;
+            gap: 14px;
         }
 
         .dashboard-quick-actions {
             display: grid;
-            gap: 20px;
+            gap: 14px;
         }
 
         .quick-action-grid {
             display: grid;
             grid-template-columns: repeat(5, minmax(0, 1fr));
-            gap: 14px;
+            gap: 12px;
             align-items: stretch;
         }
 
         .quick-action-card {
-            min-height: 132px;
+            min-height: 118px;
             position: relative;
             display: flex;
             align-items: flex-start;
-            gap: 14px;
-            padding: 17px 16px 44px;
+            gap: 12px;
+            padding: 15px 14px 40px;
             border-radius: 14px;
             text-decoration: none;
             color: #19324d;

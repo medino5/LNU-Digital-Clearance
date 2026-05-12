@@ -17,6 +17,7 @@
             --success: #1f7a4f;
             --danger: #b5442c;
             --warning: #8b5a14;
+            --admin-sidebar-width: 208px;
         }
 
         * { box-sizing: border-box; }
@@ -427,7 +428,7 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 238px;
+            width: var(--admin-sidebar-width);
             height: 100vh;
             background:
                 radial-gradient(circle at top left, rgba(210, 168, 61, 0.25), transparent 35%),
@@ -435,12 +436,12 @@
             color: white;
             display: flex;
             flex-direction: column;
-            padding: 18px 14px;
+            padding: 16px 12px;
             overflow-y: auto;
             scrollbar-width: none;
             -ms-overflow-style: none;
             z-index: 1000;
-            box-shadow: 8px 0 24px rgba(14, 39, 66, 0.18);
+            box-shadow: 6px 0 22px rgba(14, 39, 66, 0.16);
         }
 
         .admin-sidebar::-webkit-scrollbar {
@@ -452,8 +453,8 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            margin-bottom: 18px;
-            padding: 10px 0 14px 0;
+            margin-bottom: 14px;
+            padding: 8px 0 12px 0;
             position: relative;
             text-align: center;
         }
@@ -468,14 +469,14 @@
         }
 
         .sidebar-logo {
-            width: 82px;
-            height: 82px;
+            width: 64px;
+            height: 64px;
             object-fit: contain;
         }
 
         .sidebar-brand-text {
-            margin-top: 10px;
-            font-size: 12px;
+            margin-top: 8px;
+            font-size: 10px;
             font-weight: 800;  
             letter-spacing: 0.12em; 
             color: rgba(255, 255, 255, 0.95);
@@ -490,16 +491,16 @@
         .sidebar-nav {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 5px;
         }
 
         .nav-item {
-            padding: 11px 13px;
-            border-radius: 12px;
+            padding: 10px 11px;
+            border-radius: 11px;
             text-decoration: none;
             color: white;
             transition: 0.2s ease;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
         }
 
@@ -514,35 +515,24 @@
             box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
         }
 
-        .sidebar-logout {
-            margin-top: auto;
-            padding-top: 18px;
-        }
-
-        .sidebar-logout button {
-            width: 100%;
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
         /* ================= MAIN ================= */
 
         .admin-main {
             flex: 1;
             display: flex;
             flex-direction: column;
-            margin-left: 238px;
+            margin-left: var(--admin-sidebar-width);
         }
 
         .admin-header {
             position: fixed;
             top: 0;
-            left: 238px;
+            left: var(--admin-sidebar-width);
             right: 0;
             background:
                 linear-gradient(135deg, #0e2742 0%, #16385f 65%, #1b4675 100%);
             color: white;
-            padding: 16px 24px;
+            padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -585,7 +575,7 @@
             display: flex;
             justify-content: flex-end;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
         }
 
         .admin-action-search {
@@ -599,7 +589,7 @@
             border-radius: 999px;
             background: rgba(255, 255, 255, 0.12);
             color: white;
-            padding: 12px 44px 12px 18px;
+            padding: 10px 42px 10px 16px;
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
         }
 
@@ -709,16 +699,15 @@
         }
 
         @media (max-width: 1024px) {
-            .admin-sidebar {
-                width: 220px;
+            :root {
+                --admin-sidebar-width: 198px;
             }
 
-            .admin-main {
-                margin-left: 220px;
+            .admin-sidebar {
+                padding-inline: 10px;
             }
 
             .admin-header {
-                left: 220px;
                 align-items: stretch;
             }
 
@@ -742,11 +731,35 @@
         }
 
         .admin-user {
-            display: flex;
+            position: relative;
+            flex: 0 0 auto;
+        }
+
+        .admin-user-menu summary {
+            display: inline-flex;
             align-items: center;
-            gap: 10px;
-            font-weight: 600;
+            gap: 9px;
+            min-height: 42px;
+            padding: 4px 5px 4px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            background: rgba(255, 255, 255, 0.11);
+            color: white;
+            cursor: pointer;
+            list-style: none;
             white-space: nowrap;
+        }
+
+        .admin-user-menu summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .admin-user-name {
+            max-width: 180px;
+            overflow: hidden;
+            font-size: 13px;
+            font-weight: 750;
+            text-overflow: ellipsis;
         }
 
         .admin-user-avatar {
@@ -759,16 +772,66 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
             font-size: 14px;
             font-weight: 700;
         }
 
+        .admin-user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .admin-user-dropdown {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            z-index: 1120;
+            width: min(260px, calc(100vw - 32px));
+            display: grid;
+            gap: 12px;
+            padding: 14px;
+            border: 1px solid #ded5c8;
+            border-radius: 18px;
+            background: #fffdf8;
+            color: #173c66;
+            box-shadow: 0 20px 44px rgba(14, 39, 66, 0.22);
+        }
+
+        .admin-user-dropdown strong,
+        .admin-user-dropdown span {
+            display: block;
+            overflow-wrap: anywhere;
+        }
+
+        .admin-user-dropdown span {
+            margin-top: 3px;
+            color: #667085;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .admin-user-dropdown form {
+            margin: 0;
+        }
+
+        .admin-user-dropdown button {
+            width: 100%;
+            min-height: 40px;
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 14px;
+            justify-content: center;
+        }
+
         .admin-content {
-            padding: 96px 24px 28px;
+            padding: 78px 18px 24px;
             background:
                 radial-gradient(circle at top right, rgba(210, 168, 61, 0.10), transparent 22%),
                 linear-gradient(180deg, #f8f5ed 0%, #f1ebdf 100%);
             min-height: 100vh;
+            font-size: 14px;
         }
 
         .align-stretch {
@@ -799,6 +862,9 @@
 
 @if(auth()->check() && request()->routeIs('admin.*'))
     @php
+        $currentAdmin = auth()->user();
+        $currentAdminName = $currentAdmin?->name ?? 'Admin';
+        $currentAdminPhoto = $currentAdmin?->profilePhotoUrl();
         $adminActionSearchItems = [
             [
                 'title' => 'Dashboard',
@@ -917,11 +983,6 @@
                 <a href="{{ route('admin.analytics.index') }}" class="nav-item {{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}">Analytics</a>
                 <a href="{{ route('admin.clearance-history.index') }}" class="nav-item {{ request()->routeIs('admin.clearance-history.*') || request()->routeIs('admin.clearances.show') ? 'active' : '' }}">Download Reports</a>
             </nav>
-
-            <form method="POST" action="{{ route('portal.logout') }}" class="sidebar-logout">
-                @csrf
-                <button type="submit">Log Out</button>
-            </form>
         </aside>
 
         <main class="admin-main">
@@ -954,10 +1015,30 @@
                     </div>
 
                     <div class="admin-user">
-                        <span>{{ auth()->user()->name }}</span>
-                        <div class="admin-user-avatar">
-                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                        </div>
+                        <details class="admin-user-menu">
+                            <summary aria-label="Open admin account menu">
+                                <span class="admin-user-name">{{ $currentAdminName }}</span>
+                                <span class="admin-user-avatar">
+                                    @if($currentAdminPhoto)
+                                        <img src="{{ $currentAdminPhoto }}" alt="{{ $currentAdminName }} profile picture">
+                                    @else
+                                        {{ strtoupper(substr($currentAdminName, 0, 1)) }}
+                                    @endif
+                                </span>
+                            </summary>
+
+                            <div class="admin-user-dropdown">
+                                <div>
+                                    <strong>{{ $currentAdminName }}</strong>
+                                    <span>{{ $currentAdmin?->username }}</span>
+                                </div>
+
+                                <form method="POST" action="{{ route('portal.logout') }}">
+                                    @csrf
+                                    <button type="submit">Log Out</button>
+                                </form>
+                            </div>
+                        </details>
                     </div>
                 </div>
             </header>

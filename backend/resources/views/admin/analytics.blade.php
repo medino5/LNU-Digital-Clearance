@@ -276,7 +276,7 @@
     <style>
         .analytics-dashboard-page {
             display: grid;
-            gap: 18px;
+            gap: 14px;
             min-width: 0;
         }
 
@@ -292,10 +292,10 @@
         .analytics-hero {
             display: grid;
             grid-template-columns: minmax(260px, 1fr) minmax(360px, auto);
-            gap: 20px;
+            gap: 16px;
             align-items: start;
-            padding: 22px;
-            border-radius: 24px;
+            padding: 18px;
+            border-radius: 20px;
             background:
                 radial-gradient(circle at top left, rgba(241, 190, 72, 0.2), transparent 32%),
                 linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
@@ -312,7 +312,7 @@
         .analytics-hero h1 {
             margin: 6px 0 4px;
             color: #0b1f44;
-            font-size: clamp(1.7rem, 3vw, 2.35rem);
+            font-size: clamp(1.5rem, 2.4vw, 2.05rem);
             line-height: 1;
         }
 
@@ -388,24 +388,24 @@
         .analytics-metric-grid {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 16px;
+            gap: 12px;
         }
 
         .analytics-metric {
             display: grid;
             grid-template-columns: auto 1fr;
-            gap: 14px;
+            gap: 12px;
             align-items: center;
-            padding: 18px;
-            border-radius: 22px;
+            padding: 15px;
+            border-radius: 18px;
         }
 
         .analytics-metric-icon {
-            width: 56px;
-            height: 56px;
+            width: 48px;
+            height: 48px;
             display: grid;
             place-items: center;
-            border-radius: 18px;
+            border-radius: 15px;
             font-size: 1.2rem;
             font-weight: 950;
         }
@@ -424,7 +424,7 @@
             display: block;
             margin: 5px 0;
             color: #0b1f44;
-            font-size: clamp(1.6rem, 3vw, 2.25rem);
+            font-size: clamp(1.38rem, 2.5vw, 1.9rem);
             line-height: 1;
         }
 
@@ -461,7 +461,7 @@
         .analytics-secondary-grid,
         .analytics-bottom-grid {
             display: grid;
-            gap: 16px;
+            gap: 12px;
             align-items: stretch;
             min-width: 0;
         }
@@ -479,8 +479,8 @@
         }
 
         .analytics-panel {
-            padding: 20px;
-            border-radius: 24px;
+            padding: 16px;
+            border-radius: 20px;
             overflow: hidden;
         }
 

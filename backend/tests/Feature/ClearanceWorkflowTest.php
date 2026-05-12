@@ -6,6 +6,8 @@ use App\Models\Clearance;
 use App\Models\ClearanceStep;
 use App\Models\OfficeAccount;
 use App\Models\OfficeDesignation;
+use App\Models\Program;
+use App\Models\Semester;
 use App\Models\Student;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
@@ -520,6 +522,52 @@ class ClearanceWorkflowTest extends TestCase
             ]))
             ->assertRedirect(route('office.dashboard', ['tab' => 'archive']))
             ->assertSessionHasErrors('archive_search');
+    }
+
+    public function test_office_archive_uses_safe_pagination_for_large_processed_history(): void
+    {
+        $officeUser = User::query()->where('username', 'vpsd.office')->firstOrFail();
+        $designation = OfficeDesignation::query()->where('key', 'vpsd-office')->firstOrFail();
+        $program = Program::query()->where('code', 'BSIT')->firstOrFail();
+        $semester = Semester::query()->where('is_active', true)->firstOrFail();
+
+        foreach (range(1, 25) as $index) {
+            $user = User::factory()
+                ->namedStudent('Archive', null, 'Student')
+                ->create([
+                    'username' => (string) (2500000 + $index),
+                ]);
+
+            $student = Student::factory()->create([
+                'user_id' => $user->id,
+                'student_id_number' => $user->username,
+                'program_id' => $program->id,
+                'year_level' => 3,
+            ]);
+
+            $clearance = Clearance::factory()
+                ->forStudentAndSemester($student, $semester)
+                ->create([
+                    'status' => Clearance::STATUS_COMPLETED,
+                    'reference_number' => 'ARCHIVE-' . str_pad((string) $index, 4, '0', STR_PAD_LEFT),
+                    'completed_at' => now()->subDays($index),
+                ]);
+
+            ClearanceStep::factory()
+                ->forDesignation($designation)
+                ->approved('Bulk archive approval.')
+                ->create([
+                    'clearance_id' => $clearance->id,
+                    'signed_at' => now()->subMinutes($index),
+                ]);
+        }
+
+        $this->actingAs($officeUser)
+            ->get(route('office.dashboard', ['tab' => 'archive']))
+            ->assertOk()
+            ->assertSee('office-simple-pagination')
+            ->assertSee('Page 1')
+            ->assertSee('Next');
     }
 
     public function test_office_user_can_undo_a_flagged_step_and_reopen_the_clearance(): void
