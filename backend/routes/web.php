@@ -63,6 +63,11 @@ Route::prefix('admin')
 
         Route::post('/semesters', [SemesterAdminController::class, 'store'])->name('admin.semesters.store');
         Route::put('/semesters/{semester}', [SemesterAdminController::class, 'update'])->name('admin.semesters.update');
+        Route::delete('/semesters/{semester}', [SemesterAdminController::class, 'destroy'])
+            ->missing(fn () => redirect()
+                ->route('admin.semesters.index')
+                ->with('info', 'Semester was already deleted or no longer exists.'))
+            ->name('admin.semesters.destroy');
 
         Route::post('/students', [StudentAdminController::class, 'store'])->name('admin.students.store');
         Route::put('/students/{student}', [StudentAdminController::class, 'update'])->name('admin.students.update');

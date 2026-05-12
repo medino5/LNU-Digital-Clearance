@@ -101,4 +101,33 @@ class SemesterAdminController extends Controller
             'Semester updated successfully.',
         );
     }
+
+    public function destroy(Semester $semester)
+    {
+        $redirectTo = route('admin.semesters.index');
+
+        if ($semester->is_active) {
+            return $this->redirectWithMessage(
+                $redirectTo,
+                'error',
+                'The active semester cannot be deleted. Please activate another semester first.',
+            );
+        }
+
+        if ($semester->clearances()->exists()) {
+            return $this->redirectWithMessage(
+                $redirectTo,
+                'error',
+                'This semester cannot be deleted because it already contains clearance records.',
+            );
+        }
+
+        $semester->delete();
+
+        return $this->redirectWithMessage(
+            $redirectTo,
+            'success',
+            'Semester deleted successfully.',
+        );
+    }
 }
