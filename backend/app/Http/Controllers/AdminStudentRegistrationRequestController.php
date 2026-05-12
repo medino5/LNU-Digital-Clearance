@@ -15,14 +15,14 @@ class AdminStudentRegistrationRequestController extends Controller
     public function index(Request $request)
     {
         $request->validate([
-            'search' => ['nullable', 'string', 'max:100'],
+            'search' => ['nullable', 'string', 'max:50'],
             'status' => ['nullable', 'in:' . implode(',', [
                 StudentRegistrationRequest::STATUS_PENDING,
                 StudentRegistrationRequest::STATUS_APPROVED,
                 StudentRegistrationRequest::STATUS_REJECTED,
             ])],
         ], [
-            'search.max' => 'Registration request search must be 100 characters or fewer.',
+            'search.max' => 'Registration request search must be 50 characters or fewer.',
         ]);
 
         $status = in_array($request->query('status'), [
@@ -146,20 +146,11 @@ class AdminStudentRegistrationRequestController extends Controller
             );
         }
 
-        $data = $this->validateForm(
-            $request,
-            'registrationReject',
-            [
-                'review_note' => ['required', 'string', 'max:500'],
-            ],
-            $redirectTo,
-        );
-
         $registrationRequest->update([
             'status' => StudentRegistrationRequest::STATUS_REJECTED,
             'reviewed_by' => $request->user()->id,
             'reviewed_at' => now(),
-            'review_note' => $data['review_note'],
+            'review_note' => null,
         ]);
 
         return $this->redirectWithMessage(
