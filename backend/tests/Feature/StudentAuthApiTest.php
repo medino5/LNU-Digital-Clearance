@@ -160,25 +160,24 @@ class StudentAuthApiTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_reject_mobile_registration_request_with_reason(): void
+    public function test_admin_can_reject_mobile_registration_request_without_reason(): void
     {
         $admin = User::where('username', 'mis.admin')->firstOrFail();
+
         $registrationRequest = StudentRegistrationRequest::factory()->create([
             'student_id_number' => '2409999',
             'status' => StudentRegistrationRequest::STATUS_PENDING,
         ]);
 
         $this->actingAs($admin)
-            ->post(route('admin.registration-requests.reject', $registrationRequest), [
-                'review_note' => 'Student ID does not match submitted records.',
-            ])
+            ->post(route('admin.registration-requests.reject', $registrationRequest))
             ->assertRedirect(route('admin.registration-requests.index'));
 
         $this->assertDatabaseHas('student_registration_requests', [
             'id' => $registrationRequest->id,
             'status' => StudentRegistrationRequest::STATUS_REJECTED,
             'reviewed_by' => $admin->id,
-            'review_note' => 'Student ID does not match submitted records.',
+            'review_note' => null,
         ]);
 
         $this->assertDatabaseMissing('students', [
