@@ -344,241 +344,252 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
       body: SafeArea(
         child: Form(
           key: _formKey,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(22, 24, 22, 28),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 520),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _HeaderCard(onBack: () => Navigator.of(context).pop()),
-                    const SizedBox(height: 28),
-                    Column(
-                      children: [
-                        _nameField(
-                          controller: _firstNameController,
-                          label: 'First Name',
-                          required: true,
-                        ),
-                        const SizedBox(height: 14),
-                        _nameField(
-                          controller: _lastNameController,
-                          label: 'Last Name',
-                          required: true,
-                        ),
-                        const SizedBox(height: 14),
-                        _middleInitialField(),
-                        const SizedBox(height: 14),
-                        _suffixDropdown(),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      controller: _studentIdController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(7),
-                      ],
-                      style: _inputTextStyle(),
-                      decoration: _inputDecoration(
-                        label: 'Student ID',
-                        icon: Icons.badge_outlined,
+          child: AutofillGroup(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(22, 24, 22, 28),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _HeaderCard(onBack: () => Navigator.of(context).pop()),
+                      const SizedBox(height: 28),
+                      Column(
+                        children: [
+                          _nameField(
+                            controller: _firstNameController,
+                            label: 'First Name',
+                            required: true,
+                          ),
+                          const SizedBox(height: 14),
+                          _nameField(
+                            controller: _lastNameController,
+                            label: 'Last Name',
+                            required: true,
+                          ),
+                          const SizedBox(height: 14),
+                          _middleInitialField(),
+                          const SizedBox(height: 14),
+                          _suffixDropdown(),
+                        ],
                       ),
-                      validator: _validateStudentId,
-                    ),
-                    const SizedBox(height: 16),
-                    _BirthdayFields(
-                      selectedYear: _selectedBirthYear,
-                      selectedMonth: _selectedBirthMonth,
-                      selectedDay: _selectedBirthDay,
-                      yearItems: _birthYearItems,
-                      monthItems: _monthItems,
-                      dayItems: _birthDayItems,
-                      inputTextStyle: _inputTextStyle(),
-                      decorationBuilder: _inputDecoration,
-                      onYearChanged: (year) {
-                        setState(() {
-                          _selectedBirthYear = year;
-                          _normalizeSelectedBirthDay();
-                        });
-                      },
-                      onMonthChanged: (month) {
-                        setState(() {
-                          _selectedBirthMonth = month;
-                          _normalizeSelectedBirthDay();
-                        });
-                      },
-                      onDayChanged: (day) {
-                        setState(() {
-                          _selectedBirthDay = day;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    _SectionTitle(
-                      title: 'Academic Profile',
-                      subtitle:
-                          'These choices come from the admin-managed directory.',
-                    ),
-                    const SizedBox(height: 14),
-                    if (_error != null) ...[
-                      _ErrorBanner(message: _error!),
                       const SizedBox(height: 14),
-                    ],
-                    DropdownButtonFormField<RegistrationProgram>(
-                      key: const Key('registration-program-dropdown'),
-                      initialValue: _selectedProgram,
-                      isExpanded: true,
-                      items: _programItems,
-                      onChanged: canUseAcademicOptions
-                          ? (program) {
-                              setState(() {
-                                _selectedProgram = program;
-                                _selectedYearLevel = null;
-                              });
-                            }
-                          : null,
-                      dropdownColor: _field,
-                      style: _inputTextStyle(),
-                      decoration: _inputDecoration(
-                        label: 'Program',
-                        hint: _isLoadingOptions
-                            ? 'Loading programs...'
-                            : 'Select your program',
-                        icon: Icons.school_outlined,
+                      TextFormField(
+                        controller: _studentIdController,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.username],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(7),
+                        ],
+                        style: _inputTextStyle(),
+                        decoration: _inputDecoration(
+                          label: 'Student ID',
+                          icon: Icons.badge_outlined,
+                        ),
+                        validator: _validateStudentId,
                       ),
-                      validator: (value) =>
-                          value == null ? 'Please select your program.' : null,
-                    ),
-                    const SizedBox(height: 14),
-                    DropdownButtonFormField<RegistrationYearLevel>(
-                      key: const Key('registration-year-level-dropdown'),
-                      initialValue: _selectedYearLevel,
-                      isExpanded: true,
-                      items: _yearLevelItems,
-                      onChanged:
-                          canUseAcademicOptions && _selectedProgram != null
-                          ? (yearLevel) {
-                              setState(() {
-                                _selectedYearLevel = yearLevel;
-                              });
-                            }
-                          : null,
-                      dropdownColor: _field,
-                      style: _inputTextStyle(),
-                      decoration: _inputDecoration(
-                        label: 'Year Level',
-                        hint: _selectedProgram == null
-                            ? 'Select a program first'
-                            : 'Select your year level',
-                        icon: Icons.calendar_month_outlined,
-                      ),
-                      validator: (value) => value == null
-                          ? 'Please select your year level.'
-                          : null,
-                    ),
-                    const SizedBox(height: 14),
-                    _OrganizationCard(program: _selectedProgram),
-                    const SizedBox(height: 24),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      style: _inputTextStyle(),
-                      decoration: _passwordDecoration(
-                        label: 'Password',
-                        obscure: _obscurePassword,
-                        onToggle: () {
+                      const SizedBox(height: 16),
+                      _BirthdayFields(
+                        selectedYear: _selectedBirthYear,
+                        selectedMonth: _selectedBirthMonth,
+                        selectedDay: _selectedBirthDay,
+                        yearItems: _birthYearItems,
+                        monthItems: _monthItems,
+                        dayItems: _birthDayItems,
+                        inputTextStyle: _inputTextStyle(),
+                        decorationBuilder: _inputDecoration,
+                        onYearChanged: (year) {
                           setState(() {
-                            _obscurePassword = !_obscurePassword;
+                            _selectedBirthYear = year;
+                            _normalizeSelectedBirthDay();
+                          });
+                        },
+                        onMonthChanged: (month) {
+                          setState(() {
+                            _selectedBirthMonth = month;
+                            _normalizeSelectedBirthDay();
+                          });
+                        },
+                        onDayChanged: (day) {
+                          setState(() {
+                            _selectedBirthDay = day;
                           });
                         },
                       ),
-                      validator: _validatePassword,
-                    ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      controller: _confirmPasswordController,
-                      obscureText: _obscureConfirmPassword,
-                      style: _inputTextStyle(),
-                      decoration: _passwordDecoration(
-                        label: 'Confirm Password',
-                        obscure: _obscureConfirmPassword,
-                        onToggle: () {
-                          setState(() {
-                            _obscureConfirmPassword = !_obscureConfirmPassword;
-                          });
-                        },
+                      const SizedBox(height: 24),
+                      _SectionTitle(
+                        title: 'Academic Profile',
+                        subtitle:
+                            'These choices come from the admin-managed directory.',
                       ),
-                      validator: _validatePasswordConfirmation,
-                    ),
-                    const SizedBox(height: 18),
-                    _PrivacyAgreement(
-                      acceptedTerms: _acceptedTerms,
-                      hasReadPrivacyStatement: _hasReadPrivacyStatement,
-                      onOpen: _showPrivacyStatement,
-                      onChanged: (value) {
-                        if (!_hasReadPrivacyStatement) {
-                          _showPrivacyStatement();
-                          return;
-                        }
+                      const SizedBox(height: 14),
+                      if (_error != null) ...[
+                        _ErrorBanner(message: _error!),
+                        const SizedBox(height: 14),
+                      ],
+                      DropdownButtonFormField<RegistrationProgram>(
+                        key: const Key('registration-program-dropdown'),
+                        initialValue: _selectedProgram,
+                        isExpanded: true,
+                        items: _programItems,
+                        onChanged: canUseAcademicOptions
+                            ? (program) {
+                                setState(() {
+                                  _selectedProgram = program;
+                                  _selectedYearLevel = null;
+                                });
+                              }
+                            : null,
+                        dropdownColor: _field,
+                        style: _inputTextStyle(),
+                        decoration: _inputDecoration(
+                          label: 'Program',
+                          hint: _isLoadingOptions
+                              ? 'Loading programs...'
+                              : 'Select your program',
+                          icon: Icons.school_outlined,
+                        ),
+                        validator: (value) => value == null
+                            ? 'Please select your program.'
+                            : null,
+                      ),
+                      const SizedBox(height: 14),
+                      DropdownButtonFormField<RegistrationYearLevel>(
+                        key: const Key('registration-year-level-dropdown'),
+                        initialValue: _selectedYearLevel,
+                        isExpanded: true,
+                        items: _yearLevelItems,
+                        onChanged:
+                            canUseAcademicOptions && _selectedProgram != null
+                            ? (yearLevel) {
+                                setState(() {
+                                  _selectedYearLevel = yearLevel;
+                                });
+                              }
+                            : null,
+                        dropdownColor: _field,
+                        style: _inputTextStyle(),
+                        decoration: _inputDecoration(
+                          label: 'Year Level',
+                          hint: _selectedProgram == null
+                              ? 'Select a program first'
+                              : 'Select your year level',
+                          icon: Icons.calendar_month_outlined,
+                        ),
+                        validator: (value) => value == null
+                            ? 'Please select your year level.'
+                            : null,
+                      ),
+                      const SizedBox(height: 14),
+                      _OrganizationCard(program: _selectedProgram),
+                      const SizedBox(height: 24),
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.newPassword],
+                        style: _inputTextStyle(),
+                        decoration: _passwordDecoration(
+                          label: 'Password',
+                          obscure: _obscurePassword,
+                          onToggle: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
+                        validator: _validatePassword,
+                      ),
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: _confirmPasswordController,
+                        obscureText: _obscureConfirmPassword,
+                        textInputAction: TextInputAction.done,
+                        autofillHints: const [AutofillHints.newPassword],
+                        style: _inputTextStyle(),
+                        decoration: _passwordDecoration(
+                          label: 'Confirm Password',
+                          obscure: _obscureConfirmPassword,
+                          onToggle: () {
+                            setState(() {
+                              _obscureConfirmPassword =
+                                  !_obscureConfirmPassword;
+                            });
+                          },
+                        ),
+                        validator: _validatePasswordConfirmation,
+                      ),
+                      const SizedBox(height: 18),
+                      _PrivacyAgreement(
+                        acceptedTerms: _acceptedTerms,
+                        hasReadPrivacyStatement: _hasReadPrivacyStatement,
+                        onOpen: _showPrivacyStatement,
+                        onChanged: (value) {
+                          if (!_hasReadPrivacyStatement) {
+                            _showPrivacyStatement();
+                            return;
+                          }
 
-                        setState(() {
-                          _acceptedTerms = value ?? false;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 18),
-                    SizedBox(
-                      height: 56,
-                      child: ElevatedButton(
-                        key: const Key('registration-submit-button'),
-                        onPressed: _isSubmitting || _isLoadingOptions
+                          setState(() {
+                            _acceptedTerms = value ?? false;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        height: 56,
+                        child: ElevatedButton(
+                          key: const Key('registration-submit-button'),
+                          onPressed: _isSubmitting || _isLoadingOptions
+                              ? null
+                              : _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _navy,
+                            disabledBackgroundColor: Colors.white.withValues(
+                              alpha: 0.7,
+                            ),
+                            foregroundColor: Colors.white,
+                            disabledForegroundColor: _muted,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            textStyle: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 17,
+                            ),
+                          ),
+                          child: _isSubmitting
+                              ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.4,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('Submit for Approval'),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      TextButton(
+                        onPressed: _isSubmitting
                             ? null
-                            : _submit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _navy,
-                          disabledBackgroundColor: Colors.white.withValues(
-                            alpha: 0.7,
-                          ),
-                          foregroundColor: Colors.white,
-                          disabledForegroundColor: _muted,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          textStyle: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 17,
+                            : () => Navigator.of(context).pop(),
+                        child: const Text(
+                          'Already have an account? Sign In',
+                          style: TextStyle(
+                            color: _navy,
+                            fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.underline,
                           ),
                         ),
-                        child: _isSubmitting
-                            ? const SizedBox(
-                                height: 22,
-                                width: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.4,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text('Submit for Approval'),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    TextButton(
-                      onPressed: _isSubmitting
-                          ? null
-                          : () => Navigator.of(context).pop(),
-                      child: const Text(
-                        'Already have an account? Sign In',
-                        style: TextStyle(
-                          color: _navy,
-                          fontWeight: FontWeight.w700,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -596,6 +607,10 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
     return TextFormField(
       controller: controller,
       textCapitalization: TextCapitalization.words,
+      textInputAction: TextInputAction.next,
+      autofillHints: label == 'First Name'
+          ? const [AutofillHints.givenName]
+          : const [AutofillHints.familyName],
       inputFormatters: [LengthLimitingTextInputFormatter(60)],
       style: _inputTextStyle(),
       decoration: _inputDecoration(label: label, icon: Icons.person_outline),
@@ -607,6 +622,7 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
     return TextFormField(
       controller: _middleInitialController,
       textCapitalization: TextCapitalization.characters,
+      textInputAction: TextInputAction.next,
       inputFormatters: [LengthLimitingTextInputFormatter(1)],
       style: _inputTextStyle(),
       decoration: _inputDecoration(
@@ -870,10 +886,12 @@ class _HeaderCard extends StatelessWidget {
         ),
         SizedBox(
           height: 118,
-          child: Image.asset(
-            _RegisterScreenState._logoAsset,
-            fit: BoxFit.contain,
-            cacheWidth: 360,
+          child: RepaintBoundary(
+            child: Image.asset(
+              _RegisterScreenState._logoAsset,
+              fit: BoxFit.contain,
+              cacheWidth: 360,
+            ),
           ),
         ),
         const SizedBox(height: 14),

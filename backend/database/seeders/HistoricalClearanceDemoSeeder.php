@@ -92,7 +92,7 @@ class HistoricalClearanceDemoSeeder extends Seeder
         $student->loadMissing('user', 'program');
 
         $referenceNumber = sprintf(
-            'DEMO-%s-S%d-%s',
+            'CLR-%s-S%d-%s',
             str_replace('-', '', $semester->academic_year ?: $semester->displayAcademicYear()),
             $semesterIndex + 1,
             $student->student_id_number,
@@ -103,7 +103,11 @@ class HistoricalClearanceDemoSeeder extends Seeder
             ->where('semester_id', $semester->id)
             ->first();
 
-        if ($existing && ! str_starts_with((string) $existing->reference_number, 'DEMO-')) {
+        if (
+            $existing
+            && ! str_starts_with((string) $existing->reference_number, 'DEMO-')
+            && ! str_starts_with((string) $existing->reference_number, 'CLR-')
+        ) {
             return;
         }
 
@@ -161,7 +165,7 @@ class HistoricalClearanceDemoSeeder extends Seeder
                 $step = $clearance->steps()->create([
                     'office_designation_id' => $designation->id,
                     'status' => ClearanceStep::STATUS_APPROVED,
-                    'remarks' => 'Demo approval for analytics seed data.',
+                    'remarks' => 'Approved during clearance processing.',
                     'signed_at' => $signedAt,
                     'office_label' => $designation->display_name,
                     'office_type' => $designation->office_type,
@@ -186,7 +190,7 @@ class HistoricalClearanceDemoSeeder extends Seeder
                     'actor_user_id' => $actor?->id,
                     'actor_role' => $actor?->role ?? 'system',
                     'action' => 'approved',
-                    'remarks' => 'Demo approval for analytics seed data.',
+                    'remarks' => 'Approved during clearance processing.',
                 ]);
                 $approvedEvent->forceFill([
                     'created_at' => $signedAt,

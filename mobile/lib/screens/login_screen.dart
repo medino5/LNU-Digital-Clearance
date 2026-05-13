@@ -144,10 +144,39 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _openRegistration() async {
+    await precacheImage(
+      const AssetImage(
+        'assets/branding/lnu_digital_clearance_logo_compact.png',
+      ),
+      context,
+    );
+
+    if (!mounted) return;
+
     final created = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) =>
+      PageRouteBuilder<bool>(
+        transitionDuration: const Duration(milliseconds: 180),
+        reverseTransitionDuration: const Duration(milliseconds: 140),
+        pageBuilder: (routeContext, animation, secondaryAnimation) =>
             RegisterScreen(registrationService: widget.registrationService),
+        transitionsBuilder:
+            (routeContext, animation, secondaryAnimation, child) {
+              final curved = CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutCubic,
+              );
+
+              return FadeTransition(
+                opacity: curved,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.025),
+                    end: Offset.zero,
+                  ).animate(curved),
+                  child: child,
+                ),
+              );
+            },
       ),
     );
 
@@ -176,201 +205,236 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(26, 18, 26, 18),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: 440,
-                  minHeight: constraints.maxHeight - 36,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Center(
-                      child: RepaintBoundary(
-                        child: Image.asset(
-                          _logoAsset,
-                          height: 172,
-                          fit: BoxFit.contain,
-                          cacheWidth: 360,
-                        ),
-                      ),
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Center(
+                child: SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.fromLTRB(26, 18, 26, 18),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: 440,
+                      minHeight: constraints.maxHeight - 36,
                     ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      'LNU Student Clearance Portal',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: _navy,
-                        fontSize: 26,
-                        fontWeight: FontWeight.w900,
-                        height: 1.12,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Digital Clearance Mobile App',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: _gold,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    const Text(
-                      'Student Sign In',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: _navy,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    if (_notice != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF3D9),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFD1A33B)),
-                        ),
-                        child: Text(
-                          _notice!,
-                          style: const TextStyle(
-                            color: _navy,
-                            fontWeight: FontWeight.w600,
-                            height: 1.4,
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: 1),
+                      duration: const Duration(milliseconds: 260),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, child) {
+                        return Opacity(
+                          opacity: value,
+                          child: Transform.translate(
+                            offset: Offset(0, 10 * (1 - value)),
+                            child: child,
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                    ],
-                    TextField(
-                      controller: _studentIdController,
-                      keyboardType: TextInputType.number,
-                      textInputAction: TextInputAction.next,
-                      enableSuggestions: false,
-                      autocorrect: false,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(7),
-                      ],
-                      decoration: InputDecoration(
-                        labelText: 'Student ID',
-                        counterText: '',
-                        filled: true,
-                        fillColor: const Color(0xFFF8F4EA),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
-                      enableSuggestions: false,
-                      autocorrect: false,
-                      onSubmitted: (_) {
-                        if (!_isLoading) {
-                          _handleLogin();
-                        }
+                        );
                       },
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        suffixIcon: IconButton(
-                          tooltip: _obscurePassword
-                              ? 'Show password'
-                              : 'Hide password',
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
-                        filled: true,
-                        fillColor: const Color(0xFFF8F4EA),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      height: 54,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleLogin,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _gold,
-                          foregroundColor: _navy,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 22,
-                                width: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.4,
-                                  color: _navy,
+                      child: AutofillGroup(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Center(
+                              child: RepaintBoundary(
+                                child: Image.asset(
+                                  _logoAsset,
+                                  height: 172,
+                                  fit: BoxFit.contain,
+                                  cacheWidth: 360,
                                 ),
-                              )
-                            : const Text('Sign In'),
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            const Text(
+                              'LNU Student Clearance Portal',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: _navy,
+                                fontSize: 26,
+                                fontWeight: FontWeight.w900,
+                                height: 1.12,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Digital Clearance Mobile App',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: _gold,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+                            const Text(
+                              'Student Sign In',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: _navy,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            if (_notice != null) ...[
+                              Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF3D9),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: const Color(0xFFD1A33B),
+                                  ),
+                                ),
+                                child: Text(
+                                  _notice!,
+                                  style: const TextStyle(
+                                    color: _navy,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+                            ],
+                            TextField(
+                              controller: _studentIdController,
+                              keyboardType: TextInputType.number,
+                              textInputAction: TextInputAction.next,
+                              autofillHints: const [AutofillHints.username],
+                              enableSuggestions: false,
+                              autocorrect: false,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(7),
+                              ],
+                              decoration: InputDecoration(
+                                labelText: 'Student ID',
+                                counterText: '',
+                                filled: true,
+                                fillColor: const Color(0xFFF8F4EA),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: _passwordController,
+                              obscureText: _obscurePassword,
+                              textInputAction: TextInputAction.done,
+                              autofillHints: const [AutofillHints.password],
+                              enableSuggestions: false,
+                              autocorrect: false,
+                              onSubmitted: (_) {
+                                if (!_isLoading) {
+                                  _handleLogin();
+                                }
+                              },
+                              decoration: InputDecoration(
+                                labelText: 'Password',
+                                suffixIcon: IconButton(
+                                  tooltip: _obscurePassword
+                                      ? 'Show password'
+                                      : 'Hide password',
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    });
+                                  },
+                                ),
+                                filled: true,
+                                fillColor: const Color(0xFFF8F4EA),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            SizedBox(
+                              height: 54,
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _handleLogin,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _gold,
+                                  foregroundColor: _navy,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  textStyle: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        height: 22,
+                                        width: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.4,
+                                          color: _navy,
+                                        ),
+                                      )
+                                    : const Text('Sign In'),
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            TextButton(
+                              onPressed: _isLoading
+                                  ? null
+                                  : _openForgotPassword,
+                              child: const Text(
+                                'Forgot password?',
+                                style: TextStyle(fontWeight: FontWeight.w800),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Text(
+                                  'Need an account?',
+                                  style: TextStyle(color: Colors.grey.shade700),
+                                ),
+                                TextButton(
+                                  onPressed: _isLoading
+                                      ? null
+                                      : _openRegistration,
+                                  child: const Text(
+                                    'Create Account',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 14),
-                    TextButton(
-                      onPressed: _isLoading ? null : _openForgotPassword,
-                      child: const Text(
-                        'Forgot password?',
-                        style: TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          'Need an account?',
-                          style: TextStyle(color: Colors.grey.shade700),
-                        ),
-                        TextButton(
-                          onPressed: _isLoading ? null : _openRegistration,
-                          child: const Text(
-                            'Create Account',
-                            style: TextStyle(fontWeight: FontWeight.w800),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
