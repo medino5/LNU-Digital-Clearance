@@ -129,13 +129,13 @@ class UatDatabaseSeederTest extends TestCase
 
         $this->assertSame(3080, DB::table('clearances')
             ->where('status', 'completed')
-            ->where('reference_number', 'like', 'DEMO-%')
+            ->where('reference_number', 'like', 'CLR-%')
             ->count());
 
         $completedBySemester = DB::table('clearances')
             ->select('semester_label', DB::raw('COUNT(*) as total'))
             ->where('status', 'completed')
-            ->where('reference_number', 'like', 'DEMO-%')
+            ->where('reference_number', 'like', 'CLR-%')
             ->groupBy('semester_label')
             ->pluck('total', 'semester_label');
 
@@ -151,7 +151,7 @@ class UatDatabaseSeederTest extends TestCase
         $completedByProgram = DB::table('clearances')
             ->select('program_code', DB::raw('COUNT(*) as total'))
             ->where('status', 'completed')
-            ->where('reference_number', 'like', 'DEMO-%')
+            ->where('reference_number', 'like', 'CLR-%')
             ->groupBy('program_code')
             ->pluck('total', 'program_code');
 

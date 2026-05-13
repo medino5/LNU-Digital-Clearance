@@ -27,7 +27,7 @@ class OfficeAccountAdminController extends Controller
         $officeType = $request->query('office_type');
 
         $officeAccountsQuery = OfficeAccount::query()
-            ->with(['user', 'program']);
+            ->with(['user.activeOfficeDesignations.program', 'program']);
 
         if ($officeSearch !== '') {
             $officeSearchLike = '%' . $officeSearch . '%';

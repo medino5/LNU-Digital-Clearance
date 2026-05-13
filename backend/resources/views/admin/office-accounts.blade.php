@@ -105,7 +105,13 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="table-main-text">{{ $officeAccount->display_name }}</div>
+                                        <button
+                                            type="button"
+                                            class="office-profile-name table-main-text"
+                                            data-modal-open="office-view-{{ $officeAccount->id }}"
+                                        >
+                                            {{ $officeAccount->display_name }}
+                                        </button>
                                     </td>
                                     <td>{{ $officeAccount->user->username }}</td>
                                     <td>
@@ -119,13 +125,23 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <button
-                                            type="button"
-                                            class="button secondary table-action-button"
-                                            data-modal-open="office-edit-{{ $officeAccount->id }}"
-                                        >
-                                            Edit
-                                        </button>
+                                        <div class="office-action-stack">
+                                            <button
+                                                type="button"
+                                                class="button secondary table-action-button"
+                                                data-modal-open="office-view-{{ $officeAccount->id }}"
+                                            >
+                                                View
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                class="button secondary table-action-button"
+                                                data-modal-open="office-edit-{{ $officeAccount->id }}"
+                                            >
+                                                Edit
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -295,7 +311,80 @@
                 $officeUpdateFormKey = 'office-account-update-' . $officeAccount->id;
                 $shouldOpenEdit = $activeFormKey === $officeUpdateFormKey;
                 $editTypeOptions = $officeAccountEditTypeOptions[$officeAccount->id] ?? [];
+                $activeDesignations = $officeAccount->user->activeOfficeDesignations;
             @endphp
+
+            <div
+                class="management-modal"
+                id="office-view-{{ $officeAccount->id }}"
+                data-modal
+            >
+                <div class="management-modal-panel office-profile-modal">
+                    <div class="management-modal-header">
+                        <div>
+                            <div class="eyebrow">Office Profile</div>
+                            <h2>{{ $officeAccount->display_name }}</h2>
+                        </div>
+
+                        <button type="button" class="modal-close-button" data-modal-close>&times;</button>
+                    </div>
+
+                    <div class="office-profile-summary">
+                        <div class="account-avatar large">
+                            @if($officeAccount->user->profilePhotoUrl())
+                                <img src="{{ $officeAccount->user->profilePhotoUrl() }}" alt="{{ $officeAccount->display_name }} profile picture">
+                            @else
+                                <span>{{ strtoupper(substr($officeAccount->display_name, 0, 1)) }}</span>
+                            @endif
+                        </div>
+
+                        <div class="office-profile-heading">
+                            <strong>{{ $officeAccount->display_name }}</strong>
+                            <span>{{ $officeAccount->user->username }}</span>
+                        </div>
+                    </div>
+
+                    <dl class="office-profile-facts">
+                        <div>
+                            <dt>Account Type</dt>
+                            <dd>{{ $officeAccount->officeTypeLabel() }}</dd>
+                        </div>
+                        <div>
+                            <dt>Scope</dt>
+                            <dd>{{ $officeAccount->scopeSummaryLabel() }}</dd>
+                        </div>
+                        <div>
+                            <dt>Active Assignments</dt>
+                            <dd>{{ $activeDesignations->count() }}</dd>
+                        </div>
+                    </dl>
+
+                    <div class="office-profile-assignments">
+                        <div class="eyebrow">Assigned Designations</div>
+                        @forelse($activeDesignations as $designation)
+                            <div class="office-assignment-row">
+                                <strong>{{ $designation->display_name }}</strong>
+                                <span>{{ $designation->scopeLabel() ?: 'Whole school' }}</span>
+                            </div>
+                        @empty
+                            <div class="empty-state compact-empty-state">
+                                No active designation assignment.
+                            </div>
+                        @endforelse
+                    </div>
+
+                    <div class="form-actions modal-actions">
+                        <button type="button" class="secondary" data-modal-close>Close</button>
+                        <button
+                            type="button"
+                            data-modal-open="office-edit-{{ $officeAccount->id }}"
+                            data-modal-close
+                        >
+                            Edit Account
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <div
                 class="management-modal {{ $shouldOpenEdit ? 'is-open' : '' }}"
@@ -545,6 +634,33 @@
             text-overflow: ellipsis;
         }
 
+        .office-profile-name {
+            display: inline;
+            max-width: 280px;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: #183a63;
+            font: inherit;
+            font-weight: 800;
+            text-align: left;
+            overflow-wrap: anywhere;
+            cursor: pointer;
+        }
+
+        .office-profile-name:hover,
+        .office-profile-name:focus-visible {
+            color: #0e2742;
+            text-decoration: underline;
+        }
+
+        .office-action-stack {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
         .account-avatar {
             width: 42px;
             height: 42px;
@@ -569,6 +685,99 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+        }
+
+        .office-profile-modal {
+            max-width: 720px;
+        }
+
+        .office-profile-summary {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            padding: 16px;
+            border: 1px solid #e4dacd;
+            border-radius: 18px;
+            background: #fffdf8;
+            min-width: 0;
+        }
+
+        .office-profile-heading {
+            display: grid;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .office-profile-heading strong {
+            color: #183a63;
+            font-size: 1.2rem;
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+        }
+
+        .office-profile-heading span {
+            color: #667085;
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+
+        .office-profile-facts {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin: 14px 0;
+        }
+
+        .office-profile-facts div,
+        .office-assignment-row {
+            padding: 12px;
+            border: 1px solid #ece3d6;
+            border-radius: 14px;
+            background: #ffffff;
+            min-width: 0;
+        }
+
+        .office-profile-facts dt {
+            color: #667085;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .office-profile-facts dd {
+            margin: 6px 0 0;
+            color: #183a63;
+            font-weight: 800;
+            line-height: 1.32;
+            overflow-wrap: anywhere;
+        }
+
+        .office-profile-assignments {
+            display: grid;
+            gap: 10px;
+        }
+
+        .office-assignment-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+        }
+
+        .office-assignment-row strong,
+        .office-assignment-row span {
+            overflow-wrap: anywhere;
+            min-width: 0;
+        }
+
+        .office-assignment-row span {
+            color: #667085;
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .compact-empty-state {
+            padding: 14px;
         }
 
         .profile-photo-form {
@@ -702,6 +911,20 @@
             .office-filter-bar .button,
             .office-filter-bar .secondary-button {
                 width: 100%;
+            }
+
+            .office-profile-summary,
+            .office-assignment-row {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .office-profile-facts {
+                grid-template-columns: 1fr;
+            }
+
+            .office-assignment-row span {
+                text-align: left;
             }
         }
     </style>

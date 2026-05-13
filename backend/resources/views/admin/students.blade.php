@@ -555,7 +555,7 @@
         @endforeach
 
         <div class="student-profile-drawer" id="studentProfileDrawer" hidden>
-            <div class="student-profile-drawer-panel">
+            <div class="student-profile-drawer-panel" role="dialog" aria-modal="true" aria-label="Student profile">
                 <div class="student-profile-drawer-header">
                     <button type="button" class="secondary" id="closeStudentProfileDrawer">Close</button>
                     <a href="#" class="button secondary" id="openStudentProfilePage">Open Full Page</a>
@@ -625,8 +625,11 @@
             inset: 0;
             z-index: 1300;
             display: flex;
-            justify-content: flex-end;
+            justify-content: center;
+            align-items: center;
+            padding: 22px;
             background: rgba(8, 26, 43, 0.42);
+            backdrop-filter: blur(4px);
         }
 
         .student-profile-drawer[hidden] {
@@ -634,12 +637,14 @@
         }
 
         .student-profile-drawer-panel {
-            width: min(920px, 100%);
-            height: 100%;
+            width: min(880px, 100%);
+            max-height: min(88vh, 920px);
             overflow-y: auto;
-            padding: 22px;
+            padding: 18px;
             background: #f8f4ea;
-            box-shadow: -18px 0 44px rgba(14, 39, 66, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.62);
+            border-radius: 24px;
+            box-shadow: 0 24px 70px rgba(14, 39, 66, 0.26);
         }
 
         .student-profile-drawer-header {
@@ -649,8 +654,8 @@
             display: flex;
             justify-content: flex-end;
             gap: 10px;
-            margin: -22px -22px 18px;
-            padding: 16px 22px;
+            margin: -18px -18px 14px;
+            padding: 12px 18px;
             background: rgba(248, 244, 234, 0.96);
             border-bottom: 1px solid #e4dacd;
         }
