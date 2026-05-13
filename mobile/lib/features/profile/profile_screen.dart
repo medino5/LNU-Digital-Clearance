@@ -176,10 +176,7 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
-          _PasswordCard(
-            isBusy: isChangingPassword,
-            onPressed: () => _showChangePasswordDialog(context),
-          ),
+          _PasswordCard(isBusy: isChangingPassword, onSubmit: onChangePassword),
           const SizedBox(height: 18),
           Container(
             padding: const EdgeInsets.all(18),
@@ -286,160 +283,60 @@ class ProfileScreen extends StatelessWidget {
       filename: image.name,
     );
   }
+}
 
-  Future<void> _showChangePasswordDialog(BuildContext context) async {
-    final passwordController = TextEditingController();
-    final confirmController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-    var obscurePassword = true;
-    var obscureConfirm = true;
+class _PasswordCard extends StatefulWidget {
+  const _PasswordCard({required this.isBusy, required this.onSubmit});
 
-    final request = await showDialog<_PasswordChangeRequest>(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Change Password'),
-              content: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: passwordController,
-                      obscureText: obscurePassword,
-                      inputFormatters: const [NoEmojiTextInputFormatter()],
-                      decoration: InputDecoration(
-                        labelText: 'New password',
-                        suffixIcon: IconButton(
-                          tooltip: obscurePassword
-                              ? 'Show password'
-                              : 'Hide password',
-                          onPressed: () {
-                            setDialogState(() {
-                              obscurePassword = !obscurePassword;
-                            });
-                          },
-                          icon: Icon(
-                            obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                        ),
-                      ),
-                      validator: (value) {
-                        final password = value ?? '';
+  final bool isBusy;
+  final Future<bool> Function({
+    required String password,
+    required String passwordConfirmation,
+  })
+  onSubmit;
 
-                        if (password.length < 8) {
-                          return 'Use at least 8 characters.';
-                        }
+  @override
+  State<_PasswordCard> createState() => _PasswordCardState();
+}
 
-                        if (password.length > 72) {
-                          return 'Password is too long.';
-                        }
+class _PasswordCardState extends State<_PasswordCard> {
+  final _formKey = GlobalKey<FormState>();
+  final _passwordController = TextEditingController();
+  final _confirmController = TextEditingController();
+  bool _isExpanded = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
 
-                        if (containsEmoji(password)) {
-                          return 'Password cannot contain emoji.';
-                        }
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
 
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: confirmController,
-                      obscureText: obscureConfirm,
-                      inputFormatters: const [NoEmojiTextInputFormatter()],
-                      decoration: InputDecoration(
-                        labelText: 'Confirm password',
-                        suffixIcon: IconButton(
-                          tooltip: obscureConfirm
-                              ? 'Show password'
-                              : 'Hide password',
-                          onPressed: () {
-                            setDialogState(() {
-                              obscureConfirm = !obscureConfirm;
-                            });
-                          },
-                          icon: Icon(
-                            obscureConfirm
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                        ),
-                      ),
-                      validator: (value) {
-                        if ((value ?? '').isEmpty) {
-                          return 'Confirm your password.';
-                        }
-
-                        if (value != passwordController.text) {
-                          return 'Passwords do not match.';
-                        }
-
-                        return null;
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) {
-                      return;
-                    }
-
-                    Navigator.of(dialogContext).pop(
-                      _PasswordChangeRequest(
-                        password: passwordController.text,
-                        passwordConfirmation: confirmController.text,
-                      ),
-                    );
-                  },
-                  child: const Text('Save'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    passwordController.dispose();
-    confirmController.dispose();
-
-    if (request == null || !context.mounted) {
+  Future<void> _submit() async {
+    if (widget.isBusy || !_formKey.currentState!.validate()) {
       return;
     }
 
-    await onChangePassword(
-      password: request.password,
-      passwordConfirmation: request.passwordConfirmation,
+    final didUpdate = await widget.onSubmit(
+      password: _passwordController.text,
+      passwordConfirmation: _confirmController.text,
     );
+
+    if (!mounted || !didUpdate) {
+      return;
+    }
+
+    _passwordController.clear();
+    _confirmController.clear();
+
+    setState(() {
+      _isExpanded = false;
+      _obscurePassword = true;
+      _obscureConfirm = true;
+    });
   }
-}
-
-class _PasswordChangeRequest {
-  const _PasswordChangeRequest({
-    required this.password,
-    required this.passwordConfirmation,
-  });
-
-  final String password;
-  final String passwordConfirmation;
-}
-
-class _PasswordCard extends StatelessWidget {
-  const _PasswordCard({required this.isBusy, required this.onPressed});
-
-  final bool isBusy;
-  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -456,50 +353,166 @@ class _PasswordCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: ProfileScreen._gold.withValues(alpha: 0.18),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.lock_reset_rounded,
-              color: ProfileScreen._navy,
-            ),
+          Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: ProfileScreen._gold.withValues(alpha: 0.18),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.lock_reset_rounded,
+                  color: ProfileScreen._navy,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Password',
+                      style: TextStyle(
+                        color: ProfileScreen._navy,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 17,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Update your student app password.',
+                      style: TextStyle(color: Colors.black54, height: 1.35),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: widget.isBusy
+                    ? null
+                    : () {
+                        setState(() {
+                          _isExpanded = !_isExpanded;
+                        });
+                      },
+                child: Text(_isExpanded ? 'Cancel' : 'Change'),
+              ),
+            ],
           ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Password',
-                  style: TextStyle(
-                    color: ProfileScreen._navy,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 17,
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 160),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            child: !_isExpanded
+                ? const SizedBox.shrink()
+                : Form(
+                    key: _formKey,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            inputFormatters: const [
+                              NoEmojiTextInputFormatter(),
+                            ],
+                            decoration: InputDecoration(
+                              labelText: 'New password',
+                              suffixIcon: IconButton(
+                                tooltip: _obscurePassword
+                                    ? 'Show password'
+                                    : 'Hide password',
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                              ),
+                            ),
+                            validator: (value) {
+                              final password = value ?? '';
+
+                              if (password.length < 8) {
+                                return 'Use at least 8 characters.';
+                              }
+
+                              if (password.length > 72) {
+                                return 'Password is too long.';
+                              }
+
+                              if (containsEmoji(password)) {
+                                return 'Password cannot contain emoji.';
+                              }
+
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _confirmController,
+                            obscureText: _obscureConfirm,
+                            inputFormatters: const [
+                              NoEmojiTextInputFormatter(),
+                            ],
+                            decoration: InputDecoration(
+                              labelText: 'Confirm password',
+                              suffixIcon: IconButton(
+                                tooltip: _obscureConfirm
+                                    ? 'Show password'
+                                    : 'Hide password',
+                                onPressed: () {
+                                  setState(() {
+                                    _obscureConfirm = !_obscureConfirm;
+                                  });
+                                },
+                                icon: Icon(
+                                  _obscureConfirm
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                              ),
+                            ),
+                            validator: (value) {
+                              if ((value ?? '').isEmpty) {
+                                return 'Confirm your password.';
+                              }
+
+                              if (value != _passwordController.text) {
+                                return 'Passwords do not match.';
+                              }
+
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: widget.isBusy ? null : _submit,
+                              child: widget.isBusy
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text('Save New Password'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-                SizedBox(height: 3),
-                Text(
-                  'Update your student app password.',
-                  style: TextStyle(color: Colors.black54, height: 1.35),
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: isBusy ? null : onPressed,
-            child: isBusy
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Change'),
           ),
         ],
       ),
