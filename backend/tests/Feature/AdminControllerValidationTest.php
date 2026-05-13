@@ -290,16 +290,35 @@ class AdminControllerValidationTest extends TestCase
             ->for(User::factory()->namedStudent('Niña', 'Ñ', 'Santos'), 'user')
             ->create();
 
-        \App\Models\Clearance::factory()
+        $signer = User::factory()->office()->create(['name' => 'Library Signer']);
+
+        $clearance = \App\Models\Clearance::factory()
             ->forStudentAndSemester($student, Semester::factory()->create())
             ->create(['status' => \App\Models\Clearance::STATUS_IN_PROGRESS]);
+        $step = \App\Models\ClearanceStep::factory()
+            ->approved('Verified by library.')
+            ->create([
+                'clearance_id' => $clearance->id,
+                'office_label' => 'College Chief Librarian',
+            ]);
+        \App\Models\ClearanceStepEvent::factory()->create([
+            'clearance_step_id' => $step->id,
+            'actor_user_id' => $signer->id,
+            'actor_role' => User::ROLE_OFFICE,
+            'action' => 'approved',
+            'remarks' => 'Verified by library.',
+        ]);
 
         $this->actingAs($this->admin)
             ->get(route('admin.students.show', $student))
             ->assertOk()
             ->assertSee('STUDENT PROFILE')
             ->assertSee('Niña Ñ. Santos')
-            ->assertSee('Current Progress');
+            ->assertSee('Current Progress')
+            ->assertSee('View signers')
+            ->assertSee('College Chief Librarian')
+            ->assertSee('Library Signer')
+            ->assertSee('Verified by library.');
     }
 
     public function test_office_user_can_open_profile_for_routed_student_only(): void

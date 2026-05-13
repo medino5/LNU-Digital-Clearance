@@ -11,16 +11,17 @@ use App\Models\Student;
 use App\Models\StudentRegistrationRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class AdminDashboardController extends Controller
 {
     public function index()
     {
         $snapshotData = $this->buildSnapshotData();
-        $semesters = Semester::query()
+        $semesters = Cache::remember('admin.dashboard.semester-options', now()->addMinutes(5), fn () => Semester::query()
             ->orderByDesc('academic_year')
             ->orderBy('label')
-            ->get(['id', 'label', 'academic_year']);
+            ->get(['id', 'label', 'academic_year']));
 
         return view('admin.dashboard', array_merge($snapshotData, [
             'academicYears' => $semesters
@@ -54,6 +55,18 @@ class AdminDashboardController extends Controller
     }
 
     private function buildSnapshotData(?string $academicYear = null, ?int $semesterId = null): array
+    {
+        $cacheKey = 'admin.dashboard.snapshots.' . md5(json_encode([
+            'academic_year' => $academicYear,
+            'semester_id' => $semesterId,
+        ]));
+
+        return Cache::remember($cacheKey, now()->addSeconds(90), function () use ($academicYear, $semesterId) {
+            return $this->buildUncachedSnapshotData($academicYear, $semesterId);
+        });
+    }
+
+    private function buildUncachedSnapshotData(?string $academicYear = null, ?int $semesterId = null): array
     {
         $isFiltered = $academicYear !== null || $semesterId !== null;
 

@@ -55,11 +55,46 @@ class StudentProfileController extends Controller
     {
         $student->loadMissing(['user', 'program']);
 
-        $clearances = Clearance::with([
-            'semester',
-            'steps.officeDesignation.program',
-            'steps.events.actor',
-        ])
+        $clearances = Clearance::query()
+            ->select([
+                'id',
+                'student_id',
+                'semester_id',
+                'status',
+                'reference_number',
+                'completed_at',
+                'semester_label',
+                'created_at',
+            ])
+            ->with([
+                'semester:id,label,academic_year',
+                'steps' => fn ($query) => $query
+                    ->select([
+                        'id',
+                        'clearance_id',
+                        'office_designation_id',
+                        'status',
+                        'remarks',
+                        'signed_at',
+                        'office_label',
+                        'office_type',
+                        'scope_label',
+                    ])
+                    ->with([
+                        'officeDesignation:id,display_name,office_type,program_id',
+                        'latestEvent' => fn ($eventQuery) => $eventQuery
+                            ->select([
+                                'clearance_step_events.id',
+                                'clearance_step_events.clearance_step_id',
+                                'clearance_step_events.actor_user_id',
+                                'clearance_step_events.actor_role',
+                                'clearance_step_events.action',
+                                'clearance_step_events.remarks',
+                                'clearance_step_events.created_at',
+                            ])
+                            ->with('actor:id,name,first_name,middle_initial,last_name,name_extension,role,is_student'),
+                    ]),
+            ])
             ->where('student_id', $student->id)
             ->latest('created_at')
             ->get();

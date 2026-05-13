@@ -10,6 +10,7 @@ use App\Models\Student;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class AdminAnalyticsController extends Controller
@@ -103,6 +104,25 @@ class AdminAnalyticsController extends Controller
      * @return array<string, mixed>
      */
     private function analyticsPayload(Request $request): array
+    {
+        $cacheKey = 'admin.analytics.payload.' . md5(json_encode([
+            'scope' => $request->query('scope'),
+            'semester_id' => $request->query('semester_id'),
+            'academic_year' => $request->query('academic_year'),
+            'semester_term' => $request->query('semester_term'),
+            'semester' => $request->query('semester'),
+            'program_code' => $request->query('program_code'),
+        ]));
+
+        return Cache::remember($cacheKey, now()->addSeconds(120), function () use ($request) {
+            return $this->analyticsPayloadUncached($request);
+        });
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function analyticsPayloadUncached(Request $request): array
     {
         $legacySemester = $request->filled('semester_id')
             ? Semester::find((int) $request->query('semester_id'))

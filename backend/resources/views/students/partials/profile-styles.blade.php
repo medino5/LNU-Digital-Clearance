@@ -161,6 +161,72 @@
         background: #ffffff;
     }
 
+    .profile-history-record {
+        border: 1px solid #ece3d6;
+        border-radius: 16px;
+        background: #ffffff;
+        overflow: hidden;
+    }
+
+    .profile-history-record[open] {
+        border-color: rgba(23, 60, 102, 0.28);
+        box-shadow: 0 14px 32px rgba(24, 58, 99, 0.08);
+    }
+
+    .profile-history-record summary {
+        cursor: pointer;
+        list-style: none;
+    }
+
+    .profile-history-record summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .profile-history-record summary::after {
+        content: "View signers";
+        align-self: center;
+        color: #173c66;
+        font-size: 12px;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+
+    .profile-history-record[open] summary::after {
+        content: "Hide signers";
+    }
+
+    .profile-history-record .profile-history-row {
+        border: 0;
+        border-radius: 0;
+    }
+
+    .profile-history-details {
+        display: grid;
+        gap: 9px;
+        padding: 0 14px 14px;
+    }
+
+    .profile-history-step {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 12px;
+        border-radius: 14px;
+        background: #f8f4ea;
+        border: 1px solid #ede2d2;
+    }
+
+    .profile-history-status {
+        text-align: right;
+    }
+
+    .profile-history-remarks {
+        max-width: 32ch;
+        color: #8b5a14;
+        overflow-wrap: anywhere;
+    }
+
     .profile-step-row strong,
     .profile-history-row strong {
         color: #183a63;
@@ -174,8 +240,13 @@
     @media (max-width: 860px) {
         .student-profile-hero,
         .profile-step-row,
-        .profile-history-row {
+        .profile-history-row,
+        .profile-history-step {
             flex-direction: column;
+        }
+
+        .profile-history-status {
+            text-align: left;
         }
 
         .student-profile-grid,

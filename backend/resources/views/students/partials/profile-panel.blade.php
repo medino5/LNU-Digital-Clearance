@@ -82,7 +82,7 @@
         @else
             <div class="profile-step-list">
                 @forelse($currentClearance->steps as $step)
-                    @php($lastEvent = $step->events->first())
+                    @php($lastEvent = $step->latestEvent)
                     <div class="profile-step-row">
                         <div>
                             <strong>{{ $step->office_label ?: $step->officeDesignation?->display_name ?: 'Office Step' }}</strong>
@@ -115,16 +115,51 @@
 
         <div class="profile-history-list">
             @forelse($clearances as $clearance)
-                <div class="profile-history-row">
-                    <div>
-                        <strong>{{ $clearance->semester?->label ?? $clearance->semester_label ?? 'Semester not set' }}</strong>
-                        <p class="mini">{{ $clearance->reference_number ?? 'No reference number yet' }}</p>
+                <details class="profile-history-record">
+                    <summary class="profile-history-row">
+                        <div>
+                            <strong>{{ $clearance->semester?->label ?? $clearance->semester_label ?? 'Semester not set' }}</strong>
+                            <p class="mini">{{ $clearance->reference_number ?? 'No reference number yet' }}</p>
+                        </div>
+                        <div class="profile-history-status">
+                            <span class="badge {{ $clearance->status }}">{{ ucwords(str_replace('_', ' ', $clearance->status)) }}</span>
+                            <p class="mini">{{ $clearance->completed_at?->format('M d, Y h:i A') ?? 'Not completed' }}</p>
+                        </div>
+                    </summary>
+
+                    <div class="profile-history-details">
+                        @forelse($clearance->steps as $step)
+                            @php($lastEvent = $step->latestEvent)
+                            <div class="profile-history-step">
+                                <div>
+                                    <strong>{{ $step->office_label ?: $step->officeDesignation?->display_name ?: 'Office Step' }}</strong>
+                                    <p class="mini">{{ $step->scope_label ?: 'Whole school' }}</p>
+                                </div>
+
+                                <div>
+                                    <span class="badge {{ $step->status }}">{{ ucwords(str_replace('_', ' ', $step->status)) }}</span>
+                                    <p class="mini">
+                                        @if($lastEvent?->actor)
+                                            {{ $lastEvent->actor->formattedName() }}
+                                        @elseif($lastEvent)
+                                            {{ ucwords(str_replace('_', ' ', $lastEvent->actor_role)) }}
+                                        @else
+                                            No signer yet
+                                        @endif
+                                    </p>
+                                    <p class="mini">
+                                        {{ $step->signed_at?->format('M d, Y h:i A') ?? $lastEvent?->created_at?->format('M d, Y h:i A') ?? 'No action yet' }}
+                                    </p>
+                                    @if($step->remarks || $lastEvent?->remarks)
+                                        <p class="mini profile-history-remarks">{{ $step->remarks ?: $lastEvent->remarks }}</p>
+                                    @endif
+                                </div>
+                            </div>
+                        @empty
+                            <div class="empty-state">No signatory steps were recorded for this clearance.</div>
+                        @endforelse
                     </div>
-                    <div>
-                        <span class="badge {{ $clearance->status }}">{{ ucwords(str_replace('_', ' ', $clearance->status)) }}</span>
-                        <p class="mini">{{ $clearance->completed_at?->format('M d, Y h:i A') ?? 'Not completed' }}</p>
-                    </div>
-                </div>
+                </details>
             @empty
                 <div class="empty-state">No clearance history yet.</div>
             @endforelse
