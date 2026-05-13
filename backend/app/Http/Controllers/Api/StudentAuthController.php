@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Clearance;
+use App\Models\Semester;
 use App\Models\Student;
 use App\Support\ProfilePhotoStorage;
 use App\Support\StudentClearancePayloadBuilder;
@@ -123,6 +125,58 @@ class StudentAuthController extends Controller
 
         return response()->json([
             'message' => 'Password updated successfully.',
+        ]);
+    }
+
+    public function updateAcademicProfile(Request $request)
+    {
+        $student = $request->user()->loadMissing('studentProfile.program')->studentProfile;
+
+        if (!$student) {
+            return response()->json([
+                'message' => 'Student profile not found.',
+            ], 404);
+        }
+
+        $activeSemester = Semester::active()->first();
+        $activeClearance = $activeSemester
+            ? Clearance::query()
+                ->where('student_id', $student->id)
+                ->where('semester_id', $activeSemester->id)
+                ->first()
+            : null;
+
+        if ($activeClearance && $activeClearance->status !== Clearance::STATUS_COMPLETED) {
+            throw ValidationException::withMessages([
+                'profile' => ['Academic profile can only be edited before starting clearance or after completing the current clearance.'],
+            ]);
+        }
+
+        $data = $request->validate([
+            'program_id' => ['required', 'integer', 'exists:programs,id'],
+            'year_level' => ['required', 'integer', 'between:1,4'],
+            'date_of_birth' => ['required', 'date_format:Y-m-d', 'before_or_equal:today', 'after_or_equal:1900-01-01'],
+        ], [
+            'program_id.required' => 'Choose a program.',
+            'year_level.required' => 'Choose a year level.',
+            'year_level.between' => 'Year level must be from 1st to 4th year.',
+            'date_of_birth.required' => 'Birthday is required.',
+            'date_of_birth.date_format' => 'Birthday must use the YYYY-MM-DD format.',
+            'date_of_birth.before_or_equal' => 'Birthday cannot be in the future.',
+            'date_of_birth.after_or_equal' => 'Birthday is outside the supported range.',
+        ]);
+
+        $student->update([
+            'program_id' => $data['program_id'],
+            'year_level' => $data['year_level'],
+            'date_of_birth' => $data['date_of_birth'],
+        ]);
+
+        $student->refresh()->load('user', 'program');
+
+        return response()->json([
+            'message' => 'Academic profile updated successfully.',
+            'profile' => $this->payloadBuilder->build($student, null, null)['student'],
         ]);
     }
 

@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Program;
+use App\Models\Clearance;
+use App\Models\Semester;
 use App\Models\Student;
 use App\Models\StudentRegistrationRequest;
 use App\Models\User;
@@ -360,6 +362,75 @@ class StudentAuthApiTest extends TestCase
         $student->user->refresh();
 
         $this->assertTrue(Hash::check('new-password', $student->user->password));
+    }
+
+    public function test_authenticated_student_can_update_academic_profile_before_starting_clearance(): void
+    {
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        $program = Program::where('code', 'BAEL')->firstOrFail();
+        Sanctum::actingAs($student->user);
+
+        $this->patchJson('/api/me/academic-profile', [
+            'program_id' => $program->id,
+            'year_level' => 4,
+            'date_of_birth' => '2004-04-22',
+        ])
+            ->assertOk()
+            ->assertJsonPath('profile.program.code', 'BAEL')
+            ->assertJsonPath('profile.year_level', 4)
+            ->assertJsonPath('profile.date_of_birth', '2004-04-22');
+
+        $student->refresh();
+
+        $this->assertSame($program->id, $student->program_id);
+        $this->assertSame(4, $student->year_level);
+        $this->assertSame('2004-04-22', $student->date_of_birth->toDateString());
+    }
+
+    public function test_authenticated_student_cannot_update_academic_profile_during_active_clearance(): void
+    {
+        $student = Student::with('user', 'program')->where('student_id_number', '2302314')->firstOrFail();
+        $semester = Semester::active()->firstOrFail();
+        $program = Program::where('code', 'BAEL')->firstOrFail();
+        Clearance::factory()->forStudentAndSemester($student, $semester)->create([
+            'status' => Clearance::STATUS_IN_PROGRESS,
+        ]);
+        Sanctum::actingAs($student->user);
+
+        $this->patchJson('/api/me/academic-profile', [
+            'program_id' => $program->id,
+            'year_level' => 4,
+            'date_of_birth' => '2004-04-22',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['profile']);
+
+        $this->assertDatabaseHas('students', [
+            'id' => $student->id,
+            'program_id' => $student->program_id,
+            'year_level' => $student->year_level,
+        ]);
+    }
+
+    public function test_authenticated_student_can_update_academic_profile_after_completed_clearance(): void
+    {
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        $semester = Semester::active()->firstOrFail();
+        $program = Program::where('code', 'BAEL')->firstOrFail();
+        Clearance::factory()->forStudentAndSemester($student, $semester)->create([
+            'status' => Clearance::STATUS_COMPLETED,
+            'completed_at' => now(),
+        ]);
+        Sanctum::actingAs($student->user);
+
+        $this->patchJson('/api/me/academic-profile', [
+            'program_id' => $program->id,
+            'year_level' => 2,
+            'date_of_birth' => '2005-01-12',
+        ])
+            ->assertOk()
+            ->assertJsonPath('profile.program.code', 'BAEL')
+            ->assertJsonPath('profile.year_level', 2);
     }
 
     public function test_student_can_reset_forgotten_password_with_student_id_and_birthday(): void

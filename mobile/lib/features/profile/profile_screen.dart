@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/input_sanitizers.dart';
+import '../../services/registration_service.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({
@@ -12,10 +13,13 @@ class ProfileScreen extends StatelessWidget {
     required this.isBusy,
     required this.isUploadingPhoto,
     required this.isChangingPassword,
+    required this.isUpdatingAcademicProfile,
     required this.onLogout,
     required this.onRefresh,
     required this.onUpdateProfilePhoto,
     required this.onChangePassword,
+    required this.onLoadAcademicOptions,
+    required this.onUpdateAcademicProfile,
   });
 
   final Map<String, dynamic>? payload;
@@ -24,6 +28,7 @@ class ProfileScreen extends StatelessWidget {
   final bool isBusy;
   final bool isUploadingPhoto;
   final bool isChangingPassword;
+  final bool isUpdatingAcademicProfile;
   final Future<void> Function() onLogout;
   final Future<void> Function() onRefresh;
   final Future<void> Function({
@@ -36,6 +41,13 @@ class ProfileScreen extends StatelessWidget {
     required String passwordConfirmation,
   })
   onChangePassword;
+  final Future<RegistrationOptions> Function() onLoadAcademicOptions;
+  final Future<bool> Function({
+    required int programId,
+    required int yearLevel,
+    required String dateOfBirth,
+  })
+  onUpdateAcademicProfile;
 
   static const Color _navy = Color(0xFF183A63);
   static const Color _gold = Color(0xFFD1A33B);
@@ -50,6 +62,9 @@ class ProfileScreen extends StatelessWidget {
     final program = student?['program'] as Map<String, dynamic>?;
     final semester = payload?['active_semester'] as Map<String, dynamic>?;
     final profilePhotoUrl = student?['profile_photo_url'] as String?;
+    final clearance = payload?['clearance'] as Map<String, dynamic>?;
+    final canEditAcademicProfile =
+        clearance == null || clearance['status']?.toString() == 'completed';
 
     return RefreshIndicator(
       color: _gold,
@@ -134,27 +149,13 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
-          _DetailCard(
-            children: [
-              _DetailRow(
-                label: 'Student ID',
-                value:
-                    student?['student_id_number'] as String? ?? 'Unavailable',
-              ),
-              _DetailRow(
-                label: 'Birthday',
-                value: _formatBirthday(student?['date_of_birth'] as String?),
-              ),
-              _DetailRow(
-                label: 'Program',
-                value: program?['name'] as String? ?? 'Unavailable',
-              ),
-              _DetailRow(
-                label: 'Year Level',
-                value: student?['year_level_label'] as String? ?? 'Unavailable',
-                isLast: true,
-              ),
-            ],
+          _AcademicProfileCard(
+            student: student,
+            program: program,
+            canEdit: canEditAcademicProfile,
+            isBusy: isUpdatingAcademicProfile,
+            onLoadOptions: onLoadAcademicOptions,
+            onSubmit: onUpdateAcademicProfile,
           ),
           const SizedBox(height: 18),
           _DetailCard(
@@ -238,7 +239,352 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  String _formatBirthday(String? value) {
+  Future<void> _pickAndUploadPhoto() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      imageQuality: 82,
+    );
+
+    if (image == null) {
+      return;
+    }
+
+    await onUpdateProfilePhoto(
+      bytes: await image.readAsBytes(),
+      filename: image.name,
+    );
+  }
+}
+
+class _AcademicProfileCard extends StatefulWidget {
+  const _AcademicProfileCard({
+    required this.student,
+    required this.program,
+    required this.canEdit,
+    required this.isBusy,
+    required this.onLoadOptions,
+    required this.onSubmit,
+  });
+
+  final Map<String, dynamic>? student;
+  final Map<String, dynamic>? program;
+  final bool canEdit;
+  final bool isBusy;
+  final Future<RegistrationOptions> Function() onLoadOptions;
+  final Future<bool> Function({
+    required int programId,
+    required int yearLevel,
+    required String dateOfBirth,
+  })
+  onSubmit;
+
+  @override
+  State<_AcademicProfileCard> createState() => _AcademicProfileCardState();
+}
+
+class _AcademicProfileCardState extends State<_AcademicProfileCard> {
+  final _formKey = GlobalKey<FormState>();
+  RegistrationOptions? _options;
+  bool _isEditing = false;
+  bool _isLoadingOptions = false;
+  String? _loadError;
+  int? _selectedProgramId;
+  int? _selectedYearLevel;
+  DateTime? _selectedBirthday;
+
+  @override
+  void didUpdateWidget(covariant _AcademicProfileCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (!identical(oldWidget.student, widget.student) ||
+        !identical(oldWidget.program, widget.program)) {
+      _syncSelectionsFromProfile();
+    }
+  }
+
+  void _syncSelectionsFromProfile() {
+    _selectedProgramId = _asInt(widget.program?['id']);
+    _selectedYearLevel = _asInt(widget.student?['year_level']);
+    _selectedBirthday = DateTime.tryParse(
+      widget.student?['date_of_birth']?.toString() ?? '',
+    );
+  }
+
+  Future<void> _beginEdit() async {
+    setState(() {
+      _isEditing = true;
+      _loadError = null;
+    });
+    _syncSelectionsFromProfile();
+
+    if (_options != null || _isLoadingOptions) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingOptions = true;
+    });
+
+    try {
+      final options = await widget.onLoadOptions();
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _options = options;
+        _isLoadingOptions = false;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _loadError = error.toString().replaceFirst('Exception: ', '');
+        _isLoadingOptions = false;
+      });
+    }
+  }
+
+  Future<void> _pickBirthday() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate:
+          _selectedBirthday ?? DateTime(now.year - 18, now.month, now.day),
+      firstDate: DateTime(1900),
+      lastDate: now,
+    );
+
+    if (picked == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _selectedBirthday = picked;
+    });
+  }
+
+  Future<void> _submit() async {
+    if (widget.isBusy || !_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final birthday = _selectedBirthday;
+    final programId = _selectedProgramId;
+    final yearLevel = _selectedYearLevel;
+
+    if (birthday == null || programId == null || yearLevel == null) {
+      return;
+    }
+
+    final didUpdate = await widget.onSubmit(
+      programId: programId,
+      yearLevel: yearLevel,
+      dateOfBirth: _toDateString(birthday),
+    );
+
+    if (!mounted || !didUpdate) {
+      return;
+    }
+
+    setState(() {
+      _isEditing = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final options = _options;
+    final programs = options?.programs ?? const <RegistrationProgram>[];
+    final yearLevels =
+        options?.yearLevels ??
+        const [
+          RegistrationYearLevel(value: 1, label: '1st Year'),
+          RegistrationYearLevel(value: 2, label: '2nd Year'),
+          RegistrationYearLevel(value: 3, label: '3rd Year'),
+          RegistrationYearLevel(value: 4, label: '4th Year'),
+        ];
+    final hasSelectedProgram =
+        _selectedProgramId != null &&
+        programs.any((program) => program.id == _selectedProgramId);
+    final hasSelectedYear =
+        _selectedYearLevel != null &&
+        yearLevels.any((year) => year.value == _selectedYearLevel);
+
+    return _DetailCard(
+      title: 'Academic Profile',
+      action: widget.canEdit
+          ? TextButton.icon(
+              onPressed: widget.isBusy
+                  ? null
+                  : () {
+                      if (_isEditing) {
+                        setState(() {
+                          _isEditing = false;
+                          _loadError = null;
+                        });
+                      } else {
+                        _beginEdit();
+                      }
+                    },
+              icon: Icon(_isEditing ? Icons.close_rounded : Icons.edit_rounded),
+              label: Text(_isEditing ? 'Cancel' : 'Edit'),
+            )
+          : null,
+      children: [
+        _DetailRow(
+          label: 'Student ID',
+          value:
+              widget.student?['student_id_number'] as String? ?? 'Unavailable',
+        ),
+        _DetailRow(
+          label: 'Birthday',
+          value: _formatBirthday(widget.student?['date_of_birth'] as String?),
+        ),
+        _DetailRow(
+          label: 'Program',
+          value: widget.program?['name'] as String? ?? 'Unavailable',
+        ),
+        _DetailRow(
+          label: 'Year Level',
+          value:
+              widget.student?['year_level_label'] as String? ?? 'Unavailable',
+          isLast: !_isEditing && widget.canEdit,
+        ),
+        if (!widget.canEdit) ...[
+          const SizedBox(height: 10),
+          _ProfileNotice(
+            icon: Icons.lock_clock_rounded,
+            text:
+                'Academic details can be edited before starting clearance or after the current clearance is completed.',
+          ),
+        ],
+        if (_isEditing) ...[
+          const SizedBox(height: 14),
+          if (_isLoadingOptions)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (_loadError != null)
+            _ProfileNotice(
+              icon: Icons.error_outline_rounded,
+              text: _loadError!,
+              isError: true,
+            )
+          else
+            Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  DropdownButtonFormField<int>(
+                    initialValue: hasSelectedProgram
+                        ? _selectedProgramId
+                        : null,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Program'),
+                    items: programs
+                        .map(
+                          (program) => DropdownMenuItem(
+                            value: program.id,
+                            child: Text('${program.code} - ${program.name}'),
+                          ),
+                        )
+                        .toList(),
+                    validator: (value) =>
+                        value == null ? 'Choose a program.' : null,
+                    onChanged: widget.isBusy
+                        ? null
+                        : (value) {
+                            setState(() {
+                              _selectedProgramId = value;
+                            });
+                          },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<int>(
+                    initialValue: hasSelectedYear ? _selectedYearLevel : null,
+                    decoration: const InputDecoration(labelText: 'Year Level'),
+                    items: yearLevels
+                        .map(
+                          (year) => DropdownMenuItem(
+                            value: year.value,
+                            child: Text(year.label),
+                          ),
+                        )
+                        .toList(),
+                    validator: (value) =>
+                        value == null ? 'Choose a year level.' : null,
+                    onChanged: widget.isBusy
+                        ? null
+                        : (value) {
+                            setState(() {
+                              _selectedYearLevel = value;
+                            });
+                          },
+                  ),
+                  const SizedBox(height: 12),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: widget.isBusy ? null : _pickBirthday,
+                    child: InputDecorator(
+                      decoration: const InputDecoration(labelText: 'Birthday'),
+                      child: Text(
+                        _selectedBirthday == null
+                            ? 'Choose birthday'
+                            : _formatBirthday(
+                                _toDateString(_selectedBirthday!),
+                              ),
+                        style: const TextStyle(
+                          color: ProfileScreen._navy,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: widget.isBusy ? null : _submit,
+                      child: widget.isBusy
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Save Academic Profile'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+
+  static int? _asInt(dynamic value) {
+    if (value is int) {
+      return value;
+    }
+
+    return int.tryParse(value?.toString() ?? '');
+  }
+
+  static String _toDateString(DateTime value) {
+    final month = value.month.toString().padLeft(2, '0');
+    final day = value.day.toString().padLeft(2, '0');
+
+    return '${value.year}-$month-$day';
+  }
+
+  static String _formatBirthday(String? value) {
     if (value == null || value.isEmpty) {
       return 'Not set';
     }
@@ -265,22 +611,52 @@ class ProfileScreen extends StatelessWidget {
 
     return '${monthNames[parsed.month - 1]} ${parsed.day}, ${parsed.year}';
   }
+}
 
-  Future<void> _pickAndUploadPhoto() async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1024,
-      imageQuality: 82,
-    );
+class _ProfileNotice extends StatelessWidget {
+  const _ProfileNotice({
+    required this.icon,
+    required this.text,
+    this.isError = false,
+  });
 
-    if (image == null) {
-      return;
-    }
+  final IconData icon;
+  final String text;
+  final bool isError;
 
-    await onUpdateProfilePhoto(
-      bytes: await image.readAsBytes(),
-      filename: image.name,
+  @override
+  Widget build(BuildContext context) {
+    final color = isError ? Colors.red.shade700 : ProfileScreen._navy;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isError ? const Color(0xFFFFE7E7) : const Color(0xFFFFF4DB),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isError
+              ? Colors.red.withValues(alpha: 0.22)
+              : ProfileScreen._gold.withValues(alpha: 0.28),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w700,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -605,9 +981,10 @@ class _ProfilePhotoButton extends StatelessWidget {
 }
 
 class _DetailCard extends StatelessWidget {
-  const _DetailCard({this.title, required this.children});
+  const _DetailCard({this.title, this.action, required this.children});
 
   final String? title;
+  final Widget? action;
   final List<Widget> children;
 
   @override
@@ -628,16 +1005,20 @@ class _DetailCard extends StatelessWidget {
       child: Column(
         children: [
           if (title != null) ...[
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                title!,
-                style: const TextStyle(
-                  color: ProfileScreen._navy,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title!,
+                    style: const TextStyle(
+                      color: ProfileScreen._navy,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ),
-              ),
+                ?action,
+              ],
             ),
             const SizedBox(height: 12),
           ],

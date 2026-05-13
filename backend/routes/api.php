@@ -18,6 +18,8 @@ Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
     Route::get('/me', [StudentAuthController::class, 'me'])->name('api.me');
     Route::post('/me/password', [StudentAuthController::class, 'updatePassword'])
         ->name('api.me.password.update');
+    Route::patch('/me/academic-profile', [StudentAuthController::class, 'updateAcademicProfile'])
+        ->name('api.me.academic-profile.update');
     Route::post('/me/profile-photo', [StudentAuthController::class, 'updateProfilePhoto'])
         ->name('api.me.profile-photo.update');
 

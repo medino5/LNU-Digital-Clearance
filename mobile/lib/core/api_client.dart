@@ -44,6 +44,23 @@ class ApiClient {
     }
   }
 
+  Future<http.Response> patch(
+    String path, {
+    Map<String, String>? headers,
+    Object? body,
+  }) async {
+    try {
+      final response = await _client
+          .patch(_buildUri(path), headers: headers, body: body)
+          .timeout(const Duration(seconds: 10));
+      return response;
+    } on http.ClientException {
+      throw Exception(_deviceReachabilityMessage());
+    } on TimeoutException {
+      throw Exception(_timeoutMessage());
+    }
+  }
+
   Future<http.Response> delete(
     String path, {
     Map<String, String>? headers,

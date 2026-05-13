@@ -5,6 +5,7 @@ import '../../screens/dashboard_screen.dart';
 import '../../screens/login_screen.dart';
 import '../../services/auth_service.dart';
 import '../../services/clearance_service.dart';
+import '../../services/registration_service.dart';
 import '../history/history_screen.dart';
 import '../pdf/pdf_screen.dart';
 import '../profile/profile_screen.dart';
@@ -51,6 +52,7 @@ class _AppShellState extends State<AppShell> {
   bool _isLoggingOut = false;
   bool _isUploadingProfilePhoto = false;
   bool _isChangingPassword = false;
+  bool _isUpdatingAcademicProfile = false;
   int? _resubmittingStepId;
 
   int _selectedIndex = 0;
@@ -404,6 +406,70 @@ class _AppShellState extends State<AppShell> {
     }
   }
 
+  Future<RegistrationOptions> _loadAcademicProfileOptions() {
+    return _authService.loadAcademicProfileOptions();
+  }
+
+  Future<bool> _updateAcademicProfile({
+    required int programId,
+    required int yearLevel,
+    required String dateOfBirth,
+  }) async {
+    if (_isUpdatingAcademicProfile) {
+      return false;
+    }
+
+    setState(() {
+      _isUpdatingAcademicProfile = true;
+    });
+
+    try {
+      final profile = await _authService.updateAcademicProfile(
+        programId: programId,
+        yearLevel: yearLevel,
+        dateOfBirth: dateOfBirth,
+      );
+
+      if (!mounted) {
+        return false;
+      }
+
+      final updatedPayload = Map<String, dynamic>.from(_payload ?? {});
+      updatedPayload['student'] = profile;
+
+      setState(() {
+        _payload = updatedPayload;
+        _error = null;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Academic profile updated.')),
+      );
+
+      return true;
+    } catch (error) {
+      if (await _handleSessionExpired(error)) {
+        return false;
+      }
+
+      if (!mounted) {
+        return false;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_getErrorMessage(error))));
+
+      return false;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdatingAcademicProfile = false;
+        });
+      }
+    }
+  }
+
   Future<bool> _handleSessionExpired(Object error) async {
     if (error is! SessionExpiredException) {
       return false;
@@ -593,10 +659,13 @@ class _AppShellState extends State<AppShell> {
           isBusy: _isLoggingOut,
           isUploadingPhoto: _isUploadingProfilePhoto,
           isChangingPassword: _isChangingPassword,
+          isUpdatingAcademicProfile: _isUpdatingAcademicProfile,
           onLogout: _logout,
           onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
           onUpdateProfilePhoto: _updateProfilePhoto,
           onChangePassword: _changePassword,
+          onLoadAcademicOptions: _loadAcademicProfileOptions,
+          onUpdateAcademicProfile: _updateAcademicProfile,
         );
       default:
         return const SizedBox.shrink();

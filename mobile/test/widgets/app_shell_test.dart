@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/profile/profile_screen.dart';
 import 'package:mobile/features/shell/app_shell.dart';
+import 'package:mobile/services/registration_service.dart';
 
 import '../helpers/fake_services.dart';
 import '../helpers/test_payloads.dart';
@@ -72,10 +73,10 @@ void main() {
       await tester.tap(find.text('History'));
       await tester.pumpAndSettle();
 
-      expect(find.text('2nd Semester 2024-2025'), findsOneWidget);
+      expect(find.text('2nd Semester 2024-2025'), findsWidgets);
       expect(find.text('School Year 2024-2025'), findsOneWidget);
 
-      await tester.tap(find.text('2nd Semester 2024-2025'));
+      await tester.tap(find.text('2nd Semester 2024-2025').last);
       await tester.pumpAndSettle();
 
       expect(find.text('Reference: CLR-2024-BSIT-001'), findsOneWidget);
@@ -189,12 +190,20 @@ void main() {
               isBusy: false,
               isUploadingPhoto: false,
               isChangingPassword: false,
+              isUpdatingAcademicProfile: false,
               onRefresh: () async {},
               onUpdateProfilePhoto:
                   ({required bytes, required filename}) async {},
               onChangePassword:
                   ({required password, required passwordConfirmation}) async =>
                       true,
+              onLoadAcademicOptions: () async => RegistrationOptions.empty(),
+              onUpdateAcademicProfile:
+                  ({
+                    required programId,
+                    required yearLevel,
+                    required dateOfBirth,
+                  }) async => true,
               onLogout: () async {
                 logoutCalled = true;
               },

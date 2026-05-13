@@ -5,6 +5,7 @@ import '../core/api_client.dart';
 import '../core/network_config.dart';
 import '../core/session_expired_exception.dart';
 import 'auth_token_store.dart';
+import 'registration_service.dart';
 
 class AuthService {
   AuthService({ApiClient? apiClient, AuthTokenStore? tokenStore})
@@ -163,6 +164,60 @@ class AuthService {
     }
 
     return message;
+  }
+
+  Future<RegistrationOptions> loadAcademicProfileOptions() async {
+    final response = await _apiClient.get(
+      '/registration/options',
+      headers: {'Accept': 'application/json'},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        _extractMessage(response.body, 'Unable to load academic options.'),
+      );
+    }
+
+    return RegistrationOptions.fromJson(
+      (jsonDecode(response.body) as Map<String, dynamic>),
+    );
+  }
+
+  Future<Map<String, dynamic>> updateAcademicProfile({
+    required int programId,
+    required int yearLevel,
+    required String dateOfBirth,
+  }) async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw Exception('You are not logged in.');
+    }
+
+    final response = await _apiClient.patch(
+      '/me/academic-profile',
+      headers: {..._authHeaders(token), 'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'program_id': programId,
+        'year_level': yearLevel,
+        'date_of_birth': dateOfBirth,
+      }),
+    );
+
+    if (response.statusCode == 401) {
+      await clearStoredToken();
+      throw SessionExpiredException();
+    }
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        _extractMessage(response.body, 'Unable to update academic profile.'),
+      );
+    }
+
+    final payload = jsonDecode(response.body) as Map<String, dynamic>;
+    return (payload['profile'] as Map?)?.cast<String, dynamic>() ??
+        <String, dynamic>{};
   }
 
   Future<String> resetForgottenPassword({
