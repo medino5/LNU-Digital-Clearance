@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../core/input_sanitizers.dart';
 import '../core/session_expired_exception.dart';
 import '../features/shell/app_shell.dart';
 import '../services/auth_service.dart';
@@ -214,29 +215,14 @@ class _LoginScreenState extends State<LoginScreen> {
           child: LayoutBuilder(
             builder: (context, constraints) {
               return Center(
-                child: SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
+                child: Padding(
                   padding: const EdgeInsets.fromLTRB(26, 18, 26, 18),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: 440,
-                      minHeight: constraints.maxHeight - 36,
-                    ),
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0, end: 1),
-                      duration: const Duration(milliseconds: 260),
-                      curve: Curves.easeOutCubic,
-                      builder: (context, value, child) {
-                        return Opacity(
-                          opacity: value,
-                          child: Transform.translate(
-                            offset: Offset(0, 10 * (1 - value)),
-                            child: child,
-                          ),
-                        );
-                      },
+                  child: RepaintBoundary(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: 440,
+                        minHeight: constraints.maxHeight - 36,
+                      ),
                       child: AutofillGroup(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -336,6 +322,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               autofillHints: const [AutofillHints.password],
                               enableSuggestions: false,
                               autocorrect: false,
+                              inputFormatters: const [
+                                NoEmojiTextInputFormatter(),
+                              ],
                               onSubmitted: (_) {
                                 if (!_isLoading) {
                                   _handleLogin();

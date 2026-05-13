@@ -22,15 +22,29 @@
                 </div>
             </div>
 
-            <form method="GET" action="{{ route('admin.registration-requests.index') }}" class="management-filter-grid">
-                <label>
-                    Status
-                    <select name="status">
-                        <option value="pending" @selected($status === 'pending')>Pending</option>
-                        <option value="approved" @selected($status === 'approved')>Approved</option>
-                        <option value="rejected" @selected($status === 'rejected')>Rejected</option>
-                    </select>
-                </label>
+            <div class="registration-status-tabs" aria-label="Registration request status">
+                <a
+                    href="{{ route('admin.registration-requests.index', array_filter(['status' => 'pending', 'search' => $search])) }}"
+                    class="registration-status-tab pending {{ $status === 'pending' ? 'active' : '' }}"
+                >
+                    Pending <span>{{ $pendingCount }}</span>
+                </a>
+                <a
+                    href="{{ route('admin.registration-requests.index', array_filter(['status' => 'approved', 'search' => $search])) }}"
+                    class="registration-status-tab approved {{ $status === 'approved' ? 'active' : '' }}"
+                >
+                    Approved <span>{{ $approvedCount }}</span>
+                </a>
+                <a
+                    href="{{ route('admin.registration-requests.index', array_filter(['status' => 'rejected', 'search' => $search])) }}"
+                    class="registration-status-tab rejected {{ $status === 'rejected' ? 'active' : '' }}"
+                >
+                    Rejected <span>{{ $rejectedCount }}</span>
+                </a>
+            </div>
+
+            <form method="GET" action="{{ route('admin.registration-requests.index') }}" class="registration-search-form">
+                <input type="hidden" name="status" value="{{ $status }}">
 
                 <label>
                     Search
@@ -43,15 +57,9 @@
                     >
                 </label>
 
-                <button type="submit" class="management-primary-action">Apply Filters</button>
+                <button type="submit" class="management-primary-action">Search</button>
                 <a href="{{ route('admin.registration-requests.index') }}" class="button secondary management-secondary-action">Reset</a>
             </form>
-
-            <div class="management-summary-strip">
-                <span class="management-summary-pill">Pending: {{ $pendingCount }}</span>
-                <span class="management-summary-pill">Approved: {{ $approvedCount }}</span>
-                <span class="management-summary-pill">Rejected: {{ $rejectedCount }}</span>
-            </div>
 
             @if($requests->isEmpty())
                 <div class="empty-state">
@@ -159,6 +167,81 @@
                 gap: 14px;
             }
 
+            .registration-status-tabs {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .registration-status-tab {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                min-height: 40px;
+                padding: 0 14px;
+                border-radius: 999px;
+                border: 1px solid var(--border-subtle);
+                background: var(--bg-surface);
+                color: var(--text-primary);
+                font-size: 13px;
+                font-weight: 800;
+                text-decoration: none;
+                transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+            }
+
+            .registration-status-tab:hover,
+            .registration-status-tab.active {
+                transform: translateY(-1px);
+            }
+
+            .registration-status-tab span {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 24px;
+                height: 24px;
+                padding: 0 7px;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.7);
+            }
+
+            .registration-status-tab.pending,
+            .registration-status-tab.pending.active {
+                background: var(--status-warning-bg);
+                border-color: rgba(146, 64, 14, 0.18);
+                color: var(--status-warning-text);
+            }
+
+            .registration-status-tab.approved,
+            .registration-status-tab.approved.active {
+                background: var(--status-success-bg);
+                border-color: rgba(22, 101, 52, 0.18);
+                color: var(--status-success-text);
+            }
+
+            .registration-status-tab.rejected,
+            .registration-status-tab.rejected.active {
+                background: var(--status-danger-bg);
+                border-color: rgba(153, 27, 27, 0.18);
+                color: var(--status-danger-text);
+            }
+
+            .registration-status-tab:not(.active) {
+                opacity: 0.74;
+            }
+
+            .registration-search-form {
+                display: grid;
+                grid-template-columns: minmax(240px, 1fr) auto auto;
+                gap: 10px;
+                align-items: end;
+            }
+
+            .registration-search-form input {
+                width: 100%;
+            }
+
             .registration-request-card {
                 display: grid;
                 gap: 16px;
@@ -244,9 +327,15 @@
                 color: var(--danger);
             }
 
+            .badge.approved {
+                background: var(--status-success-bg);
+                color: var(--status-success-text);
+            }
+
             @media (max-width: 720px) {
                 .registration-request-actions,
-                .registration-reject-form {
+                .registration-reject-form,
+                .registration-search-form {
                     display: grid;
                     width: 100%;
                 }
@@ -259,6 +348,4 @@
         </style>
     @endpush
 @endsection
-
-
 

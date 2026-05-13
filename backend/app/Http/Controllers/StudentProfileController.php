@@ -42,7 +42,13 @@ class StudentProfileController extends Controller
             abort(403, 'This student is not routed to your current designation.');
         }
 
-        return view('students.profile', $this->profileData($student) + [
+        $profile = $this->profileData($student);
+
+        if ($request->boolean('partial')) {
+            return view('students.partials.profile-panel', $profile);
+        }
+
+        return view('students.profile', $profile + [
             'backUrl' => route('office.dashboard'),
             'backLabel' => 'Back to Office Dashboard',
         ]);

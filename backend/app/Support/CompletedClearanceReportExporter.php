@@ -85,36 +85,61 @@ class CompletedClearanceReportExporter
         $academicYear = $semester->displayAcademicYear() ?? 'Not set';
         $generatedAt = now()->format('M d, Y h:i A');
         $programGroups = $clearances->groupBy('program_code')->sortKeys();
+        $avgCompletionMinutes = $clearances
+            ->filter(fn (Clearance $clearance) => $clearance->created_at && $clearance->completed_at)
+            ->map(fn (Clearance $clearance) => $clearance->created_at->diffInMinutes($clearance->completed_at))
+            ->avg();
+        $completedDates = $clearances->pluck('completed_at')->filter()->sort();
+        $earliestCompletion = $completedDates->first();
+        $latestCompletion = $completedDates->last();
 
         $summaryRows = [
             [$this->stringCell('Completed Clearance Report')],
             [$this->stringCell('Semester'), $this->stringCell($semester->label)],
             [$this->stringCell('Academic Year'), $this->stringCell($academicYear)],
             [$this->stringCell('Generated At'), $this->stringCell($generatedAt)],
+            [$this->stringCell('Total Completed Clearances'), $this->numberCell($clearances->count())],
+            [$this->stringCell('Average Completion Time'), $this->stringCell($this->formatDuration($avgCompletionMinutes))],
+            [$this->stringCell('First Completion'), $this->stringCell($earliestCompletion ? $earliestCompletion->format('M d, Y h:i A') : '')],
+            [$this->stringCell('Latest Completion'), $this->stringCell($latestCompletion ? $latestCompletion->format('M d, Y h:i A') : '')],
             [],
             [
                 $this->stringCell('Program Code'),
                 $this->stringCell('Program Name'),
                 $this->stringCell('Completed Clearances'),
+                $this->stringCell('Average Completion Time'),
             ],
         ];
 
         foreach ($programGroups as $programCode => $programClearances) {
             /** @var Clearance $firstClearance */
             $firstClearance = $programClearances->first();
+            $programAvgMinutes = $programClearances
+                ->filter(fn (Clearance $clearance) => $clearance->created_at && $clearance->completed_at)
+                ->map(fn (Clearance $clearance) => $clearance->created_at->diffInMinutes($clearance->completed_at))
+                ->avg();
 
             $summaryRows[] = [
                 $this->stringCell((string) $programCode),
                 $this->stringCell($firstClearance->program_name),
                 $this->numberCell($programClearances->count()),
+                $this->stringCell($this->formatDuration($programAvgMinutes)),
             ];
         }
 
         $summaryRows[] = [];
+        $summaryRows[] = [$this->stringCell('Year Level Breakdown')];
         $summaryRows[] = [
-            $this->stringCell('Total Completed Clearances'),
-            $this->numberCell($clearances->count()),
+            $this->stringCell('Year Level'),
+            $this->stringCell('Completed Clearances'),
         ];
+
+        foreach ($clearances->groupBy('year_level')->sortKeys() as $yearLevel => $yearClearances) {
+            $summaryRows[] = [
+                $this->numberCell((int) $yearLevel),
+                $this->numberCell($yearClearances->count()),
+            ];
+        }
 
         $sheets = [
             [
@@ -138,10 +163,16 @@ class CompletedClearanceReportExporter
                 $this->stringCell('Program Name'),
                 $this->stringCell('Year Level'),
                 $this->stringCell('Reference Number'),
+                $this->stringCell('Started Date/Time'),
                 $this->stringCell('Completed Date/Time'),
+                $this->stringCell('Completion Duration'),
             ]];
 
             foreach ($programClearances as $clearance) {
+                $durationMinutes = $clearance->created_at && $clearance->completed_at
+                    ? $clearance->created_at->diffInMinutes($clearance->completed_at)
+                    : null;
+
                 $rows[] = [
                     $this->stringCell($clearance->student_id_number),
                     $this->stringCell($clearance->student_name),
@@ -149,7 +180,9 @@ class CompletedClearanceReportExporter
                     $this->stringCell($clearance->program_name),
                     $this->numberCell((int) $clearance->year_level),
                     $this->stringCell($clearance->reference_number ?? ''),
+                    $this->stringCell(optional($clearance->created_at)->format('M d, Y h:i A') ?? ''),
                     $this->stringCell(optional($clearance->completed_at)->format('M d, Y h:i A') ?? ''),
+                    $this->stringCell($this->formatDuration($durationMinutes)),
                 ];
             }
 
@@ -160,6 +193,29 @@ class CompletedClearanceReportExporter
         }
 
         return ['sheets' => $sheets];
+    }
+
+    protected function formatDuration(mixed $minutes): string
+    {
+        if ($minutes === null || $minutes === '') {
+            return 'No completed timing data';
+        }
+
+        $minutes = (int) round((float) $minutes);
+
+        if ($minutes < 60) {
+            return $minutes . ' minute' . ($minutes === 1 ? '' : 's');
+        }
+
+        $hours = round($minutes / 60, 1);
+
+        if ($hours < 24) {
+            return $hours . ' hour' . ($hours == 1.0 ? '' : 's');
+        }
+
+        $days = round($hours / 24, 1);
+
+        return $days . ' day' . ($days == 1.0 ? '' : 's');
     }
 
     /**

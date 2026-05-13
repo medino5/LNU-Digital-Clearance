@@ -193,7 +193,8 @@ void main() {
               onUpdateProfilePhoto:
                   ({required bytes, required filename}) async {},
               onChangePassword:
-                  ({required password, required passwordConfirmation}) async {},
+                  ({required password, required passwordConfirmation}) async =>
+                      true,
               onLogout: () async {
                 logoutCalled = true;
               },

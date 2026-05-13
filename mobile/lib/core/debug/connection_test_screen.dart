@@ -2,11 +2,13 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../api_client.dart';
-import 'build_identity_card.dart';
+import '../input_sanitizers.dart';
 import '../network_config.dart';
+import 'build_identity_card.dart';
 
 class ConnectionTestScreen extends StatefulWidget {
   const ConnectionTestScreen({super.key});
@@ -218,6 +220,10 @@ class _ConnectionTestScreenState extends State<ConnectionTestScreen> {
             TextField(
               controller: _studentIdController,
               keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(7),
+              ],
               decoration: const InputDecoration(
                 labelText: 'Student ID for login test',
                 border: OutlineInputBorder(),
@@ -227,6 +233,7 @@ class _ConnectionTestScreenState extends State<ConnectionTestScreen> {
             TextField(
               controller: _passwordController,
               obscureText: true,
+              inputFormatters: const [NoEmojiTextInputFormatter()],
               decoration: const InputDecoration(
                 labelText: 'Password for login test',
                 border: OutlineInputBorder(),

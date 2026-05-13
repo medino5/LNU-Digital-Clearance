@@ -354,12 +354,12 @@ class _AppShellState extends State<AppShell> {
     }
   }
 
-  Future<void> _changePassword({
+  Future<bool> _changePassword({
     required String password,
     required String passwordConfirmation,
   }) async {
     if (_isChangingPassword) {
-      return;
+      return false;
     }
 
     setState(() {
@@ -373,24 +373,28 @@ class _AppShellState extends State<AppShell> {
       );
 
       if (!mounted) {
-        return;
+        return false;
       }
 
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
+
+      return true;
     } catch (error) {
       if (await _handleSessionExpired(error)) {
-        return;
+        return false;
       }
 
       if (!mounted) {
-        return;
+        return false;
       }
 
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_getErrorMessage(error))));
+
+      return false;
     } finally {
       if (mounted) {
         setState(() {

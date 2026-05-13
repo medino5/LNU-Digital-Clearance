@@ -196,15 +196,14 @@
 
         .dashboard-quick-actions {
             display: grid;
-            grid-template-columns: minmax(190px, 0.45fr) minmax(0, 1fr);
-            gap: 1.5rem;
+            gap: 1rem;
             align-items: start;
         }
 
         .quick-action-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 0.875rem;
             align-items: stretch;
         }
 
@@ -212,10 +211,10 @@
             display: flex;
             flex-direction: column;
             align-items: stretch;
-            gap: 0.875rem;
-            min-height: 154px;
+            gap: 0.75rem;
+            min-height: 124px;
             height: 100%;
-            padding: 1rem;
+            padding: 0.875rem;
             border-radius: 0.75rem;
             text-decoration: none;
             color: var(--text-primary);
@@ -237,7 +236,7 @@
 
         .quick-action-label {
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 0.94rem;
         }
 
         .quick-action-copy {
@@ -948,7 +947,6 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 @endpush
-
 
 
 

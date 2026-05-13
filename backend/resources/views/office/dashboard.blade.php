@@ -140,25 +140,11 @@
                                         <span class="badge awaiting_action">Awaiting Action</span>
 
                                         <div class="office-action-buttons">
-                                            <button
-                                                type="button"
-                                                class="button ghost detail-trigger"
-                                                data-modal-step-id="{{ $step->id }}"
-                                                data-modal-student-name="{{ $studentName }}"
-                                                data-modal-student-meta="{{ $studentMeta }}"
-                                                data-modal-step-status="Awaiting Action"
-                                                data-modal-clearance-status="{{ ucwords(str_replace('_', ' ', $step->clearance->status)) }}"
-                                                data-modal-last-processed="{{ optional($step->signed_at)->format('M d, Y h:i A') ?? '-' }}"
-                                                data-modal-designation="{{ $step->office_label ?: '-' }}"
-                                                data-modal-note-label="Previous Office Note"
-                                                data-modal-previous-note="{{ $step->remarks ?: '-' }}"
-                                            >
-                                                View
-                                            </button>
-
                                             <a
                                                 href="{{ $student ? route('office.students.show', $student) : '#' }}"
                                                 class="button profile-link"
+                                                data-office-profile-link
+                                                data-student-profile-url="{{ $student ? route('office.students.show', [$student, 'partial' => 1]) : '' }}"
                                                 aria-disabled="{{ $student ? 'false' : 'true' }}"
                                             >
                                                 View Profile
@@ -295,25 +281,11 @@
                                         </span>
 
                                         <div class="office-action-buttons">
-                                            <button
-                                                type="button"
-                                                class="button ghost detail-trigger"
-                                                data-modal-step-id="{{ $step['id'] }}"
-                                                data-modal-student-name="{{ $step['student_name'] }}"
-                                                data-modal-student-meta="{{ $step['student_meta'] }}"
-                                                data-modal-step-status="{{ $step['status_label'] }}"
-                                                data-modal-clearance-status="{{ $step['clearance_status'] }}"
-                                                data-modal-last-processed="{{ $step['last_processed'] }}"
-                                                data-modal-designation="{{ $step['office_label'] }}"
-                                                data-modal-note-label="{{ $step['note_label'] }}"
-                                                data-modal-previous-note="{{ $step['remarks'] }}"
-                                            >
-                                                View
-                                            </button>
-
                                             <a
                                                 href="{{ $step['student_profile_url'] }}"
                                                 class="button profile-link"
+                                                data-office-profile-link
+                                                data-student-profile-url="{{ $step['student_profile_url'] ? $step['student_profile_url'] . (str_contains($step['student_profile_url'], '?') ? '&' : '?') . 'partial=1' : '' }}"
                                                 aria-disabled="{{ $step['student_profile_disabled'] ? 'true' : 'false' }}"
                                             >
                                                 View Profile
@@ -430,6 +402,29 @@
                 <div class="office-modal-actions">
                     <button type="button" class="office-cancel-link" id="cancelOfficeModal">Close</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="office-modal-backdrop office-profile-backdrop" id="officeStudentProfileModal" hidden>
+        <div class="office-profile-modal" role="dialog" aria-modal="true" aria-labelledby="officeStudentProfileTitle">
+            <div class="office-modal-header">
+                <div>
+                    <div class="eyebrow">Student Profile</div>
+                    <h2 id="officeStudentProfileTitle">Student details</h2>
+                </div>
+
+                <button type="button" class="office-modal-close" id="closeOfficeStudentProfile" aria-label="Close profile">
+                    &times;
+                </button>
+            </div>
+
+            <div class="office-profile-modal-body" id="officeStudentProfileBody">
+                <div class="empty-state">Loading student profile...</div>
+            </div>
+
+            <div class="office-profile-modal-footer">
+                <button type="button" class="office-cancel-link" id="cancelOfficeStudentProfile">Close</button>
             </div>
         </div>
     </div>
@@ -924,6 +919,38 @@
             border: 1px solid rgba(255, 255, 255, 0.5);
         }
 
+        .office-profile-modal {
+            width: min(100%, 920px);
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-surface);
+            border-radius: 22px;
+            box-shadow: 0 24px 70px rgba(14, 39, 66, 0.26);
+            border: 1px solid rgba(255, 255, 255, 0.62);
+        }
+
+        .office-profile-modal .office-modal-header {
+            flex: 0 0 auto;
+        }
+
+        .office-profile-modal-body {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            padding: 22px;
+            background: var(--bg-app);
+        }
+
+        .office-profile-modal-footer {
+            flex: 0 0 auto;
+            display: flex;
+            justify-content: flex-end;
+            padding: 16px 22px;
+            background: var(--bg-surface);
+            border-top: 1px solid var(--border-subtle);
+        }
+
         .office-modal-header {
             background: linear-gradient(135deg, #16385f, #254f82);
             color: white;
@@ -1242,6 +1269,11 @@
             const undoFlagButtons = document.querySelectorAll('.undo-flag-trigger');
             const closeUndoFlagModal = document.getElementById('closeUndoFlagModal');
             const cancelUndoFlagModal = document.getElementById('cancelUndoFlagModal');
+            const profileModal = document.getElementById('officeStudentProfileModal');
+            const profileBody = document.getElementById('officeStudentProfileBody');
+            const profileLinks = document.querySelectorAll('[data-office-profile-link]');
+            const closeProfileModal = document.getElementById('closeOfficeStudentProfile');
+            const cancelProfileModal = document.getElementById('cancelOfficeStudentProfile');
 
             const reopenStepId = @json(old('step_id'));
             const oldRemarks = @json(old('remarks'));
@@ -1294,6 +1326,29 @@
                 showModal(undoFlagModal);
             }
 
+            async function openProfileModal(link) {
+                if (!profileModal || !profileBody || link.getAttribute('aria-disabled') === 'true') {
+                    return;
+                }
+
+                profileBody.innerHTML = '<div class="empty-state">Loading student profile...</div>';
+                showModal(profileModal);
+
+                try {
+                    const response = await fetch(link.dataset.studentProfileUrl || link.href, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Profile request failed');
+                    }
+
+                    profileBody.innerHTML = await response.text();
+                } catch (error) {
+                    profileBody.innerHTML = '<div class="empty-state">Unable to load the student profile. Please refresh and try again.</div>';
+                }
+            }
+
             detailButtons.forEach(button => {
                 button.addEventListener('click', function () {
                     openDetailModal(button);
@@ -1321,6 +1376,13 @@
             undoFlagButtons.forEach(button => {
                 button.addEventListener('click', function () {
                     openUndoFlagModal(button);
+                });
+            });
+
+            profileLinks.forEach(link => {
+                link.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    openProfileModal(link);
                 });
             });
 
@@ -1372,7 +1434,19 @@
                 hideModal(undoFlagModal);
             });
 
-            [detailModal, approveModal, flagModal, undoModal, undoFlagModal].forEach(modal => {
+            closeProfileModal?.addEventListener('click', function () {
+                hideModal(profileModal);
+            });
+
+            cancelProfileModal?.addEventListener('click', function () {
+                hideModal(profileModal);
+            });
+
+            [detailModal, approveModal, flagModal, undoModal, undoFlagModal, profileModal].forEach(modal => {
+                if (!modal) {
+                    return;
+                }
+
                 modal.addEventListener('click', function (event) {
                     if (event.target === modal) {
                         hideModal(modal);
@@ -1382,7 +1456,11 @@
 
             document.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape') {
-                    [detailModal, approveModal, flagModal, undoModal, undoFlagModal].forEach(modal => {
+                    [detailModal, approveModal, flagModal, undoModal, undoFlagModal, profileModal].forEach(modal => {
+                        if (!modal) {
+                            return;
+                        }
+
                         if (!modal.hidden) {
                             hideModal(modal);
                         }

@@ -61,10 +61,10 @@
             </div>
 
             <div class="profile-counts">
-                <span>Approved: {{ $stepCounts['approved'] }}</span>
-                <span>Flagged: {{ $stepCounts['flagged'] }}</span>
-                <span>Waiting: {{ $stepCounts['awaiting'] }}</span>
-                <span>Total: {{ $stepCounts['total'] }}</span>
+                <span class="profile-count-pill total">Total: {{ $stepCounts['total'] }}</span>
+                <span class="profile-count-pill approved">Approved: {{ $stepCounts['approved'] }}</span>
+                <span class="profile-count-pill flagged">Flagged: {{ $stepCounts['flagged'] }}</span>
+                <span class="profile-count-pill waiting">Waiting: {{ $stepCounts['awaiting'] }}</span>
             </div>
         </div>
     </section>
@@ -166,6 +166,5 @@
         </div>
     </section>
 </article>
-
 
 

@@ -46,6 +46,14 @@ class AdminAnalyticsController extends Controller
             }
 
             fputcsv($output, []);
+            fputcsv($output, ['Operational Interpretation']);
+            fputcsv($output, ['Completion Rate', number_format($payload['totals']['completion_rate'], 1) . '%']);
+            fputcsv($output, ['Average Clearance Time', $payload['totals']['avg_completion_label']]);
+            fputcsv($output, ['Pending Clearances', $payload['totals']['pending']]);
+            fputcsv($output, ['Flagged Clearances', $payload['totals']['flagged']]);
+            fputcsv($output, ['Recommended Review', $payload['recentInsights'][1]['body'] ?? 'No review recommendation available.']);
+
+            fputcsv($output, []);
             fputcsv($output, ['Clearance Requests Over Time']);
             fputcsv($output, ['Period', 'Requests', 'Completed', 'Average Clearance Time']);
             foreach ($payload['requestsOverTime'] as $point) {
@@ -174,13 +182,13 @@ class AdminAnalyticsController extends Controller
             ->take(5)
             ->values();
 
-        $slowestOffice = $officePerformance
-            ->where('avg_signing_minutes', '>', 0)
-            ->sortByDesc('avg_signing_minutes')
-            ->first();
         $highestPendingOffice = $officePerformance
             ->sortByDesc('pending_steps')
             ->first();
+        $actionableBottleneckOffice = $officePerformance
+            ->reject(fn (array $office) => str($office['office_label'])->lower()->contains(['vpsd', 'vice president']))
+            ->sortByDesc(fn (array $office) => ($office['pending_steps'] * 3) + ($office['flagged_steps'] * 4) + ($office['avg_signing_minutes'] / 480))
+            ->first() ?? $highestPendingOffice;
 
         return [
             'selectedScope' => $scope,
@@ -244,7 +252,7 @@ class AdminAnalyticsController extends Controller
             'recentInsights' => $this->recentInsights(
                 $completionRate,
                 $avgCompletionMinutes,
-                $slowestOffice,
+                $actionableBottleneckOffice,
                 $highestPendingOffice,
                 $programPerformance->first(),
             ),
@@ -449,7 +457,7 @@ class AdminAnalyticsController extends Controller
     private function recentInsights(
         float $completionRate,
         ?float $avgCompletionMinutes,
-        ?array $slowestOffice,
+        ?array $actionableBottleneckOffice,
         ?array $highestPendingOffice,
         ?array $topProgram,
     ): array {
@@ -460,10 +468,10 @@ class AdminAnalyticsController extends Controller
                 'tone' => 'green',
             ],
             [
-                'title' => 'Slowest Signer',
-                'body' => $slowestOffice
-                    ? $slowestOffice['office_label'] . ' averages ' . $slowestOffice['avg_signing_time_label'] . '.'
-                    : 'No signer speed data is available for this filter.',
+                'title' => 'Actionable Bottleneck',
+                'body' => $actionableBottleneckOffice
+                    ? $actionableBottleneckOffice['office_label'] . ' needs review with ' . $actionableBottleneckOffice['pending_steps'] . ' pending and ' . $actionableBottleneckOffice['flagged_steps'] . ' flagged step(s).'
+                    : 'No actionable office bottleneck is visible for this filter.',
                 'tone' => 'orange',
             ],
             [

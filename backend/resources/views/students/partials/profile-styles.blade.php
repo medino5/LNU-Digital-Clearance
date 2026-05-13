@@ -105,7 +105,7 @@
     }
 
     .profile-facts div,
-    .profile-counts span {
+    .profile-count-pill {
         padding: 10px 12px;
         border-radius: 0.75rem;
         background: var(--bg-surface);
@@ -156,6 +156,30 @@
         color: var(--text-muted);
         font-size: 13px;
         font-weight: 800;
+    }
+
+    .profile-count-pill.total {
+        background: var(--status-info-bg);
+        border-color: rgba(30, 64, 175, 0.16);
+        color: var(--status-info-text);
+    }
+
+    .profile-count-pill.approved {
+        background: var(--status-success-bg);
+        border-color: rgba(22, 101, 52, 0.16);
+        color: var(--status-success-text);
+    }
+
+    .profile-count-pill.flagged {
+        background: var(--status-danger-bg);
+        border-color: rgba(153, 27, 27, 0.16);
+        color: var(--status-danger-text);
+    }
+
+    .profile-count-pill.waiting {
+        background: var(--status-warning-bg);
+        border-color: rgba(146, 64, 14, 0.16);
+        color: var(--status-warning-text);
     }
 
     .profile-section-header {
@@ -306,6 +330,5 @@
     }
 </style>
 @endpush
-
 
 

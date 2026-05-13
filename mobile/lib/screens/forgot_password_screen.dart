@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../core/input_sanitizers.dart';
 import '../services/auth_service.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -196,6 +197,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
+                      inputFormatters: const [NoEmojiTextInputFormatter()],
                       decoration: _passwordDecoration(
                         label: 'New Password',
                         obscure: _obscurePassword,
@@ -211,6 +213,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     TextFormField(
                       controller: _confirmPasswordController,
                       obscureText: _obscureConfirmPassword,
+                      inputFormatters: const [NoEmojiTextInputFormatter()],
                       decoration: _passwordDecoration(
                         label: 'Confirm New Password',
                         obscure: _obscureConfirmPassword,
@@ -412,6 +415,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     if (password.isEmpty) return 'New password is required.';
     if (password.length < 8) return 'Password must be at least 8 characters.';
     if (password.length > 72) return 'Password must not exceed 72 characters.';
+    if (containsEmoji(password)) return 'Password cannot contain emoji.';
 
     return null;
   }

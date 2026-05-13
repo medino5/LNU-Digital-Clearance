@@ -110,6 +110,13 @@ class StudentAuthController extends Controller
         ]);
 
         $user = $request->user();
+
+        if (Hash::check($data['password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'password' => ['Choose a new password that is different from your current password.'],
+            ]);
+        }
+
         $user->forceFill([
             'password' => Hash::make($data['password']),
         ])->save();
@@ -142,6 +149,12 @@ class StudentAuthController extends Controller
         if (!$student || !$student->user || !$student->user->isStudent()) {
             throw ValidationException::withMessages([
                 'student_id_number' => ['No student account matches that student ID and birthday.'],
+            ]);
+        }
+
+        if (Hash::check($data['password'], $student->user->password)) {
+            throw ValidationException::withMessages([
+                'password' => ['Choose a new password that is different from your current password.'],
             ]);
         }
 

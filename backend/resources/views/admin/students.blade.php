@@ -98,7 +98,6 @@
                                             href="{{ route('admin.students.show', $student) }}"
                                             class="table-main-text student-profile-link"
                                             data-student-profile-url="{{ route('admin.students.show', [$student, 'partial' => 1]) }}"
-                                            data-student-profile-full-url="{{ route('admin.students.show', $student) }}"
                                         >
                                             {{ $student->displayName() }}
                                         </a>
@@ -111,7 +110,6 @@
                                                 href="{{ route('admin.students.show', $student) }}"
                                                 class="button secondary table-action-button student-profile-link"
                                                 data-student-profile-url="{{ route('admin.students.show', [$student, 'partial' => 1]) }}"
-                                                data-student-profile-full-url="{{ route('admin.students.show', $student) }}"
                                             >
                                                 View
                                             </a>
@@ -569,7 +567,6 @@
 
                 <div class="student-profile-drawer-footer">
                     <button type="button" class="secondary" id="closeStudentProfileDrawer">Close</button>
-                    <a href="#" class="button secondary" id="openStudentProfilePage">Open Full Page</a>
                 </div>
             </div>
         </div>
@@ -904,29 +901,22 @@
         const drawer = document.getElementById('studentProfileDrawer');
         const drawerBody = document.getElementById('studentProfileDrawerBody');
         const closeDrawerButton = document.getElementById('closeStudentProfileDrawer');
-        const openFullPageLink = document.getElementById('openStudentProfilePage');
-        const studentListUrl = window.location.href;
 
         const closeDrawer = () => {
             if (!drawer) return;
 
             drawer.hidden = true;
             document.body.style.overflow = '';
-
-            if (window.location.href !== studentListUrl) {
-                window.history.pushState({}, '', studentListUrl);
-            }
         };
 
         document.querySelectorAll('.student-profile-link').forEach((link) => {
             link.addEventListener('click', async (event) => {
-                if (!drawer || !drawerBody || !openFullPageLink) return;
+                if (!drawer || !drawerBody) return;
 
                 event.preventDefault();
                 drawer.hidden = false;
                 document.body.style.overflow = 'hidden';
                 drawerBody.innerHTML = '<div class="empty-state">Loading student profile...</div>';
-                openFullPageLink.href = link.dataset.studentProfileFullUrl || link.href;
 
                 try {
                     const response = await fetch(link.dataset.studentProfileUrl, {
@@ -938,9 +928,8 @@
                     }
 
                     drawerBody.innerHTML = await response.text();
-                    window.history.pushState({}, '', link.dataset.studentProfileFullUrl || link.href);
                 } catch (error) {
-                    drawerBody.innerHTML = '<div class="empty-state">Unable to load the student profile. Open the full page instead.</div>';
+                    drawerBody.innerHTML = '<div class="empty-state">Unable to load the student profile. Please refresh and try again.</div>';
                 }
             });
         });
@@ -953,6 +942,5 @@
     </script>
     @endpush
 @endsection
-
 
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/input_sanitizers.dart';
+
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({
     super.key,
@@ -29,7 +31,7 @@ class ProfileScreen extends StatelessWidget {
     required String filename,
   })
   onUpdateProfilePhoto;
-  final Future<void> Function({
+  final Future<bool> Function({
     required String password,
     required String passwordConfirmation,
   })
@@ -308,6 +310,7 @@ class ProfileScreen extends StatelessWidget {
                     TextFormField(
                       controller: passwordController,
                       obscureText: obscurePassword,
+                      inputFormatters: const [NoEmojiTextInputFormatter()],
                       decoration: InputDecoration(
                         labelText: 'New password',
                         suffixIcon: IconButton(
@@ -337,6 +340,10 @@ class ProfileScreen extends StatelessWidget {
                           return 'Password is too long.';
                         }
 
+                        if (containsEmoji(password)) {
+                          return 'Password cannot contain emoji.';
+                        }
+
                         return null;
                       },
                     ),
@@ -344,6 +351,7 @@ class ProfileScreen extends StatelessWidget {
                     TextFormField(
                       controller: confirmController,
                       obscureText: obscureConfirm,
+                      inputFormatters: const [NoEmojiTextInputFormatter()],
                       decoration: InputDecoration(
                         labelText: 'Confirm password',
                         suffixIcon: IconButton(
@@ -396,12 +404,26 @@ class ProfileScreen extends StatelessWidget {
                             isSubmitting = true;
                           });
 
-                          await onChangePassword(
-                            password: passwordController.text,
-                            passwordConfirmation: confirmController.text,
-                          );
+                          var didUpdate = false;
 
-                          if (dialogContext.mounted) {
+                          try {
+                            didUpdate = await onChangePassword(
+                              password: passwordController.text,
+                              passwordConfirmation: confirmController.text,
+                            );
+                          } catch (_) {
+                            didUpdate = false;
+                          }
+
+                          if (!dialogContext.mounted) {
+                            return;
+                          }
+
+                          setDialogState(() {
+                            isSubmitting = false;
+                          });
+
+                          if (didUpdate) {
                             Navigator.of(dialogContext).pop();
                           }
                         },

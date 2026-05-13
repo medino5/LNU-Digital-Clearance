@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../core/input_sanitizers.dart';
 import '../services/registration_service.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -492,6 +493,7 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
                         obscureText: _obscurePassword,
                         textInputAction: TextInputAction.next,
                         autofillHints: const [AutofillHints.newPassword],
+                        inputFormatters: const [NoEmojiTextInputFormatter()],
                         style: _inputTextStyle(),
                         decoration: _passwordDecoration(
                           label: 'Password',
@@ -510,6 +512,7 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
                         obscureText: _obscureConfirmPassword,
                         textInputAction: TextInputAction.done,
                         autofillHints: const [AutofillHints.newPassword],
+                        inputFormatters: const [NoEmojiTextInputFormatter()],
                         style: _inputTextStyle(),
                         decoration: _passwordDecoration(
                           label: 'Confirm Password',
@@ -611,7 +614,10 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
       autofillHints: label == 'First Name'
           ? const [AutofillHints.givenName]
           : const [AutofillHints.familyName],
-      inputFormatters: [LengthLimitingTextInputFormatter(60)],
+      inputFormatters: [
+        NoEmojiTextInputFormatter(),
+        LengthLimitingTextInputFormatter(60),
+      ],
       style: _inputTextStyle(),
       decoration: _inputDecoration(label: label, icon: Icons.person_outline),
       validator: (value) => _validateName(value, label, required: required),
@@ -623,7 +629,10 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
       controller: _middleInitialController,
       textCapitalization: TextCapitalization.characters,
       textInputAction: TextInputAction.next,
-      inputFormatters: [LengthLimitingTextInputFormatter(1)],
+      inputFormatters: [
+        NoEmojiTextInputFormatter(),
+        LengthLimitingTextInputFormatter(1),
+      ],
       style: _inputTextStyle(),
       decoration: _inputDecoration(
         label: 'M.I. (optional)',
@@ -848,6 +857,10 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
 
     if (password.length > 72) {
       return 'Password must not exceed 72 characters.';
+    }
+
+    if (containsEmoji(password)) {
+      return 'Password cannot contain emoji.';
     }
 
     return null;
