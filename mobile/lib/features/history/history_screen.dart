@@ -68,7 +68,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final history = _selectedAcademicYear.isEmpty
+    final filteredHistory = _selectedAcademicYear.isEmpty
         ? _allHistory
         : _allHistory
               .where(
@@ -77,6 +77,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     _selectedAcademicYear,
               )
               .toList();
+    final sections = _HistorySection.fromRecords(filteredHistory);
 
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
@@ -87,7 +88,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
             sliver: SliverToBoxAdapter(
               child: _IntroCard(
-                totalCount: history.length,
+                totalCount: filteredHistory.length,
                 academicYears: _academicYears,
                 selectedAcademicYear: _selectedAcademicYear,
                 onAcademicYearChanged: (value) {
@@ -122,7 +123,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
               ),
             )
-          else if (history.isEmpty)
+          else if (filteredHistory.isEmpty)
             const SliverPadding(
               padding: EdgeInsets.fromLTRB(18, 0, 18, 28),
               sliver: SliverToBoxAdapter(
@@ -138,12 +139,256 @@ class _HistoryScreenState extends State<HistoryScreen> {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(18, 0, 18, 28),
               sliver: SliverList.builder(
-                itemCount: history.length,
+                itemCount: sections.length,
                 itemBuilder: (context, index) {
-                  return RepaintBoundary(child: _HistoryCard(history[index]));
+                  return RepaintBoundary(
+                    child: _HistoryYearSection(section: sections[index]),
+                  );
                 },
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HistorySection {
+  const _HistorySection({required this.academicYear, required this.semesters});
+
+  final String academicYear;
+  final List<_SemesterHistoryGroup> semesters;
+
+  static List<_HistorySection> fromRecords(List<Map<String, dynamic>> records) {
+    final sorted = [...records]
+      ..sort((a, b) {
+        final yearCompare = _academicYearSortKey(
+          b['academic_year']?.toString(),
+        ).compareTo(_academicYearSortKey(a['academic_year']?.toString()));
+
+        if (yearCompare != 0) {
+          return yearCompare;
+        }
+
+        final semesterCompare = _semesterSortKey(
+          a['semester_label']?.toString(),
+        ).compareTo(_semesterSortKey(b['semester_label']?.toString()));
+
+        if (semesterCompare != 0) {
+          return semesterCompare;
+        }
+
+        return _dateSortKey(
+          b['completed_at']?.toString() ?? b['created_at']?.toString(),
+        ).compareTo(
+          _dateSortKey(
+            a['completed_at']?.toString() ?? a['created_at']?.toString(),
+          ),
+        );
+      });
+
+    final sectionMap = <String, Map<String, List<Map<String, dynamic>>>>{};
+
+    for (final record in sorted) {
+      final year = record['academic_year']?.toString().trim();
+      final yearLabel = year == null || year.isEmpty ? 'Unknown SY' : year;
+      final semester = record['semester_label']?.toString().trim();
+      final semesterLabel = semester == null || semester.isEmpty
+          ? 'Unknown Semester'
+          : semester;
+
+      sectionMap
+          .putIfAbsent(yearLabel, () => <String, List<Map<String, dynamic>>>{})
+          .putIfAbsent(semesterLabel, () => <Map<String, dynamic>>[])
+          .add(record);
+    }
+
+    return sectionMap.entries
+        .map(
+          (yearEntry) => _HistorySection(
+            academicYear: yearEntry.key,
+            semesters: yearEntry.value.entries
+                .map(
+                  (semesterEntry) => _SemesterHistoryGroup(
+                    semesterLabel: semesterEntry.key,
+                    records: semesterEntry.value,
+                  ),
+                )
+                .toList(growable: false),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  static int _academicYearSortKey(String? academicYear) {
+    if (academicYear == null) {
+      return 0;
+    }
+
+    final firstYear = RegExp(r'\d{4}').firstMatch(academicYear)?.group(0);
+
+    return int.tryParse(firstYear ?? '') ?? 0;
+  }
+
+  static int _semesterSortKey(String? semester) {
+    final label = (semester ?? '').toLowerCase();
+
+    if (label.contains('1st')) {
+      return 1;
+    }
+
+    if (label.contains('2nd')) {
+      return 2;
+    }
+
+    if (label.contains('midyear')) {
+      return 3;
+    }
+
+    return 9;
+  }
+
+  static int _dateSortKey(String? value) {
+    return DateTime.tryParse(value ?? '')?.millisecondsSinceEpoch ?? 0;
+  }
+}
+
+class _SemesterHistoryGroup {
+  const _SemesterHistoryGroup({
+    required this.semesterLabel,
+    required this.records,
+  });
+
+  final String semesterLabel;
+  final List<Map<String, dynamic>> records;
+}
+
+class _HistoryYearSection extends StatelessWidget {
+  const _HistoryYearSection({required this.section});
+
+  final _HistorySection section;
+
+  @override
+  Widget build(BuildContext context) {
+    final recordCount = section.semesters.fold<int>(
+      0,
+      (sum, semester) => sum + semester.records.length,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SectionHeader(
+            title: 'SY ${section.academicYear}',
+            subtitle: recordCount == 1
+                ? '1 clearance record'
+                : '$recordCount clearance records',
+          ),
+          const SizedBox(height: 10),
+          ...section.semesters.map((semester) {
+            return _SemesterGroupCard(group: semester);
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, required this.subtitle});
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: HistoryScreen._navy,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: HistoryScreen._muted,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SemesterGroupCard extends StatelessWidget {
+  const _SemesterGroupCard({required this.group});
+
+  final _SemesterHistoryGroup group;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 2),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE4DACD)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: HistoryScreen._navy.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.calendar_month_rounded,
+                    color: HistoryScreen._navy,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    group.semesterLabel,
+                    style: const TextStyle(
+                      color: HistoryScreen._navy,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                _InfoPill(
+                  text: group.records.length == 1
+                      ? '1 record'
+                      : '${group.records.length} records',
+                ),
+              ],
+            ),
+          ),
+          ...group.records.map((record) => _HistoryCard(record)),
         ],
       ),
     );

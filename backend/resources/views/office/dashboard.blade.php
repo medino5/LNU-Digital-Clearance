@@ -567,6 +567,8 @@
         </div>
     </div>
 
+    @include('students.partials.profile-styles')
+
     <style>
         .office-modal-close {
             display: none !important;
@@ -920,25 +922,21 @@
         }
 
         .office-profile-modal {
-            width: min(100%, 920px);
+            width: min(880px, 100%);
             max-height: 90vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
             background: var(--bg-surface);
-            border-radius: 22px;
+            border-radius: 0.75rem;
             box-shadow: 0 24px 70px rgba(14, 39, 66, 0.26);
             border: 1px solid rgba(255, 255, 255, 0.62);
-        }
-
-        .office-profile-modal .office-modal-header {
-            flex: 0 0 auto;
         }
 
         .office-profile-modal-body {
             flex: 1 1 auto;
             overflow-y: auto;
-            padding: 22px;
+            padding: 1.5rem;
             background: var(--bg-app);
         }
 
@@ -946,7 +944,8 @@
             flex: 0 0 auto;
             display: flex;
             justify-content: flex-end;
-            padding: 16px 22px;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
             background: var(--bg-surface);
             border-top: 1px solid var(--border-subtle);
         }
@@ -982,6 +981,50 @@
             font-size: 1.75rem;
             line-height: 1;
             cursor: pointer;
+        }
+
+        .office-profile-modal .office-modal-header {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            flex: 0 0 auto;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 1rem 1.5rem;
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .office-profile-modal .office-modal-header h2 {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 1.125rem;
+            line-height: 1.25;
+        }
+
+        .office-profile-modal .office-modal-header .eyebrow {
+            color: var(--text-muted);
+        }
+
+        .office-profile-modal .office-cancel-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 40px;
+            padding: 0 16px;
+            border-radius: 0.625rem;
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .office-profile-modal .office-cancel-link:hover {
+            background: var(--bg-app);
         }
 
         .office-modal-body {

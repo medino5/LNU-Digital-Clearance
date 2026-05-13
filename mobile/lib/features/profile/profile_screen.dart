@@ -293,9 +293,8 @@ class ProfileScreen extends StatelessWidget {
     final formKey = GlobalKey<FormState>();
     var obscurePassword = true;
     var obscureConfirm = true;
-    var isSubmitting = false;
 
-    await showDialog<void>(
+    final request = await showDialog<_PasswordChangeRequest>(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
@@ -387,53 +386,23 @@ class ProfileScreen extends StatelessWidget {
               ),
               actions: [
                 TextButton(
-                  onPressed: isSubmitting
-                      ? null
-                      : () => Navigator.of(dialogContext).pop(),
+                  onPressed: () => Navigator.of(dialogContext).pop(),
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
-                  onPressed: isSubmitting
-                      ? null
-                      : () async {
-                          if (!formKey.currentState!.validate()) {
-                            return;
-                          }
+                  onPressed: () {
+                    if (!formKey.currentState!.validate()) {
+                      return;
+                    }
 
-                          setDialogState(() {
-                            isSubmitting = true;
-                          });
-
-                          var didUpdate = false;
-
-                          try {
-                            didUpdate = await onChangePassword(
-                              password: passwordController.text,
-                              passwordConfirmation: confirmController.text,
-                            );
-                          } catch (_) {
-                            didUpdate = false;
-                          }
-
-                          if (!dialogContext.mounted) {
-                            return;
-                          }
-
-                          setDialogState(() {
-                            isSubmitting = false;
-                          });
-
-                          if (didUpdate) {
-                            Navigator.of(dialogContext).pop();
-                          }
-                        },
-                  child: isSubmitting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Save'),
+                    Navigator.of(dialogContext).pop(
+                      _PasswordChangeRequest(
+                        password: passwordController.text,
+                        passwordConfirmation: confirmController.text,
+                      ),
+                    );
+                  },
+                  child: const Text('Save'),
                 ),
               ],
             );
@@ -444,7 +413,26 @@ class ProfileScreen extends StatelessWidget {
 
     passwordController.dispose();
     confirmController.dispose();
+
+    if (request == null || !context.mounted) {
+      return;
+    }
+
+    await onChangePassword(
+      password: request.password,
+      passwordConfirmation: request.passwordConfirmation,
+    );
   }
+}
+
+class _PasswordChangeRequest {
+  const _PasswordChangeRequest({
+    required this.password,
+    required this.passwordConfirmation,
+  });
+
+  final String password;
+  final String passwordConfirmation;
 }
 
 class _PasswordCard extends StatelessWidget {
