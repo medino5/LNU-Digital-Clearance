@@ -4,14 +4,14 @@
 ])
 
 @section('page')
-    <div class="admin-page management-page">
+    <div class="admin-page management-page student-profile-page-shell">
+        <a href="{{ $backUrl }}" class="student-profile-back-link">← {{ $backLabel }}</a>
+
         <section class="admin-page-header management-header">
             <div>
-                <h1>STUDENT PROFILE</h1>
+                <h1>Student Profile</h1>
                 <p>Review clearance progress, academic details, and historical clearance records.</p>
             </div>
-
-            <a href="{{ $backUrl }}" class="button secondary">{{ $backLabel }}</a>
         </section>
 
         @include('students.partials.profile-panel')
@@ -19,3 +19,6 @@
 
     @include('students.partials.profile-styles')
 @endsection
+
+
+

@@ -3,7 +3,7 @@
     .admin-page,
     .management-page {
         display: grid;
-        gap: 18px;
+        gap: 1.5rem;
         font-size: 0.96rem;
     }
 
@@ -25,25 +25,29 @@
     .admin-page-header h1,
     .management-header h1 {
         margin: 0;
-        color: #173c66;
-        font-size: clamp(1.38rem, 1.8vw, 1.95rem);
+        color: var(--text-primary);
+        font-size: 1.875rem;
         line-height: 1.08;
         letter-spacing: -0.03em;
+        font-weight: 600;
+        text-transform: none;
         overflow-wrap: anywhere;
     }
 
     .admin-page-header p,
     .management-header p {
         margin: 6px 0 0;
-        color: #667085;
+        color: var(--text-muted);
         max-width: 68ch;
         line-height: 1.45;
     }
 
     .management-primary-action {
         white-space: nowrap;
-        background: linear-gradient(180deg, #173c66 0%, #0e2742 100%);
-        box-shadow: 0 8px 18px rgba(14, 39, 66, 0.18);
+        background: var(--brand-navy);
+        color: var(--bg-surface);
+        border-radius: 0.5rem;
+        box-shadow: none;
     }
 
     .management-primary-action,
@@ -59,28 +63,28 @@
 
     .management-secondary-action,
     .button.secondary.management-secondary-action {
-        background: #ffffff;
-        border: 1px solid #cfc7b7;
-        color: #173c66;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        color: var(--text-primary);
     }
 
     .management-ghost-action,
     .button.ghost {
         background: transparent;
         border: 1px solid transparent;
-        color: #173c66;
+        color: var(--text-primary);
         box-shadow: none;
     }
 
     .admin-section-card,
     .management-card {
         display: grid;
-        gap: 14px;
-        padding: 18px;
-        border-radius: 22px;
-        background: rgba(255, 255, 255, 0.54);
-        border: 1px solid rgba(23, 60, 102, 0.1);
-        box-shadow: 0 16px 40px rgba(24, 58, 99, 0.055);
+        gap: 1rem;
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--card-shadow);
     }
 
     .management-card-header {
@@ -92,13 +96,13 @@
 
     .management-card-header h2 {
         margin: 0;
-        color: #173c66;
+        color: var(--text-primary);
         overflow-wrap: anywhere;
     }
 
     .management-card-kicker {
         margin: 0;
-        color: #667085;
+        color: var(--text-muted);
         font-size: 0.92rem;
         line-height: 1.45;
     }
@@ -133,7 +137,7 @@
         border-radius: 16px;
         background: rgba(255, 255, 255, 0.62);
         border: 1px solid rgba(23, 60, 102, 0.1);
-        color: #183a63;
+        color: var(--text-primary);
     }
 
     .management-summary-pill {
@@ -142,17 +146,17 @@
         gap: 6px;
         padding: 6px 11px;
         border-radius: 999px;
-        background: #eef4fb;
-        color: #173c66;
+        background: var(--status-info-bg);
+        color: var(--text-primary);
         font-size: 12px;
         font-weight: 800;
     }
 
     .management-table-wrap {
         overflow-x: auto;
-        border: 1px solid rgba(23, 60, 102, 0.1);
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid var(--border-subtle);
+        border-radius: 0.75rem;
+        background: var(--bg-surface);
     }
 
     .management-table {
@@ -160,20 +164,21 @@
     }
 
     .management-table th {
-        background: #f8f4ea;
-        color: #667085;
+        background: var(--bg-surface);
+        color: var(--text-muted);
         font-size: 0.75rem;
         letter-spacing: 0.08em;
+        font-weight: 500;
     }
 
     .management-table td {
         vertical-align: middle;
-        background: #fff;
+        background: var(--bg-surface);
         overflow-wrap: anywhere;
     }
 
     .management-table tbody tr:hover td {
-        background: #fffaf0;
+        background: rgba(248, 250, 252, 0.6);
     }
 
     .management-action-col {
@@ -205,14 +210,14 @@
         min-width: 64px;
         padding: 7px 12px;
         border-radius: 999px;
-        background: #dde8f7;
-        color: #16385f;
+        background: var(--status-info-bg);
+        color: var(--status-info-text);
         font-size: 13px;
     }
 
     .table-main-text {
         font-weight: 700;
-        color: #183a63;
+        color: var(--text-primary);
         line-height: 1.35;
         overflow-wrap: anywhere;
     }
@@ -222,8 +227,8 @@
         max-width: 260px;
         padding: 7px 12px;
         border-radius: 999px;
-        background: rgba(210, 168, 61, 0.16);
-        color: #76510e;
+        background: var(--status-warning-bg);
+        color: var(--status-warning-text);
         font-size: 13px;
         font-weight: 700;
         white-space: nowrap;
@@ -232,20 +237,20 @@
     }
 
     .active-semester-row td {
-        background: #fff8e8;
+        background: var(--status-warning-bg);
     }
 
     .active-semester-row:hover td {
-        background: #fff4d7;
+        background: var(--status-warning-bg);
     }
 
     .empty-state {
         padding: 22px;
         text-align: center;
-        color: #667085;
+        color: var(--text-muted);
         border-radius: 16px;
-        background: #fffdf8;
-        border: 1px dashed #d5cbbd;
+        background: var(--bg-surface);
+        border: 1px dashed var(--border-subtle);
         line-height: 1.45;
     }
 
@@ -271,8 +276,8 @@
         gap: 18px;
         padding: 24px;
         border-radius: 24px;
-        background: #fffdf8;
-        border: 1px solid #e4dacd;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
         box-shadow: 0 24px 70px rgba(14, 39, 66, 0.24);
         overflow-x: hidden;
     }
@@ -283,12 +288,12 @@
         align-items: flex-start;
         gap: 16px;
         padding-bottom: 12px;
-        border-bottom: 1px solid #e4dacd;
+        border-bottom: 1px solid var(--border-subtle);
     }
 
     .management-modal-header h2 {
         margin: 0;
-        color: #173c66;
+        color: var(--text-primary);
         overflow-wrap: anywhere;
     }
 
@@ -300,8 +305,8 @@
         padding: 0;
         border-radius: 50%;
         background: transparent;
-        border: 1px solid #d7d3c8;
-        color: #16385f;
+        border: 1px solid var(--border-subtle);
+        color: var(--brand-navy);
         font-size: 24px;
         line-height: 1;
     }
@@ -315,9 +320,9 @@
     }
 
     .alert-success {
-        background: #dcfce7 !important;
-        border: 1px solid #22c55e !important;
-        color: #166534 !important;
+        background: var(--status-success-bg) !important;
+        border: 1px solid var(--status-success-text) !important;
+        color: var(--status-success-text) !important;
         border-radius: 14px;
         box-shadow: 0 8px 20px rgba(34, 197, 94, 0.15);
     }
@@ -344,16 +349,16 @@
 
     .button.danger,
     button.danger {
-        background: #dc2626;
-        border-color: #dc2626;
-        color: #ffffff;
+        background: var(--status-danger-text);
+        border-color: var(--status-danger-text);
+        color: var(--bg-surface);
     }
 
     .button.danger:hover,
     button.danger:hover {
-        background: #b91c1c;
-        border-color: #b91c1c;
-        color: #ffffff;
+        background: var(--status-danger-text);
+        border-color: var(--status-danger-text);
+        color: var(--bg-surface);
     }
 
     .button.danger:focus,
@@ -451,3 +456,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endpush
+
+
+

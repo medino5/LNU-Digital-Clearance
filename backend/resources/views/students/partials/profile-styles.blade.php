@@ -6,12 +6,33 @@
         min-width: 0;
     }
 
+    .student-profile-page-shell {
+        max-width: 72rem;
+        margin-inline: auto;
+        padding: 2rem 1.5rem;
+    }
+
+    .student-profile-back-link {
+        display: inline-flex;
+        width: fit-content;
+        align-items: center;
+        color: var(--text-muted);
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+    }
+
+    .student-profile-back-link:hover,
+    .student-profile-back-link:focus-visible {
+        color: var(--text-primary);
+    }
+
     .student-profile-hero,
     .profile-card {
-        border: 1px solid #e4dacd;
-        border-radius: 18px;
-        background: #fffdf8;
-        box-shadow: 0 12px 28px rgba(24, 58, 99, 0.04);
+        border: 1px solid var(--border-subtle);
+        border-radius: 0.75rem;
+        background: var(--bg-surface);
+        box-shadow: var(--card-shadow);
         min-width: 0;
     }
 
@@ -25,7 +46,7 @@
 
     .student-profile-hero h1 {
         margin: 0;
-        color: #173c66;
+        color: var(--text-primary);
         font-size: clamp(1.3rem, 1.6vw, 1.75rem);
         line-height: 1.12;
         overflow-wrap: anywhere;
@@ -33,7 +54,7 @@
 
     .student-profile-hero p {
         margin: 8px 0 0;
-        color: #667085;
+        color: var(--text-muted);
         overflow-wrap: anywhere;
     }
 
@@ -52,11 +73,11 @@
         display: grid;
         place-items: center;
         overflow: hidden;
-        background: linear-gradient(135deg, #173c66 0%, #27588f 100%);
-        color: #fff;
+        background: var(--brand-navy);
+        color: var(--bg-surface);
         font-size: 1.35rem;
         font-weight: 900;
-        border: 3px solid #fff;
+        border: 3px solid var(--bg-surface);
         box-shadow: 0 10px 22px rgba(24, 58, 99, 0.14);
     }
 
@@ -86,14 +107,14 @@
     .profile-facts div,
     .profile-counts span {
         padding: 10px 12px;
-        border-radius: 13px;
-        background: #ffffff;
-        border: 1px solid #ece3d6;
+        border-radius: 0.75rem;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
         min-width: 0;
     }
 
     .profile-facts dt {
-        color: #667085;
+        color: var(--text-muted);
         font-size: 12px;
         font-weight: 800;
         letter-spacing: 0.08em;
@@ -102,7 +123,7 @@
 
     .profile-facts dd {
         margin: 6px 0 0;
-        color: #183a63;
+        color: var(--text-primary);
         font-weight: 800;
         line-height: 1.35;
         overflow-wrap: anywhere;
@@ -114,17 +135,17 @@
     }
 
     .profile-progress-meter {
-        height: 14px;
+        height: 0.5rem;
         border-radius: 999px;
         overflow: hidden;
-        background: #e9e1d4;
+        background: var(--border-subtle);
     }
 
     .profile-progress-meter span {
         display: block;
         height: 100%;
         border-radius: inherit;
-        background: linear-gradient(90deg, #d2a83d, #1f7a4f);
+        background: var(--brand-navy);
     }
 
     .profile-counts {
@@ -132,7 +153,7 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
         margin-top: 14px;
-        color: #183a63;
+        color: var(--text-muted);
         font-size: 13px;
         font-weight: 800;
     }
@@ -148,7 +169,7 @@
 
     .profile-section-header h2 {
         margin: 0;
-        color: #173c66;
+        color: var(--text-primary);
         font-size: 1.18rem;
         overflow-wrap: anywhere;
     }
@@ -166,16 +187,16 @@
         align-items: flex-start;
         gap: 12px;
         padding: 12px;
-        border: 1px solid #ece3d6;
+        border: 1px solid var(--border-subtle);
         border-radius: 14px;
-        background: #ffffff;
+        background: var(--bg-surface);
         min-width: 0;
     }
 
     .profile-history-record {
-        border: 1px solid #ece3d6;
+        border: 1px solid var(--border-subtle);
         border-radius: 14px;
-        background: #ffffff;
+        background: var(--bg-surface);
         overflow: hidden;
     }
 
@@ -196,7 +217,7 @@
     .profile-history-record summary::after {
         content: "View signers";
         align-self: center;
-        color: #173c66;
+        color: var(--brand-navy);
         font-size: 12px;
         font-weight: 900;
         white-space: nowrap;
@@ -224,8 +245,8 @@
         gap: 12px;
         padding: 11px;
         border-radius: 14px;
-        background: #f8f4ea;
-        border: 1px solid #ede2d2;
+        background: var(--bg-app);
+        border: 1px solid var(--border-subtle);
     }
 
     .profile-history-status {
@@ -235,13 +256,13 @@
 
     .profile-history-remarks {
         max-width: 32ch;
-        color: #8b5a14;
+        color: var(--status-warning-text);
         overflow-wrap: anywhere;
     }
 
     .profile-step-row strong,
     .profile-history-row strong {
-        color: #183a63;
+        color: var(--text-primary);
         overflow-wrap: anywhere;
         word-break: break-word;
     }
@@ -261,8 +282,8 @@
     }
 
     .badge.neutral {
-        background: #ece7dc;
-        color: #3d3a36;
+        background: var(--border-subtle);
+        color: var(--text-primary);
     }
 
     @media (max-width: 860px) {
@@ -285,3 +306,6 @@
     }
 </style>
 @endpush
+
+
+

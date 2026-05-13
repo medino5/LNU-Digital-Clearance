@@ -25,6 +25,7 @@
                         <span class="quick-action-content">
                             <span class="quick-action-label">Create Student</span>
                             <span class="quick-action-copy">Add or update student accounts.</span>
+                            <span class="quick-action-link">Open →</span>
                         </span>
                     </a>
 
@@ -38,6 +39,7 @@
                         <span class="quick-action-content">
                             <span class="quick-action-label">Review Requests</span>
                             <span class="quick-action-copy">Approve mobile registrations.</span>
+                            <span class="quick-action-link">Open →</span>
                         </span>
                     </a>
 
@@ -52,6 +54,7 @@
                         <span class="quick-action-content">
                             <span class="quick-action-label">Create Office Account</span>
                             <span class="quick-action-copy">Set up staff signers.</span>
+                            <span class="quick-action-link">Open →</span>
                         </span>
                     </a>
 
@@ -67,6 +70,7 @@
                         <span class="quick-action-content">
                             <span class="quick-action-label">Manage Routing Offices</span>
                             <span class="quick-action-copy">Create routes and assign holders.</span>
+                            <span class="quick-action-link">Open →</span>
                         </span>
                     </a>
 
@@ -82,6 +86,7 @@
                         <span class="quick-action-content">
                             <span class="quick-action-label">Go to Download Reports</span>
                             <span class="quick-action-copy">Choose report filters.</span>
+                            <span class="quick-action-link">Open →</span>
                         </span>
                     </a>
                 </div>
@@ -170,18 +175,18 @@
     <style>
         .admin-page {
             display: grid;
-            gap: 18px;
+            gap: 1.5rem;
             font-size: 0.96rem;
         }
 
         .admin-section-card {
             display: grid;
-            gap: 14px;
-            padding: 18px 0;
-            border-radius: 0;
-            background: transparent;
-            border: 0;
-            box-shadow: none;
+            gap: 1rem;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            box-shadow: var(--card-shadow);
         }
 
         .dashboard-intro-shell {
@@ -192,54 +197,42 @@
         .dashboard-quick-actions {
             display: grid;
             grid-template-columns: minmax(190px, 0.45fr) minmax(0, 1fr);
-            gap: 22px;
+            gap: 1.5rem;
             align-items: start;
-            padding-bottom: 16px;
-            border-bottom: 1px solid rgba(23, 60, 102, 0.12);
         }
 
         .quick-action-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 10px 18px;
+            gap: 1rem;
             align-items: stretch;
         }
 
         .quick-action-card {
-            position: relative;
             display: flex;
-            align-items: center;
-            gap: 12px;
-            min-height: 62px;
-            padding: 8px 4px;
-            border-radius: 0;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.875rem;
+            min-height: 154px;
+            height: 100%;
+            padding: 1rem;
+            border-radius: 0.75rem;
             text-decoration: none;
-            color: #19324d;
-            background: transparent;
-            border: 0;
-            border-bottom: 1px solid rgba(23, 60, 102, 0.1);
-            box-shadow: none;
+            color: var(--text-primary);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            box-shadow: var(--card-shadow);
             cursor: pointer;
-            transition: color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+            transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
         }
-
         .quick-action-card::after {
-            content: "Open →";
-            position: absolute;
-            right: 4px;
-            bottom: 50%;
-            transform: translateY(50%);
-            color: #173c66;
-            font-size: 0.78rem;
-            font-weight: 900;
-            letter-spacing: 0.03em;
+            content: none;
         }
 
         .quick-action-card:hover {
-            transform: translateX(3px);
-            box-shadow: none;
-            border-color: rgba(210, 168, 61, 0.55);
-            color: #0f2f52;
+            transform: translateY(-2px);
+            border-color: var(--brand-gold);
+            background: var(--bg-app);
         }
 
         .quick-action-label {
@@ -250,7 +243,11 @@
         .quick-action-copy {
             font-size: 0.82rem;
             line-height: 1.35;
-            color: #59657a;
+            color: var(--text-muted);
+            display: -webkit-box;
+            overflow: hidden;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
         }
 
         .compact-copy {
@@ -278,7 +275,7 @@
             display: grid;
             gap: 5px;
             min-width: 180px;
-            color: #173c66;
+            color: var(--text-primary);
             font-size: 0.76rem;
             font-weight: 800;
             letter-spacing: 0.05em;
@@ -288,9 +285,9 @@
         .snapshot-filter-bar select {
             min-height: 42px;
             border-radius: 12px;
-            border: 1px solid #d8cbb9;
-            background: #fff;
-            color: #183a63;
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-surface);
+            color: var(--text-primary);
             padding: 0 38px 0 12px;
             font-size: 0.92rem;
             font-weight: 700;
@@ -316,14 +313,14 @@
             align-items: baseline;
             justify-content: space-between;
             gap: 12px;
-            color: #173c66;
+            color: var(--text-primary);
             font-weight: 800;
             padding-bottom: 6px;
             border-bottom: 1px solid rgba(23, 60, 102, 0.1);
         }
 
         .snapshot-group-heading small {
-            color: #64748b;
+            color: var(--text-muted);
             font-size: 0.78rem;
             font-weight: 700;
         }
@@ -364,8 +361,8 @@
             border-radius: 50%;
             display: grid;
             place-items: center;
-            background: linear-gradient(135deg, #173c66 0%, #27588f 100%);
-            color: #ffffff;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--brand-navy) 100%);
+            color: var(--bg-surface);
             font-weight: 700;
             font-size: 1.2rem;
             box-shadow: 0 6px 14px rgba(23, 60, 102, 0.2);
@@ -377,7 +374,7 @@
         }
 
         .stat-hint {
-            color: #64748b;
+            color: var(--text-muted);
             font-size: 0.78rem;
             font-weight: 700;
         }
@@ -409,7 +406,7 @@
             margin: 4px 0 0;
             font-size: 1.1rem;
             font-weight: 700;
-            color: #173c66;
+            color: var(--text-primary);
         }
 
         .semester-chart {
@@ -430,7 +427,7 @@
 
         .semester-bar-value {
             font-size: 0.82rem;
-            color: #5b6679;
+            color: var(--text-muted);
             font-weight: 600;
         }
 
@@ -439,7 +436,7 @@
             max-width: 64px;
             height: 180px;
             border-radius: 999px;
-            background: linear-gradient(180deg, #edf2f8 0%, #dbe5f1 100%);
+            background: linear-gradient(180deg, var(--status-info-bg) 0%, var(--status-info-bg) 100%);
             display: flex;
             align-items: flex-end;
             overflow: hidden;
@@ -449,7 +446,7 @@
         .semester-bar-fill {
             width: 100%;
             border-radius: 999px;
-            background: linear-gradient(180deg, #d2a83d 0%, #285892 54%, #173c66 100%);
+            background: linear-gradient(180deg, var(--brand-gold) 0%, var(--brand-navy) 54%, var(--text-primary) 100%);
             box-shadow: 0 8px 18px rgba(23, 60, 102, 0.2);
             transition: height 0.22s ease;
         }
@@ -457,7 +454,7 @@
         .semester-bar-label {
             font-size: 0.78rem;
             line-height: 1.4;
-            color: #334155;
+            color: var(--text-primary);
             text-align: center;
         }
 
@@ -483,7 +480,7 @@
             width: 118px;
             height: 118px;
             border-radius: 50%;
-            background: #fffdf9;
+            background: var(--bg-surface);
             display: grid;
             place-items: center;
             text-align: center;
@@ -494,7 +491,7 @@
             display: block;
             font-size: 2rem;
             font-weight: 700;
-            color: #173c66;
+            color: var(--text-primary);
             line-height: 1;
         }
 
@@ -502,7 +499,7 @@
             display: block;
             margin-top: 6px;
             font-size: 0.82rem;
-            color: #64748b;
+            color: var(--text-muted);
         }
 
         .status-legend {
@@ -516,8 +513,8 @@
             align-items: flex-start;
             padding: 12px 14px;
             border-radius: 16px;
-            background: #fff;
-            border: 1px solid #e7dfd2;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
         }
 
         .status-dot {
@@ -534,11 +531,11 @@
         }
 
         .status-legend-copy strong {
-            color: #183a63;
+            color: var(--text-primary);
         }
 
         .status-legend-copy span {
-            color: #58657a;
+            color: var(--text-muted);
             font-size: 0.92rem;
             line-height: 1.4;
         }
@@ -547,10 +544,10 @@
             display: grid;
             place-items: center;
             min-height: 250px;
-            border: 1px dashed #d5cbbd;
+            border: 1px dashed var(--border-subtle);
             border-radius: 20px;
             background: rgba(255, 255, 255, 0.7);
-            color: #64748b;
+            color: var(--text-muted);
             text-align: center;
             padding: 24px;
         }
@@ -614,12 +611,12 @@
         .quick-action-icon {
             width: 42px;
             height: 42px;
-            flex: 0 0 42px;
+            flex: 0 0 auto;
             border-radius: 14px;
             display: grid;
             place-items: center;
-            background: rgba(210, 168, 61, 0.16);
-            color: #173c66;
+            background: rgba(212, 165, 58, 0.16);
+            color: var(--brand-navy);
             box-shadow: inset 0 0 0 1px rgba(210, 168, 61, 0.2);
         }
 
@@ -634,8 +631,11 @@
         }
 
         .quick-action-content {
-            display: grid;
-            gap: 7px;
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            flex-direction: column;
+            gap: 0.5rem;
         }
 
         .quick-action-label {
@@ -646,11 +646,18 @@
         .quick-action-copy {
             font-size: 0.92rem;
             line-height: 1.45;
-            color: #59657a;
+            color: var(--text-muted);
+            display: -webkit-box;
+            overflow: hidden;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
         }
 
-        .quick-action-card::after {
-            content: "Open ->";
+        .quick-action-link {
+            margin-top: auto;
+            color: var(--brand-navy);
+            font-size: 0.82rem;
+            font-weight: 700;
         }
     </style>
     @endpush
@@ -941,3 +948,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 @endpush
+
+
+
+

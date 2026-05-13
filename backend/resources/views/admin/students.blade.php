@@ -15,7 +15,7 @@
 
         <section class="admin-page-header management-header">
             <div>
-                <h1>STUDENTS</h1>
+                <h1>Students</h1>
                 <p>Add new student accounts and manage the searchable student roster.</p>
             </div>
 
@@ -557,11 +557,19 @@
         <div class="student-profile-drawer" id="studentProfileDrawer" hidden>
             <div class="student-profile-drawer-panel" role="dialog" aria-modal="true" aria-label="Student profile">
                 <div class="student-profile-drawer-header">
+                    <div>
+                        <div class="eyebrow">Student Profile</div>
+                        <h2>Student details</h2>
+                    </div>
+                </div>
+
+                <div class="student-profile-drawer-body" id="studentProfileDrawerBody">
+                    <div class="empty-state">Loading student profile...</div>
+                </div>
+
+                <div class="student-profile-drawer-footer">
                     <button type="button" class="secondary" id="closeStudentProfileDrawer">Close</button>
                     <a href="#" class="button secondary" id="openStudentProfilePage">Open Full Page</a>
-                </div>
-                <div id="studentProfileDrawerBody">
-                    <div class="empty-state">Loading student profile...</div>
                 </div>
             </div>
         </div>
@@ -605,8 +613,8 @@
             min-width: 74px;
             padding: 7px 12px;
             border-radius: 999px;
-            background: #dde8f7;
-            color: #16385f;
+            background: var(--status-info-bg);
+            color: var(--brand-navy);
             font-size: 13px;
         }
 
@@ -616,7 +624,7 @@
 
         .student-profile-link:hover,
         .student-profile-link:focus-visible {
-            color: #0e2742;
+            color: var(--brand-navy);
             text-decoration: underline;
         }
 
@@ -628,7 +636,7 @@
             justify-content: center;
             align-items: center;
             padding: 22px;
-            background: rgba(8, 26, 43, 0.42);
+            background: rgba(15, 23, 42, 0.4);
             backdrop-filter: blur(4px);
         }
 
@@ -638,12 +646,14 @@
 
         .student-profile-drawer-panel {
             width: min(880px, 100%);
-            max-height: min(88vh, 920px);
-            overflow-y: auto;
-            padding: 18px;
-            background: #f8f4ea;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 0;
+            background: var(--bg-surface);
             border: 1px solid rgba(255, 255, 255, 0.62);
-            border-radius: 24px;
+            border-radius: 0.75rem;
             box-shadow: 0 24px 70px rgba(14, 39, 66, 0.26);
         }
 
@@ -652,12 +662,37 @@
             top: 0;
             z-index: 2;
             display: flex;
-            justify-content: flex-end;
+            flex: 0 0 auto;
+            justify-content: space-between;
             gap: 10px;
-            margin: -18px -18px 14px;
-            padding: 12px 18px;
-            background: rgba(248, 244, 234, 0.96);
-            border-bottom: 1px solid #e4dacd;
+            padding: 1rem 1.5rem;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .student-profile-drawer-header h2 {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 1.125rem;
+        }
+
+        .student-profile-drawer-body {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            padding: 1.5rem;
+            background: var(--bg-app);
+        }
+
+        .student-profile-drawer-footer {
+            position: sticky;
+            bottom: 0;
+            flex: 0 0 auto;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-surface);
+            border-top: 1px solid var(--border-subtle);
         }
 
         .pagination-wrapper {
@@ -685,21 +720,21 @@
             border-radius: 8px;
             text-decoration: none;
             font-size: 13px;
-            border: 1px solid #ddd;
-            color: #1b3a6b;
-            background: #fff;
+            border: 1px solid var(--border-subtle);
+            color: var(--brand-navy);
+            background: var(--bg-surface);
             transition: 0.2s ease;
         }
 
         .pagination li a:hover {
-            background: #1b3a6b;
-            color: #fff;
+            background: var(--brand-navy);
+            color: var(--bg-surface);
         }
 
         .pagination li.active span {
-            background: #d1a33b;
-            color: #fff;
-            border-color: #d1a33b;
+            background: var(--brand-gold);
+            color: var(--bg-surface);
+            border-color: var(--brand-gold);
             font-weight: bold;
         }
 
@@ -918,3 +953,6 @@
     </script>
     @endpush
 @endsection
+
+
+

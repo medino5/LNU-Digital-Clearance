@@ -7,16 +7,33 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --navy: #16385f;
-            --navy-deep: #0e2742;
-            --gold: #d2a83d;
-            --paper: #fcfbf7;
-            --ink: #1b1b1b;
-            --muted: #667085;
-            --line: #d7d3c8;
-            --success: #1f7a4f;
-            --danger: #b5442c;
-            --warning: #8b5a14;
+            --bg-app: #F7F5EF;
+            --bg-surface: #FFFFFF;
+            --bg-sidebar: #0E2A47;
+            --text-primary: #1F2937;
+            --text-muted: #6B7280;
+            --brand-navy: #16345C;
+            --brand-gold: #D4A53A;
+            --border-subtle: #E7E3D8;
+            --status-success-bg: #DCFCE7;
+            --status-success-text: #166534;
+            --status-warning-bg: #FEF3C7;
+            --status-warning-text: #92400E;
+            --status-info-bg: #DBEAFE;
+            --status-info-text: #1E40AF;
+            --status-danger-bg: #FEE2E2;
+            --status-danger-text: #991B1B;
+            --card-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 4px 12px rgba(15,23,42,0.04);
+            --navy: var(--brand-navy);
+            --navy-deep: var(--bg-sidebar);
+            --gold: var(--brand-gold);
+            --paper: var(--bg-app);
+            --ink: var(--text-primary);
+            --muted: var(--text-muted);
+            --line: var(--border-subtle);
+            --success: var(--status-success-text);
+            --danger: var(--status-danger-text);
+            --warning: var(--status-warning-text);
             --admin-sidebar-width: 208px;
         }
 
@@ -29,9 +46,7 @@
         body {
             margin: 0;
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(210, 168, 61, 0.18), transparent 32%),
-                linear-gradient(180deg, #f8f5ed 0%, #efe8d7 100%);
+            background: var(--bg-app);
             color: var(--ink);
         }
 
@@ -115,21 +130,43 @@
 
         .button, button, input[type="submit"] {
             border: none;
-            border-radius: 999px;
-            background: var(--navy);
-            color: white;
-            padding: 12px 18px;
+            border-radius: 0.5rem;
+            background: var(--brand-navy);
+            color: var(--bg-surface);
+            padding: 0.5rem 1rem;
             font-family: inherit;
             font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
-            transition: transform 0.15s ease;
+            transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
             text-decoration: none;
         }
 
         button.secondary, .button.secondary {
-            background: transparent;
-            border: 1px solid var(--navy);
-            color: var(--navy);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+        }
+
+        button.secondary:hover,
+        .button.secondary:hover {
+            background: var(--bg-app);
+        }
+
+        button.warn,
+        .button.warn,
+        button.ghost,
+        .button.ghost {
+            background: var(--bg-surface);
+            border: 1px solid var(--status-danger-bg);
+            color: var(--status-danger-text);
+        }
+
+        button.warn:hover,
+        .button.warn:hover,
+        button.ghost:hover,
+        .button.ghost:hover {
+            background: var(--status-danger-bg);
         }
 
         .topbar-form {
@@ -154,7 +191,6 @@
             outline-offset: 2px;
         }
 
-        button.warn { background: var(--danger); }
         button:hover, input[type="submit"]:hover { transform: translateY(-1px); }
 
         form { display: grid; gap: 14px; }
@@ -177,12 +213,21 @@
         input, select, textarea {
             width: 100%;
             max-width: 100%;
-            border: 1px solid #cfc7b7;
-            border-radius: 12px;
-            padding: 11px 13px;
+            height: 2.5rem;
+            border: 1px solid var(--border-subtle);
+            border-radius: 0.5rem;
+            padding: 0.55rem 0.75rem;
             font: inherit;
-            background: white;
+            background: var(--bg-surface);
             color: var(--ink);
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--brand-navy);
+            outline: 2px solid rgba(22, 52, 92, 0.20);
+            outline-offset: 0;
         }
 
         textarea {
@@ -194,8 +239,8 @@
         table { width: 100%; border-collapse: collapse; }
 
         th, td {
-            padding: 12px 10px;
-            border-bottom: 1px solid var(--line);
+            padding: 1rem 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
             text-align: left;
             vertical-align: top;
         }
@@ -205,23 +250,31 @@
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: var(--muted);
+            font-weight: 500;
+        }
+
+        tbody tr:hover td {
+            background: rgba(248, 250, 252, 0.6);
         }
 
         .badge {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 6px 12px;
+            padding: 0.125rem 0.625rem;
             border-radius: 999px;
             font-size: 12px;
-            font-weight: 700;
+            font-weight: 500;
         }
 
-        .badge.awaiting_action { background: #fff3d9; color: var(--warning); }
-        .badge.approved, .badge.completed { background: #dff3e7; color: var(--success); }
-        .badge.flagged { background: #fbe2dc; color: var(--danger); }
-        .badge.in_progress { background: #dde8f7; color: var(--navy); }
-        .badge.active { background: rgba(210, 168, 61, 0.18); color: #76510e; }
+        .badge.awaiting_action,
+        .badge.waiting { background: var(--status-warning-bg); color: var(--status-warning-text); }
+        .badge.approved,
+        .badge.assigned,
+        .badge.completed { background: var(--status-success-bg); color: var(--status-success-text); }
+        .badge.flagged { background: var(--status-danger-bg); color: var(--status-danger-text); }
+        .badge.in_progress { background: var(--status-info-bg); color: var(--status-info-text); }
+        .badge.active { background: rgba(212, 165, 58, 0.18); color: var(--status-warning-text); }
 
         .callout {
             border-radius: 18px;
@@ -230,8 +283,8 @@
             overflow-wrap: anywhere;
         }
 
-        .callout.success { background: #eef9f2; color: var(--success); border-color: #bfe5cb; }
-        .callout.error { background: #fff1ed; color: var(--danger); border-color: #f4c8be; }
+        .callout.success { background: var(--status-success-bg); color: var(--success); border-color: var(--status-success-bg); }
+        .callout.error { background: var(--status-danger-bg); color: var(--danger); border-color: var(--status-danger-bg); }
 
         .list { display: grid; gap: 14px; }
 
@@ -409,7 +462,7 @@
         }
 
         .routing-list::-webkit-scrollbar-thumb {
-            background: #c7bca8;
+            background: var(--border-subtle);
             border-radius: 999px;
         }
 
@@ -430,10 +483,8 @@
             left: 0;
             width: var(--admin-sidebar-width);
             height: 100vh;
-            background:
-                radial-gradient(circle at top left, rgba(210, 168, 61, 0.25), transparent 35%),
-                linear-gradient(180deg, #081a2b 0%, #16385f 50%, #2a5d94 100%);
-            color: white;
+            background: var(--bg-sidebar);
+            color: var(--bg-surface);
             display: flex;
             flex-direction: column;
             padding: 16px 12px;
@@ -495,24 +546,41 @@
         }
 
         .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             padding: 10px 11px;
-            border-radius: 11px;
+            border-radius: 0 11px 11px 0;
+            border-left: 3px solid transparent;
             text-decoration: none;
-            color: white;
+            color: rgba(255,255,255,0.72);
             transition: 0.2s ease;
             font-size: 13px;
             font-weight: 600;
         }
 
         .nav-item:hover {
-            background: rgba(255,255,255,0.1);
+            color: var(--bg-surface);
+            background: rgba(255,255,255,0.05);
         }
 
         .nav-item.active {
-            background: linear-gradient(180deg, #d9b24a 0%, #c89d2d 100%);
-            color: #111;
-            font-weight: 700;
-            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+            background: rgba(212, 165, 58, 0.15);
+            border-left-color: var(--brand-gold);
+            color: var(--bg-surface);
+            font-weight: 500;
+            box-shadow: none;
+        }
+
+        .nav-icon {
+            width: 18px;
+            height: 18px;
+            flex: 0 0 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         /* ================= MAIN ================= */
@@ -530,7 +598,7 @@
             left: var(--admin-sidebar-width);
             right: 0;
             background:
-                linear-gradient(135deg, #0e2742 0%, #16385f 65%, #1b4675 100%);
+                linear-gradient(135deg, var(--bg-sidebar) 0%, var(--brand-navy) 65%, var(--brand-navy) 100%);
             color: white;
             padding: 12px 20px;
             display: flex;
@@ -556,7 +624,7 @@
         }
 
         .admin-current-page strong {
-            color: #ffffff;
+            color: var(--bg-surface);
             font-size: 18px;
             line-height: 1.2;
         }
@@ -635,8 +703,8 @@
             overflow-y: auto;
             padding: 8px;
             border-radius: 18px;
-            background: #fffdf8;
-            border: 1px solid #e4dacd;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
             box-shadow: 0 20px 44px rgba(14, 39, 66, 0.22);
             z-index: 1100;
         }
@@ -651,7 +719,7 @@
             gap: 4px;
             padding: 12px 14px;
             border-radius: 12px;
-            color: #183a63;
+            color: var(--text-primary);
             text-decoration: none;
         }
 
@@ -667,14 +735,14 @@
         }
 
         .admin-action-search-result span {
-            color: #667085;
+            color: var(--text-muted);
             font-size: 12px;
             line-height: 1.35;
         }
 
         .admin-action-search-empty {
             padding: 12px 14px;
-            color: #667085;
+            color: var(--text-muted);
             font-size: 13px;
         }
 
@@ -792,10 +860,10 @@
             display: grid;
             gap: 12px;
             padding: 14px;
-            border: 1px solid #ded5c8;
+            border: 1px solid var(--border-subtle);
             border-radius: 18px;
-            background: #fffdf8;
-            color: #173c66;
+            background: var(--bg-surface);
+            color: var(--text-primary);
             box-shadow: 0 20px 44px rgba(14, 39, 66, 0.22);
         }
 
@@ -807,7 +875,7 @@
 
         .admin-user-dropdown span {
             margin-top: 3px;
-            color: #667085;
+            color: var(--text-muted);
             font-size: 12px;
             font-weight: 700;
         }
@@ -827,9 +895,7 @@
 
         .admin-content {
             padding: 78px 18px 24px;
-            background:
-                radial-gradient(circle at top right, rgba(210, 168, 61, 0.10), transparent 22%),
-                linear-gradient(180deg, #f8f5ed 0%, #f1ebdf 100%);
+            background: var(--bg-app);
             min-height: 100vh;
             font-size: 14px;
         }
@@ -848,12 +914,25 @@
             flex: 1;
         }
 
+        .admin-page-header h1,
+        .management-header h1,
+        .routing-page-header h1,
+        .admin-page > h1,
+        .dashboard-quick-actions h1,
+        .snapshot-header h1,
         h1 {
-            font-weight: 900;
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 1.875rem;
+            line-height: 2.25rem;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+            text-transform: none;
         }
 
         h2, h3 {
             font-weight: 600;
+            color: var(--text-primary);
         }
     </style>
     @stack('styles')
@@ -979,15 +1058,42 @@
             </div>
 
             <nav class="sidebar-nav">
-                <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">Dashboard</a>
-                <a href="{{ route('admin.programs.index') }}" class="nav-item {{ request()->routeIs('admin.programs.*') ? 'active' : '' }}">Programs</a>
-                <a href="{{ route('admin.semesters.index') }}" class="nav-item {{ request()->routeIs('admin.semesters.*') ? 'active' : '' }}">Semesters</a>
-                <a href="{{ route('admin.routing.index') }}" class="nav-item {{ request()->routeIs('admin.routing.*') ? 'active' : '' }}">Routing</a>
-                <a href="{{ route('admin.students.index') }}" class="nav-item {{ request()->routeIs('admin.students.*') ? 'active' : '' }}">Students</a>
-                <a href="{{ route('admin.registration-requests.index') }}" class="nav-item {{ request()->routeIs('admin.registration-requests.*') ? 'active' : '' }}">Registration Requests</a>
-                <a href="{{ route('admin.office-accounts.index') }}" class="nav-item {{ request()->routeIs('admin.office-accounts.*') ? 'active' : '' }}">Office Accounts</a>
-                <a href="{{ route('admin.analytics.index') }}" class="nav-item {{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}">Analytics</a>
-                <a href="{{ route('admin.clearance-history.index') }}" class="nav-item {{ request()->routeIs('admin.clearance-history.*') || request()->routeIs('admin.clearances.show') ? 'active' : '' }}">Download Reports</a>
+                <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h8V3H3v10Z"/><path d="M13 21h8V11h-8v10Z"/><path d="M13 3v6h8V3h-8Z"/><path d="M3 21h8v-6H3v6Z"/></svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ route('admin.programs.index') }}" class="nav-item {{ request()->routeIs('admin.programs.*') ? 'active' : '' }}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+                    <span>Programs</span>
+                </a>
+                <a href="{{ route('admin.semesters.index') }}" class="nav-item {{ request()->routeIs('admin.semesters.*') ? 'active' : '' }}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/><path d="M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>
+                    <span>Semesters</span>
+                </a>
+                <a href="{{ route('admin.routing.index') }}" class="nav-item {{ request()->routeIs('admin.routing.*') ? 'active' : '' }}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3v6a3 3 0 0 0 3 3h6a3 3 0 0 1 3 3v6"/><path d="M6 21v-6a3 3 0 0 1 3-3"/><path d="M18 3v6"/></svg>
+                    <span>Routing</span>
+                </a>
+                <a href="{{ route('admin.students.index') }}" class="nav-item {{ request()->routeIs('admin.students.*') ? 'active' : '' }}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-8 0v2"/><path d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>
+                    <span>Students</span>
+                </a>
+                <a href="{{ route('admin.registration-requests.index') }}" class="nav-item {{ request()->routeIs('admin.registration-requests.*') ? 'active' : '' }}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 12 2 2 4-5"/><path d="M5 4h14v16H5z"/></svg>
+                    <span>Registration Requests</span>
+                </a>
+                <a href="{{ route('admin.office-accounts.index') }}" class="nav-item {{ request()->routeIs('admin.office-accounts.*') ? 'active' : '' }}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/><path d="M8 7h2M8 11h2M14 7h2M14 11h2"/><path d="M3 21h18"/></svg>
+                    <span>Office Accounts</span>
+                </a>
+                <a href="{{ route('admin.analytics.index') }}" class="nav-item {{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                    <span>Analytics</span>
+                </a>
+                <a href="{{ route('admin.clearance-history.index') }}" class="nav-item {{ request()->routeIs('admin.clearance-history.*') || request()->routeIs('admin.clearances.show') ? 'active' : '' }}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+                    <span>Download Reports</span>
+                </a>
             </nav>
         </aside>
 

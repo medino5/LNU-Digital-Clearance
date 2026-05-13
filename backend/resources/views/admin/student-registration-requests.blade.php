@@ -9,7 +9,7 @@
 
         <section class="management-header">
             <div>
-                <h1>REGISTRATION REQUESTS</h1>
+                <h1>Registration Requests</h1>
                 <p>Mobile account sign-ups stay pending here until an admin approves or rejects them.</p>
             </div>
         </section>
@@ -164,8 +164,8 @@
                 gap: 16px;
                 padding: 18px;
                 border-radius: 18px;
-                background: #ffffff;
-                border: 1px solid #e4dacd;
+                background: var(--bg-surface);
+                border: 1px solid var(--border-subtle);
                 box-shadow: 0 8px 20px rgba(24, 58, 99, 0.04);
             }
 
@@ -190,12 +190,12 @@
                 gap: 4px;
                 padding: 12px;
                 border-radius: 14px;
-                background: #f8f4ea;
-                border: 1px solid #ebe2d4;
+                background: var(--bg-app);
+                border: 1px solid var(--border-subtle);
             }
 
             .registration-request-details dt {
-                color: #667085;
+                color: var(--text-muted);
                 font-size: 0.76rem;
                 font-weight: 800;
                 letter-spacing: 0.08em;
@@ -204,7 +204,7 @@
 
             .registration-request-details dd {
                 margin: 0;
-                color: #183a63;
+                color: var(--text-primary);
                 font-weight: 700;
                 line-height: 1.35;
             }
@@ -235,12 +235,12 @@
             }
 
             .badge.pending {
-                background: #fff3d9;
+                background: var(--status-warning-bg);
                 color: var(--warning);
             }
 
             .badge.rejected {
-                background: #fbe2dc;
+                background: var(--status-danger-bg);
                 color: var(--danger);
             }
 
@@ -259,3 +259,6 @@
         </style>
     @endpush
 @endsection
+
+
+

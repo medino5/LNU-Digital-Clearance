@@ -2,6 +2,7 @@
     <div class="routing-page-header">
         <div>
             <h1>Routing Configuration</h1>
+            <p>Manage clearance routes, office designations, and active holders.</p>
         </div>
     </div>
 
@@ -16,7 +17,7 @@
             <input type="hidden" name="_form_key" value="designation-create">
 
             <label>
-                Designation Type
+                <span>Designation Type</span>
                 <select name="office_type" data-designation-type required>
                     @foreach($designationTypeOptions as $value => $label)
                         <option value="{{ $value }}" @selected(old('office_type') === $value)>{{ $label }}</option>
@@ -26,7 +27,7 @@
             </label>
 
             <label data-designation-program-scope>
-                Program Scope
+                <span>Program Scope</span>
                 <select name="program_id">
                     <option value="">Select program</option>
                     @foreach($programs as $program)
@@ -39,7 +40,7 @@
             </label>
 
             <label data-designation-year-scope>
-                Year Level Scope
+                <span>Year Level Scope</span>
                 <select name="year_level">
                     <option value="">Select year</option>
                     @foreach([1, 2, 3, 4] as $yearLevel)
@@ -52,7 +53,7 @@
             </label>
 
             <label>
-                Display Name
+                <span>Display Name</span>
                 <input
                     type="text"
                     name="display_name"
@@ -219,9 +220,9 @@
                                         {{ $currentAssignment ? 'Change Holder' : 'Assign Holder' }}
                                     </button>
 
-                                    <form
-                                        method="POST"
-                                        action="{{ route('admin.office-designations.destroy', $designation) }}"
+                    <form
+                        method="POST"
+                        action="{{ route('admin.office-designations.destroy', $designation) }}"
                                         data-routing-delete-form
                                         data-routing-delete-name="{{ $designation->display_name }}"
                                     >
@@ -263,7 +264,7 @@
                 <input type="hidden" name="_form_key" id="routingAssignmentFormKey">
 
                 <label>
-                    Search Eligible Holder
+                    <span>Search Eligible Holder</span>
                     <input
                         type="search"
                         id="routingAssignmentSearch"
@@ -273,7 +274,7 @@
                 </label>
 
                 <label>
-                    Eligible Holder
+                    <span>Eligible Holder</span>
                     <select name="user_id" id="routingAssignmentUserSelect" required disabled>
                         <option value="">Loading eligible holders...</option>
                     </select>
@@ -300,8 +301,8 @@
 <style>
     #routing-configuration {
         display: grid;
-        gap: 18px;
-        padding: 10px 8px 24px;
+        gap: 1.5rem;
+        padding: 0;
         width: 100%;
         max-width: none;
         background: transparent;
@@ -315,7 +316,7 @@
         align-items: center;
         gap: 14px;
         width: 100%;
-        padding: 4px 2px;
+        padding: 0;
         border: 0;
         background: transparent;
         box-shadow: none;
@@ -323,43 +324,64 @@
 
     .routing-page-header h1 {
         margin: 0;
-        color: #173c66;
-        font-size: clamp(1.7rem, 2vw, 2.3rem);
+        color: var(--text-primary);
+        font-size: 1.875rem;
         line-height: 1.1;
         letter-spacing: -0.03em;
+        font-weight: 600;
+        text-transform: none;
+    }
+
+    .routing-page-header p {
+        margin: 0.375rem 0 0;
+        color: var(--text-muted);
+        font-size: 0.875rem;
     }
 
     .routing-create-panel {
         display: grid;
         grid-template-columns: minmax(180px, 0.7fr) minmax(0, 2.3fr);
-        gap: 18px;
+        gap: 1.5rem;
         align-items: end;
-        padding: 18px 0 20px;
-        border-bottom: 1px solid rgba(23, 60, 102, 0.12);
+        padding: 1.5rem;
+        border: 1px solid var(--border-subtle);
+        border-radius: 0.75rem;
+        background: var(--bg-surface);
+        box-shadow: var(--card-shadow);
     }
 
     .routing-create-copy h2 {
         margin: 4px 0 0;
-        color: #173c66;
+        color: var(--text-primary);
         font-size: 1.25rem;
     }
 
     .routing-create-form {
         display: grid;
         grid-template-columns: repeat(4, minmax(150px, 1fr)) auto;
-        gap: 10px;
+        gap: 1rem;
         align-items: start;
     }
 
     .routing-create-form label,
     .routing-assignment-form label {
         display: grid;
-        gap: 5px;
-        color: #173c66;
-        font-size: 0.78rem;
-        font-weight: 800;
-        letter-spacing: 0.03em;
+        gap: 0.375rem;
+    }
+
+    .routing-create-form label > span,
+    .routing-assignment-form label > span {
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        font-weight: 500;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
+    }
+
+    .routing-create-form label:has([required]) > span::after,
+    .routing-assignment-form label:has([required]) > span::after {
+        content: " *";
+        color: var(--status-danger-text);
     }
 
     .routing-create-form input,
@@ -367,12 +389,12 @@
     .routing-assignment-form input,
     .routing-assignment-form select {
         width: 100%;
-        height: 42px;
+        height: 2.5rem;
         margin: 0;
-        border: 1px solid #d8cdbc;
-        border-radius: 13px;
-        background: rgba(255, 255, 255, 0.88);
-        color: #172033;
+        border: 1px solid var(--border-subtle);
+        border-radius: 0.5rem;
+        background: var(--bg-surface);
+        color: var(--text-primary);
         font-size: 14px;
         text-transform: none;
         letter-spacing: normal;
@@ -381,14 +403,14 @@
 
     .routing-create-form button {
         align-self: end;
-        min-height: 42px;
-        border-radius: 999px;
+        min-height: 2.5rem;
+        border-radius: 0.5rem;
         white-space: nowrap;
     }
 
     .routing-records-card {
         display: grid;
-        gap: 14px;
+        gap: 1rem;
         width: 100%;
         padding: 0;
         border: 0;
@@ -399,39 +421,39 @@
 
     .routing-records-header {
         display: grid;
-        gap: 16px;
+        gap: 1rem;
     }
 
     .routing-filter-bar {
         display: grid;
         grid-template-columns: minmax(240px, 1.4fr) repeat(3, minmax(150px, 1fr)) auto;
-        gap: 10px;
+        gap: 1rem;
         align-items: center;
     }
 
     .routing-filter-bar input,
     .routing-filter-bar select {
         width: 100%;
-        height: 44px;
+        height: 2.5rem;
         margin: 0;
-        border: 1px solid #d8cdbc;
-        border-radius: 13px;
-        background: #ffffff;
-        color: #172033;
+        border: 1px solid var(--border-subtle);
+        border-radius: 0.5rem;
+        background: var(--bg-surface);
+        color: var(--text-primary);
         font-size: 15px;
     }
 
     .routing-reset-button {
-        height: 44px;
+        height: 2.5rem;
         white-space: nowrap;
     }
 
     .routing-table-wrap {
         overflow-x: auto;
-        border: 1px solid rgba(23, 60, 102, 0.11);
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.72);
-        box-shadow: 0 18px 42px rgba(24, 58, 99, 0.07);
+        border: 1px solid var(--border-subtle);
+        border-radius: 0.75rem;
+        background: var(--bg-surface);
+        box-shadow: var(--card-shadow);
     }
 
     .routing-table {
@@ -468,22 +490,22 @@
     }
 
     .routing-table th {
-        padding: 13px 12px;
-        background: #f8f4ea;
-        color: #667085;
+        padding: 0.75rem 1rem;
+        background: var(--bg-surface);
+        color: var(--text-muted);
         font-size: 12px;
-        font-weight: 800;
+        font-weight: 500;
         letter-spacing: 0.07em;
         text-transform: uppercase;
         text-align: left;
-        border-bottom: 1px solid #ded3c3;
+        border-bottom: 1px solid var(--border-subtle);
     }
 
     .routing-table td {
-        padding: 14px 12px;
-        color: #183a63;
+        padding: 1rem;
+        color: var(--text-primary);
         vertical-align: middle;
-        border-bottom: 1px solid #e7ddcf;
+        border-bottom: 1px solid var(--border-subtle);
     }
 
     .routing-table tbody tr:last-child td {
@@ -491,16 +513,16 @@
     }
 
     .routing-table tbody tr:hover td {
-        background: #fffaf0;
+        background: rgba(248, 250, 252, 0.6);
     }
 
     .routing-row-unassigned td {
-        background: #fffdf5;
+        background: var(--bg-surface);
     }
 
     .routing-designation-name,
     .routing-holder-name {
-        color: #183a63;
+        color: var(--text-primary);
         font-size: 15px;
         font-weight: 800;
         line-height: 1.35;
@@ -508,13 +530,13 @@
 
     .routing-muted {
         margin-top: 4px;
-        color: #5d6b84;
+        color: var(--text-muted);
         font-size: 12px;
         line-height: 1.35;
     }
 
     .routing-holder-unassigned {
-        color: #9a650d;
+        color: var(--status-warning-text);
         font-size: 15px;
         font-weight: 800;
     }
@@ -530,8 +552,8 @@
         max-width: 160px;
         padding: 7px 13px;
         border-radius: 999px;
-        background: #eef4fb;
-        color: #173c66;
+        background: var(--status-info-bg);
+        color: var(--status-info-text);
         font-size: 12px;
         font-weight: 800;
         white-space: nowrap;
@@ -542,21 +564,21 @@
     .routing-status-badge {
         display: inline-flex;
         align-items: center;
-        padding: 7px 12px;
+        padding: 0.125rem 0.625rem;
         border-radius: 999px;
         font-size: 12px;
-        font-weight: 800;
+        font-weight: 500;
         white-space: nowrap;
     }
 
     .routing-status-badge.assigned {
-        background: #e2f4ea;
-        color: #1f7a4f;
+        background: var(--status-success-bg);
+        color: var(--status-success-text);
     }
 
     .routing-status-badge.unassigned {
-        background: #fff0cc;
-        color: #9a650d;
+        background: var(--status-warning-bg);
+        color: var(--status-warning-text);
     }
 
     .routing-assignment-form {
@@ -570,21 +592,21 @@
         width: 100%;
         min-height: 42px;
         padding-inline: 16px;
-        border-radius: 999px;
+        border-radius: 0.5rem;
         white-space: nowrap;
     }
 
     .routing-no-eligible {
         margin: 0;
-        color: #9a650d;
+        color: var(--status-warning-text);
     }
 
     .routing-empty-filter-state {
         padding: 18px;
         border-radius: 16px;
-        background: #ffffff;
-        border: 1px dashed #d5cbbd;
-        color: #667085;
+        background: var(--bg-surface);
+        border: 1px dashed var(--border-subtle);
+        color: var(--text-muted);
         text-align: center;
     }
 
@@ -600,7 +622,8 @@
         align-items: center;
         justify-content: center;
         padding: 22px;
-        background: rgba(8, 26, 43, 0.48);
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(4px);
     }
 
     .routing-modal-backdrop[hidden] {
@@ -612,9 +635,9 @@
         display: grid;
         gap: 18px;
         padding: 24px;
-        border-radius: 24px;
-        background: rgba(255, 253, 248, 0.96);
-        border: 1px solid rgba(228, 218, 205, 0.9);
+        border-radius: 0.75rem;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
         box-shadow: 0 24px 70px rgba(14, 39, 66, 0.24);
         backdrop-filter: blur(18px);
     }
@@ -629,7 +652,7 @@
 
     .routing-modal-header {
         padding-bottom: 12px;
-        border-bottom: 1px solid #e4dacd;
+        border-bottom: 1px solid var(--border-subtle);
     }
 
     .routing-modal-header h2,
@@ -639,7 +662,7 @@
 
     .routing-modal-header p {
         margin-top: 6px;
-        color: #667085;
+        color: var(--text-muted);
     }
 
     .routing-modal-actions {
@@ -660,7 +683,7 @@
     }
 
     .routing-remove-button {
-        color: #9a3412;
+        color: var(--status-danger-text);
     }
 
     @media (max-width: 1200px) {
@@ -958,3 +981,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endpush
+
+
+

@@ -15,7 +15,7 @@
 
         <section class="admin-page-header management-header">
             <div>
-                <h1>PROGRAMS</h1>
+                <h1>Programs</h1>
                 <p>Manage program codes, names, and organization labels.</p>
             </div>
 
@@ -322,3 +322,6 @@
 
     @include('admin.partials.management-page-styles')
 @endsection
+
+
+

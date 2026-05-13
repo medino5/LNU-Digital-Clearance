@@ -15,7 +15,7 @@
 
         <section class="admin-page-header management-header">
             <div>
-                <h1>OFFICE ACCOUNTS</h1>
+                <h1>Office Accounts</h1>
                 <p>Manage reusable staff accounts for designation assignments.</p>
             </div>
 
@@ -625,8 +625,8 @@
             align-items: center;
             padding: 7px 12px;
             border-radius: 999px;
-            background: #f3efe6;
-            color: #1b3a6b;
+            background: var(--bg-app);
+            color: var(--brand-navy);
             font-size: 12px;
             font-weight: 700;
             white-space: nowrap;
@@ -640,7 +640,7 @@
             padding: 0;
             border: 0;
             background: transparent;
-            color: #183a63;
+            color: var(--text-primary);
             font: inherit;
             font-weight: 800;
             text-align: left;
@@ -650,7 +650,7 @@
 
         .office-profile-name:hover,
         .office-profile-name:focus-visible {
-            color: #0e2742;
+            color: var(--brand-navy);
             text-decoration: underline;
         }
 
@@ -668,10 +668,10 @@
             display: grid;
             place-items: center;
             overflow: hidden;
-            background: linear-gradient(135deg, #173c66 0%, #27588f 100%);
-            color: #fff;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--brand-navy) 100%);
+            color: var(--bg-surface);
             font-weight: 900;
-            border: 2px solid #f3ead9;
+            border: 2px solid var(--border-subtle);
             box-shadow: 0 6px 14px rgba(24, 58, 99, 0.12);
         }
 
@@ -696,9 +696,9 @@
             gap: 16px;
             align-items: center;
             padding: 16px;
-            border: 1px solid #e4dacd;
+            border: 1px solid var(--border-subtle);
             border-radius: 18px;
-            background: #fffdf8;
+            background: var(--bg-surface);
             min-width: 0;
         }
 
@@ -709,14 +709,14 @@
         }
 
         .office-profile-heading strong {
-            color: #183a63;
+            color: var(--text-primary);
             font-size: 1.2rem;
             line-height: 1.2;
             overflow-wrap: anywhere;
         }
 
         .office-profile-heading span {
-            color: #667085;
+            color: var(--text-muted);
             font-weight: 700;
             overflow-wrap: anywhere;
         }
@@ -731,14 +731,14 @@
         .office-profile-facts div,
         .office-assignment-row {
             padding: 12px;
-            border: 1px solid #ece3d6;
+            border: 1px solid var(--border-subtle);
             border-radius: 14px;
-            background: #ffffff;
+            background: var(--bg-surface);
             min-width: 0;
         }
 
         .office-profile-facts dt {
-            color: #667085;
+            color: var(--text-muted);
             font-size: 11px;
             font-weight: 900;
             letter-spacing: 0.08em;
@@ -747,7 +747,7 @@
 
         .office-profile-facts dd {
             margin: 6px 0 0;
-            color: #183a63;
+            color: var(--text-primary);
             font-weight: 800;
             line-height: 1.32;
             overflow-wrap: anywhere;
@@ -771,7 +771,7 @@
         }
 
         .office-assignment-row span {
-            color: #667085;
+            color: var(--text-muted);
             font-weight: 700;
             text-align: right;
         }
@@ -783,7 +783,7 @@
         .profile-photo-form {
             margin-top: 16px;
             padding-top: 16px;
-            border-top: 1px solid #e4dacd;
+            border-top: 1px solid var(--border-subtle);
         }
 
         .profile-photo-edit-row {
@@ -795,7 +795,7 @@
 
         .modal-readonly-text {
             margin: 6px 0 0;
-            color: #183a63;
+            color: var(--text-primary);
             font-weight: 700;
         }
 
@@ -824,20 +824,20 @@
             border-radius: 8px;
             text-decoration: none;
             font-size: 13px;
-            border: 1px solid #ddd;
-            color: #1b3a6b;
-            background: #fff;
+            border: 1px solid var(--border-subtle);
+            color: var(--brand-navy);
+            background: var(--bg-surface);
         }
 
         .pagination li a:hover {
-            background: #1b3a6b;
-            color: #fff;
+            background: var(--brand-navy);
+            color: var(--bg-surface);
         }
 
         .pagination li.active span {
-            background: #d1a33b;
-            color: #fff;
-            border-color: #d1a33b;
+            background: var(--brand-gold);
+            color: var(--bg-surface);
+            border-color: var(--brand-gold);
             font-weight: bold;
         }
 
@@ -993,3 +993,6 @@
     </script>
     @endpush
 @endsection
+
+
+

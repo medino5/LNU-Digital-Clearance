@@ -15,7 +15,7 @@
 
         <section class="admin-page-header management-header">
             <div>
-                <h1>SEMESTERS</h1>
+                <h1>Semesters</h1>
                 <p>Manage active and historical clearance periods.</p>
             </div>
 
@@ -258,3 +258,6 @@
 
     @include('admin.partials.management-page-styles')
 @endsection
+
+
+
