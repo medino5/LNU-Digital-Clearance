@@ -184,8 +184,12 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> updateAcademicProfile({
-    required int programId,
-    required int yearLevel,
+    required String firstName,
+    required String middleInitial,
+    required String lastName,
+    required String nameExtension,
+    required int? programId,
+    required int? yearLevel,
     required String dateOfBirth,
   }) async {
     final token = await getToken();
@@ -194,14 +198,30 @@ class AuthService {
       throw Exception('You are not logged in.');
     }
 
+    final body = <String, dynamic>{
+      'first_name': firstName.trim(),
+      'middle_initial': middleInitial.trim().isEmpty
+          ? null
+          : middleInitial.trim(),
+      'last_name': lastName.trim(),
+      'name_extension': nameExtension.trim().isEmpty
+          ? null
+          : nameExtension.trim(),
+      'date_of_birth': dateOfBirth,
+    };
+
+    if (programId != null) {
+      body['program_id'] = programId;
+    }
+
+    if (yearLevel != null) {
+      body['year_level'] = yearLevel;
+    }
+
     final response = await _apiClient.patch(
       '/me/academic-profile',
       headers: {..._authHeaders(token), 'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'program_id': programId,
-        'year_level': yearLevel,
-        'date_of_birth': dateOfBirth,
-      }),
+      body: jsonEncode(body),
     );
 
     if (response.statusCode == 401) {
@@ -216,8 +236,14 @@ class AuthService {
     }
 
     final payload = jsonDecode(response.body) as Map<String, dynamic>;
-    return (payload['profile'] as Map?)?.cast<String, dynamic>() ??
-        <String, dynamic>{};
+    final fullPayload = (payload['payload'] as Map?)?.cast<String, dynamic>();
+
+    if (fullPayload != null) {
+      return fullPayload;
+    }
+
+    final profile = (payload['profile'] as Map?)?.cast<String, dynamic>();
+    return profile == null ? <String, dynamic>{} : {'student': profile};
   }
 
   Future<String> resetForgottenPassword({

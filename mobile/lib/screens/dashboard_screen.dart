@@ -7,10 +7,12 @@ class DashboardScreen extends StatelessWidget {
     required this.error,
     required this.isLoading,
     required this.isStartingOrResuming,
+    required this.isCancellingClearance,
     required this.isDownloadingPdf,
     required this.resubmittingStepId,
     required this.onRefresh,
     required this.onStartOrResume,
+    required this.onCancelClearance,
     required this.onResubmitStep,
     required this.onDownloadPdf,
   });
@@ -22,10 +24,12 @@ class DashboardScreen extends StatelessWidget {
   // Ticket polish: separate dashboard action states so unrelated controls
   // do not get disabled across the shell.
   final bool isStartingOrResuming;
+  final bool isCancellingClearance;
   final bool isDownloadingPdf;
   final int? resubmittingStepId;
   final Future<void> Function() onRefresh;
   final Future<void> Function() onStartOrResume;
+  final Future<void> Function() onCancelClearance;
   final Future<void> Function(Map<String, dynamic> step) onResubmitStep;
   final Future<void> Function() onDownloadPdf;
 
@@ -50,6 +54,12 @@ class DashboardScreen extends StatelessWidget {
         .map((step) => step.cast<String, dynamic>())
         .toList();
   }
+
+  Map<String, dynamic>? get _student =>
+      payload?['student'] as Map<String, dynamic>?;
+
+  Map<String, dynamic>? get _program =>
+      _student?['program'] as Map<String, dynamic>?;
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +92,9 @@ class DashboardScreen extends StatelessWidget {
           else if (_clearance == null)
             _StartClearanceCard(
               semesterLabel: _activeSemester?['label'] as String? ?? '',
+              programCode: _program?['code'] as String?,
+              programName: _program?['name'] as String?,
+              yearLevelLabel: _student?['year_level_label'] as String?,
               isBusy: isStartingOrResuming,
               onPressed: onStartOrResume,
             )
@@ -90,7 +103,9 @@ class DashboardScreen extends StatelessWidget {
               clearance: _clearance!,
               activeSemesterLabel: _activeSemester?['label'] as String?,
               isBusy: isDownloadingPdf,
+              isCancelling: isCancellingClearance,
               onDownload: onDownloadPdf,
+              onCancel: onCancelClearance,
             ),
             const SizedBox(height: 18),
             Text(
@@ -170,11 +185,17 @@ class _InfoCard extends StatelessWidget {
 class _StartClearanceCard extends StatelessWidget {
   const _StartClearanceCard({
     required this.semesterLabel,
+    required this.programCode,
+    required this.programName,
+    required this.yearLevelLabel,
     required this.isBusy,
     required this.onPressed,
   });
 
   final String semesterLabel;
+  final String? programCode;
+  final String? programName;
+  final String? yearLevelLabel;
   final bool isBusy;
   final Future<void> Function() onPressed;
 
@@ -183,6 +204,11 @@ class _StartClearanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final programLabel = [
+      if (programCode?.isNotEmpty ?? false) programCode,
+      if (programName?.isNotEmpty ?? false) programName,
+    ].join(' - ');
+
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
@@ -205,11 +231,62 @@ class _StartClearanceCard extends StatelessWidget {
             'The active semester is $semesterLabel. Starting a clearance now will immediately route the request to all required offices.',
             style: TextStyle(color: Colors.grey.shade700, height: 1.5),
           ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF6DF),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: _gold.withValues(alpha: 0.36)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.info_outline_rounded, color: _navy, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Check before starting',
+                        style: TextStyle(
+                          color: _navy,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Program: ${programLabel.isEmpty ? 'Not set' : programLabel}',
+                  style: const TextStyle(
+                    color: _navy,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Year Level: ${(yearLevelLabel?.isNotEmpty ?? false) ? yearLevelLabel : 'Not set'}',
+                  style: const TextStyle(
+                    color: _navy,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'If either detail is wrong, open Profile and update it first. These details decide which signers receive your clearance.',
+                  style: TextStyle(color: Colors.grey.shade800, height: 1.4),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: isBusy ? null : onPressed,
+              onPressed: isBusy ? null : () => _confirmStart(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: _gold,
                 foregroundColor: _navy,
@@ -235,6 +312,32 @@ class _StartClearanceCard extends StatelessWidget {
       ),
     );
   }
+
+  Future<void> _confirmStart(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Start clearance now?'),
+        content: const Text(
+          'Make sure your program and year level are correct before starting. The system will route your clearance based on those details.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Review Profile First'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Start Clearance'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await onPressed();
+    }
+  }
 }
 
 class _ClearanceSummaryCard extends StatelessWidget {
@@ -242,13 +345,17 @@ class _ClearanceSummaryCard extends StatelessWidget {
     required this.clearance,
     required this.activeSemesterLabel,
     required this.isBusy,
+    required this.isCancelling,
     required this.onDownload,
+    required this.onCancel,
   });
 
   final Map<String, dynamic> clearance;
   final String? activeSemesterLabel;
   final bool isBusy;
+  final bool isCancelling;
   final Future<void> Function() onDownload;
+  final Future<void> Function() onCancel;
 
   static const Color _navy = Color(0xFF183A63);
   static const Color _gold = Color(0xFFD1A33B);
@@ -264,6 +371,7 @@ class _ClearanceSummaryCard extends StatelessWidget {
     final total = counts['total'] ?? 0;
     final awaiting = counts['awaiting_action'] ?? 0;
     final flagged = counts['flagged'] ?? 0;
+    final canCancel = clearance['can_cancel'] == true;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -349,6 +457,45 @@ class _ClearanceSummaryCard extends StatelessWidget {
             Text(
               'Approved offices stay approved. Re-submit only the flagged office steps once your issue is resolved.',
               style: TextStyle(color: Colors.grey.shade800, height: 1.45),
+            ),
+          ],
+          if (canCancel) ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+              ),
+              child: Text(
+                'Wrong program or year level? Cancel this clearance before any office acts, update your Profile, then start again.',
+                style: TextStyle(color: Colors.grey.shade800, height: 1.4),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: isCancelling ? null : onCancel,
+                icon: isCancelling
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.cancel_outlined),
+                label: Text(
+                  isCancelling ? 'Cancelling...' : 'Cancel Wrong Clearance',
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red.shade700,
+                  side: BorderSide(color: Colors.red.shade200),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
           ],
           if (pdfAvailable) ...[

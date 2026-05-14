@@ -29,6 +29,8 @@ Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
         ->name('api.clearance.history');
     Route::post('/clearance', [StudentClearanceController::class, 'store'])
         ->name('api.clearance.store');
+    Route::delete('/clearance/current', [StudentClearanceController::class, 'cancelCurrent'])
+        ->name('api.clearance.current.cancel');
     Route::post('/clearance/steps/{step}/resubmit', [StudentClearanceController::class, 'resubmit'])
         ->name('api.clearance.steps.resubmit');
     Route::get('/clearance/current/pdf', [StudentClearanceController::class, 'downloadCurrent'])

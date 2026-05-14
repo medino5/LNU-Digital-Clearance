@@ -32,6 +32,7 @@ class ClearanceWorkflowService
 
     public function createOrResume(Student $student): Clearance
     {
+        $student->refresh()->load('program', 'user');
         $semester = $this->activeSemester();
 
         $existing = Clearance::with(['steps.officeDesignation.activeUsers', 'steps.events'])

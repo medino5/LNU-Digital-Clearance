@@ -200,6 +200,10 @@ void main() {
               onLoadAcademicOptions: () async => RegistrationOptions.empty(),
               onUpdateAcademicProfile:
                   ({
+                    required firstName,
+                    required middleInitial,
+                    required lastName,
+                    required nameExtension,
                     required programId,
                     required yearLevel,
                     required dateOfBirth,

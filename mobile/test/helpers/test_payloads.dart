@@ -9,6 +9,10 @@ Map<String, dynamic> buildTestPayload({
       'date_of_birth': '2005-03-14',
       'year_level': 3,
       'year_level_label': '3rd Year',
+      'first_name': 'John',
+      'middle_initial': 'A',
+      'last_name': 'Doe',
+      'name_extension': null,
       'program': {
         'id': 1,
         'code': 'BSIT',

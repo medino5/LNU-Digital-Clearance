@@ -69,6 +69,80 @@ class ClearanceWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_student_can_cancel_unprocessed_clearance_and_restart_after_profile_update(): void
+    {
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        $newProgram = Program::where('code', 'BAEL')->firstOrFail();
+        Sanctum::actingAs($student->user);
+
+        $started = $this->postJson('/api/clearance')
+            ->assertOk()
+            ->assertJsonPath('clearance.can_cancel', true);
+        $clearanceId = $started->json('clearance.id');
+
+        $this->deleteJson('/api/clearance/current')
+            ->assertOk()
+            ->assertJsonPath('message', 'Clearance cancelled. Update your profile if needed, then start again.')
+            ->assertJsonPath('clearance', null);
+
+        $this->assertDatabaseMissing('clearances', ['id' => $clearanceId]);
+        $this->assertDatabaseMissing('clearance_steps', ['clearance_id' => $clearanceId]);
+
+        $this->patchJson('/api/me/academic-profile', [
+            'program_id' => $newProgram->id,
+            'year_level' => 4,
+            'date_of_birth' => '2004-04-22',
+        ])->assertOk();
+
+        $this->postJson('/api/clearance')
+            ->assertOk()
+            ->assertJsonPath('student.program.code', 'BAEL')
+            ->assertJsonFragment([
+                'office_type' => 'acad_org_treasurer',
+                'scope_label' => 'BAEL',
+            ])
+            ->assertJsonFragment([
+                'office_type' => 'year_level_treasurer',
+                'scope_label' => '4th Year',
+            ]);
+    }
+
+    public function test_student_cannot_cancel_clearance_after_an_office_has_acted(): void
+    {
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        Sanctum::actingAs($student->user);
+        $this->postJson('/api/clearance')->assertOk();
+
+        $clearance = Clearance::with('steps.officeDesignation.activeUsers')->firstOrFail();
+        $step = $clearance->steps->firstWhere('office_label', 'DIGITS Academic Organization Treasurer');
+        $officeUser = $step->officeDesignation->activeUsers->first();
+        $this->assertNotNull($officeUser);
+
+        $this->actingAs($officeUser)
+            ->post(route('office.steps.process', $step), [
+                'action' => 'approve',
+                'confirm_action' => 'approve',
+                'remarks' => 'Already reviewed.',
+            ])
+            ->assertRedirect();
+
+        Sanctum::actingAs($student->user);
+
+        $this->getJson('/api/clearance/current')
+            ->assertOk()
+            ->assertJsonPath('clearance.can_cancel', false);
+
+        $this->deleteJson('/api/clearance/current')
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'This clearance can no longer be cancelled because an office has already acted on it.');
+
+        $this->assertDatabaseHas('clearances', ['id' => $clearance->id]);
+        $this->assertDatabaseHas('clearance_steps', [
+            'id' => $step->id,
+            'status' => ClearanceStep::STATUS_APPROVED,
+        ]);
+    }
+
     public function test_clearance_snapshots_do_not_change_after_student_profile_edits(): void
     {
         // This protects historical integrity. A clearance should keep the

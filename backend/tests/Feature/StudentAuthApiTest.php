@@ -387,6 +387,34 @@ class StudentAuthApiTest extends TestCase
         $this->assertSame('2004-04-22', $student->date_of_birth->toDateString());
     }
 
+    public function test_authenticated_student_can_update_name_and_birthday_during_active_clearance(): void
+    {
+        $student = Student::with('user', 'program')->where('student_id_number', '2302314')->firstOrFail();
+        $semester = Semester::active()->firstOrFail();
+        Clearance::factory()->forStudentAndSemester($student, $semester)->create([
+            'status' => Clearance::STATUS_IN_PROGRESS,
+        ]);
+        Sanctum::actingAs($student->user);
+
+        $this->patchJson('/api/me/academic-profile', [
+            'first_name' => 'Niña',
+            'middle_initial' => 'Ñ',
+            'last_name' => 'Dela Cruz',
+            'name_extension' => 'Jr',
+            'date_of_birth' => '2004-04-22',
+        ])
+            ->assertOk()
+            ->assertJsonPath('profile.name', 'Niña Ñ. Dela Cruz Jr')
+            ->assertJsonPath('profile.date_of_birth', '2004-04-22')
+            ->assertJsonPath('profile.program.code', $student->program->code)
+            ->assertJsonPath('profile.year_level', $student->year_level);
+
+        $student->refresh();
+
+        $this->assertSame('2004-04-22', $student->date_of_birth->toDateString());
+        $this->assertSame('Niña Ñ. Dela Cruz Jr', $student->user->fresh()->formattedName());
+    }
+
     public function test_authenticated_student_cannot_update_academic_profile_during_active_clearance(): void
     {
         $student = Student::with('user', 'program')->where('student_id_number', '2302314')->firstOrFail();
@@ -403,7 +431,7 @@ class StudentAuthApiTest extends TestCase
             'date_of_birth' => '2004-04-22',
         ])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['profile']);
+            ->assertJsonValidationErrors(['program_id']);
 
         $this->assertDatabaseHas('students', [
             'id' => $student->id,
@@ -431,6 +459,41 @@ class StudentAuthApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('profile.program.code', 'BAEL')
             ->assertJsonPath('profile.year_level', 2);
+    }
+
+    public function test_new_clearance_routes_against_updated_program_and_year_level(): void
+    {
+        $student = Student::with('user')->where('student_id_number', '2302314')->firstOrFail();
+        $program = Program::where('code', 'BAEL')->firstOrFail();
+        Sanctum::actingAs($student->user);
+
+        $this->patchJson('/api/me/academic-profile', [
+            'program_id' => $program->id,
+            'year_level' => 4,
+            'date_of_birth' => '2004-04-22',
+        ])->assertOk();
+
+        $this->postJson('/api/clearance')
+            ->assertOk()
+            ->assertJsonPath('student.program.code', 'BAEL')
+            ->assertJsonFragment([
+                'office_type' => 'acad_org_treasurer',
+                'scope_label' => 'BAEL',
+            ])
+            ->assertJsonFragment([
+                'office_type' => 'acad_org_adviser',
+                'scope_label' => 'BAEL',
+            ])
+            ->assertJsonFragment([
+                'office_type' => 'year_level_treasurer',
+                'scope_label' => '4th Year',
+            ]);
+
+        $this->assertDatabaseHas('clearances', [
+            'student_id' => $student->id,
+            'program_code' => 'BAEL',
+            'year_level' => 4,
+        ]);
     }
 
     public function test_student_can_reset_forgotten_password_with_student_id_and_birthday(): void

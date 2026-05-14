@@ -68,6 +68,23 @@ class ClearanceService {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
+  Future<Map<String, dynamic>> cancelCurrentClearance() async {
+    final response = await _apiClient.delete(
+      '/clearance/current',
+      headers: await _authHeaders(),
+    );
+
+    _throwIfSessionExpired(response.statusCode);
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        _extractMessage(response.body, 'Unable to cancel the clearance.'),
+      );
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
   Future<Map<String, dynamic>> resubmitStep(int stepId) async {
     final response = await _apiClient.post(
       '/clearance/steps/$stepId/resubmit',

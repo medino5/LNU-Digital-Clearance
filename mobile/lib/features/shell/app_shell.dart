@@ -48,6 +48,7 @@ class _AppShellState extends State<AppShell> {
   // Ticket polish: replace one global busy flag with action-specific loading
   // so unrelated buttons in other tabs do not get disabled.
   bool _isStartingOrResuming = false;
+  bool _isCancellingClearance = false;
   bool _isDownloadingPdf = false;
   bool _isLoggingOut = false;
   bool _isUploadingProfilePhoto = false;
@@ -155,6 +156,77 @@ class _AppShellState extends State<AppShell> {
       if (mounted) {
         setState(() {
           _isStartingOrResuming = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _confirmAndCancelClearance() async {
+    if (_isCancellingClearance) {
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel this clearance?'),
+        content: const Text(
+          'Only cancel if this clearance was created with the wrong program or year level. After cancelling, update your profile first, then start clearance again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Keep Clearance'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Cancel Clearance'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _isCancellingClearance = true;
+    });
+
+    try {
+      final payload = await _clearanceService.cancelCurrentClearance();
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _payload = payload;
+        _error = null;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Clearance cancelled. Update your profile if needed.'),
+        ),
+      );
+    } catch (error) {
+      if (await _handleSessionExpired(error)) {
+        return;
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_getErrorMessage(error))));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCancellingClearance = false;
         });
       }
     }
@@ -411,8 +483,12 @@ class _AppShellState extends State<AppShell> {
   }
 
   Future<bool> _updateAcademicProfile({
-    required int programId,
-    required int yearLevel,
+    required String firstName,
+    required String middleInitial,
+    required String lastName,
+    required String nameExtension,
+    required int? programId,
+    required int? yearLevel,
     required String dateOfBirth,
   }) async {
     if (_isUpdatingAcademicProfile) {
@@ -424,7 +500,11 @@ class _AppShellState extends State<AppShell> {
     });
 
     try {
-      final profile = await _authService.updateAcademicProfile(
+      final payload = await _authService.updateAcademicProfile(
+        firstName: firstName,
+        middleInitial: middleInitial,
+        lastName: lastName,
+        nameExtension: nameExtension,
         programId: programId,
         yearLevel: yearLevel,
         dateOfBirth: dateOfBirth,
@@ -435,7 +515,7 @@ class _AppShellState extends State<AppShell> {
       }
 
       final updatedPayload = Map<String, dynamic>.from(_payload ?? {});
-      updatedPayload['student'] = profile;
+      updatedPayload.addAll(payload);
 
       setState(() {
         _payload = updatedPayload;
@@ -628,10 +708,12 @@ class _AppShellState extends State<AppShell> {
           error: _error,
           isLoading: _isInitialLoading,
           isStartingOrResuming: _isStartingOrResuming,
+          isCancellingClearance: _isCancellingClearance,
           isDownloadingPdf: _isDownloadingPdf,
           resubmittingStepId: _resubmittingStepId,
           onRefresh: () => _loadClearance(mode: ShellLoadMode.refresh),
           onStartOrResume: _startOrResumeClearance,
+          onCancelClearance: _confirmAndCancelClearance,
           onResubmitStep: _resubmitStep,
           onDownloadPdf: _downloadPdf,
         );

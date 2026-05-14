@@ -338,7 +338,7 @@ class OfficeDashboardController extends Controller
             'processed_label' => $step->signed_at?->format('M d, Y h:i A') ?? 'Pending timestamp',
             'office_label' => $step->office_label ?: '-',
             'note_label' => $isRejected ? 'Reject Reason' : 'Processed Note',
-            'meta_note_label' => $isRejected ? 'Reject Reason' : 'Remarks',
+            'meta_note_label' => $isRejected ? 'Reject Reason' : 'Processed Note',
             'remarks' => $step->remarks ?: '-',
             'process_url' => route('office.steps.process', $step),
         ];

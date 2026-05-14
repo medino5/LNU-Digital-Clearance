@@ -111,6 +111,7 @@ class FakeClearanceService extends ClearanceService {
     this.loadError,
     this.historyError,
     this.startError,
+    this.cancelError,
     this.resubmitError,
     this.downloadError,
     this.downloadPath = '/tmp/student-clearance.pdf',
@@ -124,10 +125,12 @@ class FakeClearanceService extends ClearanceService {
   Object? loadError;
   Object? historyError;
   Object? startError;
+  Object? cancelError;
   Object? resubmitError;
   Object? downloadError;
   String downloadPath;
   int downloadCalls = 0;
+  int cancelCalls = 0;
 
   final List<Map<String, dynamic>> payloadQueue;
   int loadCalls = 0;
@@ -140,6 +143,19 @@ class FakeClearanceService extends ClearanceService {
     }
 
     return startOrResumePayload ?? currentPayload ?? const <String, dynamic>{};
+  }
+
+  @override
+  Future<Map<String, dynamic>> cancelCurrentClearance() async {
+    cancelCalls += 1;
+
+    if (cancelError != null) {
+      throw cancelError!;
+    }
+
+    return currentPayload == null
+        ? const <String, dynamic>{}
+        : {...currentPayload!, 'clearance': null};
   }
 
   @override

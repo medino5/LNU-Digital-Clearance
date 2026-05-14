@@ -48,6 +48,7 @@ class StudentClearancePayloadBuilder
                 'completed_at' => $clearance->completed_at?->toISOString(),
                 'pdf_available' => $clearance->status === Clearance::STATUS_COMPLETED
                     && filled($clearance->pdf_path),
+                'can_cancel' => $this->canCancelClearance($clearance, $steps),
                 'counts' => [
                     'total' => $steps->count(),
                     'approved' => $steps->where('status', 'approved')->count(),
@@ -80,5 +81,17 @@ class StudentClearancePayloadBuilder
                 })->values()->all(),
             ] : null,
         ];
+    }
+
+    private function canCancelClearance(Clearance $clearance, $steps): bool
+    {
+        if ($clearance->status !== Clearance::STATUS_IN_PROGRESS) {
+            return false;
+        }
+
+        return $steps->every(function ($step) {
+            return $step->status === 'awaiting_action'
+                && $step->events->every(fn ($event) => $event->action === 'generated');
+        });
     }
 }

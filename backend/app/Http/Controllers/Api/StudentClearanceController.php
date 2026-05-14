@@ -10,6 +10,7 @@ use App\Services\ClearancePdfService;
 use App\Services\ClearanceWorkflowService;
 use App\Support\StudentClearancePayloadBuilder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
@@ -131,6 +132,42 @@ class StudentClearanceController extends Controller
         );
     }
 
+    public function cancelCurrent(Request $request)
+    {
+        $student = $this->studentFromRequest($request);
+        $semester = $this->workflow->activeSemester();
+
+        $clearance = Clearance::with('steps.events')
+            ->where('student_id', $student->id)
+            ->where('semester_id', $semester->id)
+            ->first();
+
+        if (!$clearance) {
+            return response()->json([
+                'message' => 'No active clearance record found to cancel.',
+            ], 404);
+        }
+
+        if (!$this->canCancelClearance($clearance)) {
+            return response()->json([
+                'message' => 'This clearance can no longer be cancelled because an office has already acted on it.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($clearance) {
+            if ($clearance->pdf_path) {
+                Storage::disk('local')->delete($clearance->pdf_path);
+            }
+
+            $clearance->delete();
+        });
+
+        return response()->json([
+            'message' => 'Clearance cancelled. Update your profile if needed, then start again.',
+            ...$this->payloadBuilder->build($student->fresh(['user', 'program']), $semester, null),
+        ]);
+    }
+
     public function resubmit(Request $request, ClearanceStep $step)
     {
         $student = $this->studentFromRequest($request);
@@ -219,6 +256,18 @@ class StudentClearanceController extends Controller
         }
 
         return $clearance->pdf_path;
+    }
+
+    private function canCancelClearance(Clearance $clearance): bool
+    {
+        if ($clearance->status !== Clearance::STATUS_IN_PROGRESS) {
+            return false;
+        }
+
+        return $clearance->steps->every(function (ClearanceStep $step) {
+            return $step->status === ClearanceStep::STATUS_AWAITING_ACTION
+                && $step->events->every(fn ($event) => $event->action === 'generated');
+        });
     }
 
     protected function studentFromRequest(Request $request)
