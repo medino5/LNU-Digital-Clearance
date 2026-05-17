@@ -25,6 +25,8 @@ class StudentClearancePayloadBuilder
                 'date_of_birth' => $student->date_of_birth?->toDateString(),
                 'year_level' => $student->year_level,
                 'year_level_label' => $student->yearLevelLabel(),
+                'section' => $student->section,
+                'section_label' => $student->sectionLabel(),
                 'first_name' => $student->user->first_name,
                 'middle_initial' => $student->user->middle_initial,
                 'last_name' => $student->user->last_name,

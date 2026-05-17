@@ -9,6 +9,8 @@ Map<String, dynamic> buildTestPayload({
       'date_of_birth': '2005-03-14',
       'year_level': 3,
       'year_level_label': '3rd Year',
+      'section': '3-1',
+      'section_label': '3-1',
       'first_name': 'John',
       'middle_initial': 'A',
       'last_name': 'Doe',

@@ -282,7 +282,7 @@ class ClearanceWorkflowService
         string $action,
         ?string $remarks = null
     ): ClearanceStep {
-        $step->loadMissing('clearance', 'officeDesignation');
+        $step->loadMissing('clearance.steps', 'officeDesignation');
 
         if (! $actor->activeOfficeDesignations()
             ->where('office_designations.id', $step->office_designation_id)
@@ -293,6 +293,15 @@ class ClearanceWorkflowService
 
         if ($step->status !== ClearanceStep::STATUS_AWAITING_ACTION) {
             throw new RuntimeException('Only awaiting-action steps can be processed.');
+        }
+
+        if (
+            $step->officeDesignation?->office_type === OfficeDesignation::TYPE_VPSD
+            && $step->clearance->steps
+                ->where('id', '!=', $step->id)
+                ->contains(fn (ClearanceStep $otherStep) => $otherStep->status !== ClearanceStep::STATUS_APPROVED)
+        ) {
+            throw new RuntimeException('VPSD can only process a clearance after every other required office has approved it.');
         }
 
         DB::transaction(function () use ($step, $actor, $status, $action, $remarks) {

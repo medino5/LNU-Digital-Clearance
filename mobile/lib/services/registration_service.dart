@@ -39,21 +39,44 @@ class RegistrationYearLevel {
   }
 }
 
+class RegistrationSection {
+  const RegistrationSection({
+    required this.value,
+    required this.label,
+    required this.yearLevel,
+  });
+
+  final String value;
+  final String label;
+  final int yearLevel;
+
+  factory RegistrationSection.fromJson(Map<String, dynamic> json) {
+    return RegistrationSection(
+      value: json['value'] as String? ?? '',
+      label: json['label'] as String? ?? '',
+      yearLevel: json['year_level'] as int? ?? 0,
+    );
+  }
+}
+
 class RegistrationOptions {
   const RegistrationOptions({
     required this.programs,
     required this.yearLevels,
+    required this.sections,
     required this.nameExtensions,
   });
 
   final List<RegistrationProgram> programs;
   final List<RegistrationYearLevel> yearLevels;
+  final List<RegistrationSection> sections;
   final List<String> nameExtensions;
 
   factory RegistrationOptions.empty() {
     return const RegistrationOptions(
       programs: [],
       yearLevels: [],
+      sections: [],
       nameExtensions: [],
     );
   }
@@ -67,6 +90,10 @@ class RegistrationOptions {
         .whereType<Map>()
         .map((item) => RegistrationYearLevel.fromJson(item.cast()))
         .toList();
+    final sections = (json['sections'] as List? ?? [])
+        .whereType<Map>()
+        .map((item) => RegistrationSection.fromJson(item.cast()))
+        .toList();
     final nameExtensions = (json['name_extensions'] as List? ?? [])
         .map((item) => item.toString())
         .toList();
@@ -74,6 +101,7 @@ class RegistrationOptions {
     return RegistrationOptions(
       programs: programs,
       yearLevels: yearLevels,
+      sections: sections,
       nameExtensions: nameExtensions,
     );
   }
@@ -89,6 +117,7 @@ class RegistrationRequest {
     required this.email,
     required this.programId,
     required this.yearLevel,
+    required this.section,
     required this.dateOfBirth,
     required this.password,
     required this.passwordConfirmation,
@@ -102,6 +131,7 @@ class RegistrationRequest {
   final String email;
   final int programId;
   final int yearLevel;
+  final String section;
   final String dateOfBirth;
   final String password;
   final String passwordConfirmation;
@@ -116,6 +146,7 @@ class RegistrationRequest {
       'email': email.isEmpty ? null : email,
       'program_id': programId,
       'year_level': yearLevel,
+      'section': section,
       'date_of_birth': dateOfBirth,
       'password': password,
       'password_confirmation': passwordConfirmation,

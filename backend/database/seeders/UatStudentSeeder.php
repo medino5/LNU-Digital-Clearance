@@ -63,6 +63,7 @@ class UatStudentSeeder extends Seeder
                             'user_id' => $user->id,
                             'program_id' => $program->id,
                             'year_level' => $yearLevel,
+                            'section' => $this->sectionFor($yearLevel, $studentInYear),
                             'date_of_birth' => $this->dateOfBirthFor($studentNumber),
                         ]
                     );
@@ -135,5 +136,12 @@ class UatStudentSeeder extends Seeder
         $day = 1 + ($studentNumber % 28);
 
         return sprintf('%04d-%02d-%02d', $year, $month, $day);
+    }
+
+    protected function sectionFor(int $yearLevel, int $studentInYear): string
+    {
+        $sectionNumber = (($studentInYear - 1) % 6) + 1;
+
+        return $yearLevel . '-' . $sectionNumber;
     }
 }

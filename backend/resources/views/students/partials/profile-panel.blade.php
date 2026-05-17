@@ -17,7 +17,7 @@
             <div>
                 <div class="eyebrow">Student Profile</div>
                 <h1>{{ $student->displayName() }}</h1>
-                <p>{{ $student->student_id_number }} / {{ $student->program->code }} / {{ $student->yearLevelLabel() }}</p>
+                <p>{{ $student->student_id_number }} / {{ $student->program->code }} / {{ $student->yearLevelLabel() }} / {{ $student->sectionLabel() }}</p>
             </div>
         </div>
 
@@ -47,6 +47,10 @@
                 <div>
                     <dt>Year Level</dt>
                     <dd>{{ $student->yearLevelLabel() }}</dd>
+                </div>
+                <div>
+                    <dt>Section</dt>
+                    <dd>{{ $student->sectionLabel() }}</dd>
                 </div>
             </dl>
         </div>
@@ -166,5 +170,4 @@
         </div>
     </section>
 </article>
-
 

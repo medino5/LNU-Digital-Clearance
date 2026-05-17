@@ -9,7 +9,7 @@ import 'package:mobile/services/registration_service.dart';
 void main() {
   group('RegistrationService', () {
     test(
-      'loadOptions parses programs, year levels, and suffix choices',
+      'loadOptions parses programs, year levels, sections, and suffix choices',
       () async {
         final service = RegistrationService(
           apiClient: ApiClient(
@@ -29,6 +29,9 @@ void main() {
                   'year_levels': [
                     {'value': 1, 'label': '1st Year'},
                   ],
+                  'sections': [
+                    {'value': '1-1', 'label': '1-1', 'year_level': 1},
+                  ],
                   'name_extensions': ['Jr'],
                 }),
                 200,
@@ -46,6 +49,7 @@ void main() {
           contains('Technology'),
         );
         expect(options.yearLevels.single.label, '1st Year');
+        expect(options.sections.single.value, '1-1');
         expect(options.nameExtensions.single, 'Jr');
       },
     );
@@ -62,6 +66,7 @@ void main() {
             expect(payload['middle_initial'], 'ñ');
             expect(payload['program_id'], 7);
             expect(payload['year_level'], 2);
+            expect(payload['section'], '2-1');
             expect(payload['date_of_birth'], '2005-05-21');
 
             return http.Response(
@@ -86,6 +91,7 @@ void main() {
           email: '',
           programId: 7,
           yearLevel: 2,
+          section: '2-1',
           dateOfBirth: '2005-05-21',
           password: 'password',
           passwordConfirmation: 'password',
@@ -127,6 +133,7 @@ void main() {
             email: '',
             programId: 1,
             yearLevel: 1,
+            section: '1-1',
             dateOfBirth: '2005-05-21',
             password: 'password',
             passwordConfirmation: 'password',

@@ -21,6 +21,7 @@ class StudentFactory extends Factory
             'student_id_number' => (string) fake()->unique()->numberBetween(1000000, 9999999),
             'program_id' => Program::factory(),
             'year_level' => fake()->numberBetween(1, 4),
+            'section' => null,
             'date_of_birth' => fake()->dateTimeBetween('-25 years', '-16 years')->format('Y-m-d'),
         ];
     }

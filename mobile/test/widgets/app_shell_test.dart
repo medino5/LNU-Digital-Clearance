@@ -206,6 +206,7 @@ void main() {
                     required nameExtension,
                     required programId,
                     required yearLevel,
+                    required section,
                     required dateOfBirth,
                   }) async => true,
               onLogout: () async {

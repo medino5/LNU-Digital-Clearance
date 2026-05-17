@@ -172,11 +172,14 @@ class StudentAuthController extends Controller
             'name_extension' => ['nullable', Rule::in(User::studentNameExtensionOptions())],
             'program_id' => ['sometimes', 'required', 'integer', 'exists:programs,id'],
             'year_level' => ['sometimes', 'required', 'integer', 'between:1,4'],
+            'section' => ['sometimes', 'required', 'string', 'regex:/^[1-4]-[1-6]$/'],
             'date_of_birth' => ['sometimes', 'required', 'date_format:Y-m-d', 'before_or_equal:today', 'after_or_equal:1900-01-01'],
         ], [
             'program_id.required' => 'Choose a program.',
             'year_level.required' => 'Choose a year level.',
             'year_level.between' => 'Year level must be from 1st to 4th year.',
+            'section.required' => 'Choose a section.',
+            'section.regex' => 'Section must use the year-section format, for example 3-2.',
             'middle_initial.regex' => 'Middle initial must be one letter.',
             'date_of_birth.required' => 'Birthday is required.',
             'date_of_birth.date_format' => 'Birthday must use the YYYY-MM-DD format.',
@@ -186,8 +189,10 @@ class StudentAuthController extends Controller
 
         $programId = array_key_exists('program_id', $data) ? (int) $data['program_id'] : (int) $student->program_id;
         $yearLevel = array_key_exists('year_level', $data) ? (int) $data['year_level'] : (int) $student->year_level;
+        $section = array_key_exists('section', $data) ? $data['section'] : $student->section;
         $academicRoutingChanged = $programId !== (int) $student->program_id
-            || $yearLevel !== (int) $student->year_level;
+            || $yearLevel !== (int) $student->year_level
+            || $section !== $student->section;
 
         if (
             $academicRoutingChanged
@@ -195,7 +200,7 @@ class StudentAuthController extends Controller
             && $activeClearance->status !== Clearance::STATUS_COMPLETED
         ) {
             throw ValidationException::withMessages([
-                'program_id' => ['Program and year level can only be edited before starting clearance or after completing the current clearance.'],
+                'program_id' => ['Program, year level, and section can only be edited before starting clearance or after completing the current clearance.'],
             ]);
         }
 
@@ -234,6 +239,7 @@ class StudentAuthController extends Controller
         $student->update([
             'program_id' => $programId,
             'year_level' => $yearLevel,
+            'section' => $section,
             'date_of_birth' => $data['date_of_birth'] ?? $student->date_of_birth,
         ]);
 

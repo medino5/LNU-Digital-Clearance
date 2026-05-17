@@ -102,9 +102,76 @@
                         <div>
                             <div class="eyebrow">Active Queue</div>
                             <h2>Clearance steps awaiting your action</h2>
-                            <p class="muted">Only students routed to your current designation appear here.</p>
+                            <p class="muted">Only students ready for your current designation appear here. VPSD receives students after every other office signs.</p>
                         </div>
                     </div>
+
+                    <form method="GET" action="{{ route('office.dashboard') }}" class="office-queue-filter">
+                        <input type="hidden" name="tab" value="active">
+
+                        <label>
+                            <span>Find</span>
+                            <input
+                                type="search"
+                                name="pending_search"
+                                value="{{ $pendingSearch }}"
+                                placeholder="Name, student ID, program"
+                                maxlength="120"
+                            >
+                        </label>
+
+                        <label>
+                            <span>Program</span>
+                            <select name="pending_program">
+                                <option value="">All programs</option>
+                                @foreach($programOptions as $program)
+                                    <option value="{{ $program->id }}" @selected((int) $pendingProgram === (int) $program->id)>
+                                        {{ $program->code }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </label>
+
+                        <label>
+                            <span>Year Level</span>
+                            <select name="pending_year">
+                                <option value="">All years</option>
+                                @foreach($yearLevelOptions as $yearValue => $yearLabel)
+                                    <option value="{{ $yearValue }}" @selected((int) $pendingYear === (int) $yearValue)>
+                                        {{ $yearLabel }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </label>
+
+                        <label>
+                            <span>Section</span>
+                            <select name="pending_section">
+                                <option value="">All sections</option>
+                                @foreach($sectionOptions as $section)
+                                    <option value="{{ $section }}" @selected((string) $pendingSection === (string) $section)>
+                                        {{ $section }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </label>
+
+                        <label>
+                            <span>Sort</span>
+                            <select name="pending_sort">
+                                <option value="waiting_desc" @selected($pendingSort === 'waiting_desc')>Newest waiting</option>
+                                <option value="waiting_asc" @selected($pendingSort === 'waiting_asc')>Oldest waiting</option>
+                                <option value="student_asc" @selected($pendingSort === 'student_asc')>Student name</option>
+                                <option value="student_id_asc" @selected($pendingSort === 'student_id_asc')>Student ID</option>
+                                <option value="program_asc" @selected($pendingSort === 'program_asc')>Program</option>
+                                <option value="year_asc" @selected($pendingSort === 'year_asc')>Year level</option>
+                                <option value="section_asc" @selected($pendingSort === 'section_asc')>Section</option>
+                            </select>
+                        </label>
+
+                        <button type="submit">Apply</button>
+                        <a href="{{ route('office.dashboard', ['tab' => 'active']) }}" class="button ghost">Reset</a>
+                    </form>
 
                     <div class="list office-list">
                         @forelse($pendingSteps as $step)
@@ -114,8 +181,14 @@
                                 $studentId = $student?->student_id_number ?: 'No ID';
                                 $programCode = $student?->program?->code ?: 'No program';
                                 $yearLevel = $student?->yearLevelLabel() ?: 'No year level';
-                                $studentMeta = $studentId . ' | ' . $programCode . ' | ' . $yearLevel;
+                                $section = $student?->sectionLabel() ?: 'No section';
+                                $studentMeta = $studentId . ' | ' . $programCode . ' | ' . $yearLevel . ' | ' . $section;
                                 $studentPhoto = $student?->user?->profilePhotoUrl();
+                                $clearanceSteps = $step->clearance?->steps ?? collect();
+                                $totalSteps = $clearanceSteps->count();
+                                $approvedSteps = $clearanceSteps->where('status', \App\Models\ClearanceStep::STATUS_APPROVED)->count();
+                                $waitingSteps = $clearanceSteps->where('status', \App\Models\ClearanceStep::STATUS_AWAITING_ACTION)->count();
+                                $progressPercent = $totalSteps > 0 ? (int) floor(($approvedSteps / $totalSteps) * 100) : 0;
                             @endphp
 
                             <div class="record office-record pending-record">
@@ -174,6 +247,19 @@
                                 </div>
 
                                 <div class="record-meta">
+                                    <div
+                                        class="clearance-mini-progress"
+                                        title="{{ $approvedSteps }} approved, {{ $waitingSteps }} waiting, {{ $totalSteps }} total offices"
+                                    >
+                                        <div class="clearance-mini-progress-top">
+                                            <strong>Progress</strong>
+                                            <span>{{ $approvedSteps }}/{{ $totalSteps }} signed</span>
+                                        </div>
+                                        <div class="clearance-mini-progress-track" aria-hidden="true">
+                                            <span style="width: {{ $progressPercent }}%"></span>
+                                        </div>
+                                    </div>
+
                                     <p class="mini">
                                         <strong>Designation:</strong>
                                         {{ $step->office_label ?: '-' }}
@@ -198,9 +284,21 @@
                     </div>
 
                     @if(method_exists($pendingSteps, 'hasPages') && $pendingSteps->hasPages())
-                        <div class="pagination-wrapper">
-                            {{ $pendingSteps->links('pagination::bootstrap-5') }}
-                        </div>
+                        <nav class="pagination-wrapper office-simple-pagination" aria-label="Active queue pagination">
+                            @if($pendingSteps->onFirstPage())
+                                <span class="button ghost is-disabled" aria-disabled="true">Previous</span>
+                            @else
+                                <a class="button ghost" href="{{ $pendingSteps->previousPageUrl() }}">Previous</a>
+                            @endif
+
+                            <span class="office-page-indicator">Page {{ $pendingSteps->currentPage() }}</span>
+
+                            @if($pendingSteps->hasMorePages())
+                                <a class="button ghost" href="{{ $pendingSteps->nextPageUrl() }}">Next</a>
+                            @else
+                                <span class="button ghost is-disabled" aria-disabled="true">Next</span>
+                            @endif
+                        </nav>
                     @endif
                 </section>
             @else
@@ -573,6 +671,15 @@
         .office-modal-close {
             display: none !important;
         }
+
+        /* Office dashboard 60/30/10 balance: warm surface, navy structure, gold accent. */
+        :root {
+            --office-major: #F7F5EF;
+            --office-secondary: #0E2A47;
+            --office-accent: #D4A53A;
+            --office-surface: #FFFFFF;
+            --office-line: #E7E3D8;
+        }
         
         .topbar {
             margin: -28px -32px 0;
@@ -589,11 +696,22 @@
             color: white;
         }
 
+        .topbar h1,
+        .topbar p,
+        .topbar .eyebrow {
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+        }
+
+        .topbar p {
+            color: rgba(255, 255, 255, 0.84);
+        }
+
         .office-dashboard {
-            gap: 24px;
+            gap: 18px;
             width: 100%;
             margin: 0;
-            padding: 28px 32px 40px;
+            padding: 24px 30px 36px;
             background: transparent;
             border-radius: 0;
         }
@@ -601,11 +719,11 @@
         .office-tabs {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
-            padding: 8px;
-            border: 1px solid #ded5c8;
-            border-radius: 22px;
-            background: #f2ece2;
+            gap: 8px;
+            padding: 6px;
+            border: 1px solid var(--office-line);
+            border-radius: 18px;
+            background: rgba(14, 42, 71, 0.06);
         }
 
         .office-tab {
@@ -613,8 +731,8 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            padding: 12px 18px;
-            border-radius: 16px;
+            padding: 10px 16px;
+            border-radius: 14px;
             color: var(--navy);
             font-weight: 800;
             text-decoration: none;
@@ -631,8 +749,14 @@
         }
 
         .office-tab.active {
-            background: white;
-            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+            background: var(--office-secondary);
+            color: white;
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+        }
+
+        .office-tab.active span {
+            background: rgba(212, 165, 58, 0.22);
+            color: #fff4cc;
         }
 
         .office-panel {
@@ -661,53 +785,62 @@
             gap: 14px;
         }
 
-        .office-archive-filter {
+        .office-archive-filter,
+        .office-queue-filter {
             display: grid;
-            grid-template-columns: minmax(220px, 1fr) minmax(150px, 180px) minmax(170px, 210px) auto auto;
-            gap: 12px;
+            grid-template-columns: minmax(200px, 1fr) repeat(4, minmax(110px, 150px)) auto auto;
+            gap: 10px;
             align-items: end;
             margin: 0 0 18px;
-            padding: 16px;
-            border: 1px solid #ded5c8;
-            border-radius: 20px;
-            background: #f8f7f3;
+            padding: 12px;
+            border: 1px solid var(--office-line);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.72);
         }
 
-        .office-archive-filter label {
+        .office-archive-filter {
+            grid-template-columns: minmax(220px, 1fr) minmax(150px, 180px) minmax(170px, 210px) auto auto;
+        }
+
+        .office-archive-filter label,
+        .office-queue-filter label {
             display: grid;
             gap: 6px;
             font-weight: 700;
             color: var(--navy-deep);
         }
 
-        .office-archive-filter span {
+        .office-archive-filter span,
+        .office-queue-filter span {
             font-size: 0.82rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
 
         .office-archive-filter input,
-        .office-archive-filter select {
+        .office-archive-filter select,
+        .office-queue-filter input,
+        .office-queue-filter select {
             width: 100%;
-            min-height: 42px;
-            border: 1px solid #d6ccbd;
+            min-height: 38px;
+            border: 1px solid var(--office-line);
             border-radius: 12px;
-            padding: 10px 12px;
+            padding: 8px 11px;
             background: white;
         }
 
         .office-record {
-            border-radius: 18px;
-            padding: 18px;
-            border: 1px solid #ddd3c4;
-            background: #f8f7f3;
+            border-radius: 16px;
+            padding: 14px 16px;
+            border: 1px solid var(--office-line);
+            background: rgba(255, 255, 255, 0.78);
             box-shadow: none;
             transition: border-color 0.15s ease, background 0.15s ease;
         }
 
         .office-record:hover {
-            border-color: #cdbb9c;
-            background: #fcfbf7;
+            border-color: rgba(212, 165, 58, 0.62);
+            background: var(--office-surface);
             transform: none;
             box-shadow: none;
         }
@@ -716,13 +849,13 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            gap: 16px;
+            gap: 14px;
         }
 
         .record-name {
             display: block;
-            font-size: 1.08rem;
-            margin-bottom: 4px;
+            font-size: 1rem;
+            margin-bottom: 3px;
             color: var(--navy-deep);
             overflow-wrap: anywhere;
         }
@@ -739,9 +872,9 @@
         }
 
         .office-student-avatar {
-            width: 48px;
-            height: 48px;
-            flex: 0 0 48px;
+            width: 42px;
+            height: 42px;
+            flex: 0 0 42px;
             border-radius: 999px;
             display: grid;
             place-items: center;
@@ -763,28 +896,62 @@
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            gap: 10px;
+            gap: 8px;
             flex-shrink: 0;
         }
 
         .office-action-buttons {
             display: flex;
-            gap: 8px;
+            gap: 7px;
             flex-wrap: wrap;
             justify-content: flex-end;
         }
 
         .record-meta {
-            margin-top: 14px;
-            padding-top: 14px;
-            border-top: 1px solid #d9d1c4;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--office-line);
             display: grid;
-            gap: 8px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px 14px;
         }
 
         .record-meta p {
             margin: 0;
             overflow-wrap: anywhere;
+        }
+
+        .clearance-mini-progress {
+            grid-column: 1 / -1;
+            display: grid;
+            gap: 6px;
+        }
+
+        .clearance-mini-progress-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        .clearance-mini-progress-top strong {
+            color: var(--navy-deep);
+        }
+
+        .clearance-mini-progress-track {
+            height: 7px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(14, 42, 71, 0.1);
+        }
+
+        .clearance-mini-progress-track span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--office-accent), #f0cf73);
         }
 
         .button.ghost,
@@ -1213,12 +1380,17 @@
         }
 
         @media (max-width: 980px) {
-            .office-archive-filter {
+            .office-archive-filter,
+            .office-queue-filter {
                 grid-template-columns: 1fr;
             }
 
             .office-section-header {
                 flex-direction: column;
+            }
+
+            .record-meta {
+                grid-template-columns: 1fr;
             }
         }
 

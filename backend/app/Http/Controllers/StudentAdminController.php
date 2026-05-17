@@ -18,13 +18,16 @@ class StudentAdminController extends Controller
             'student_search' => ['nullable', 'string', 'max:80'],
             'student_program' => ['nullable', 'integer', 'exists:programs,id'],
             'student_year_level' => ['nullable', 'integer', 'between:1,4'],
+            'student_section' => ['nullable', 'regex:/^[1-4]-[1-6]$/'],
         ], [
             'student_search.max' => 'Search text must be 80 characters or fewer.',
+            'student_section.regex' => 'Section must use the year-section format, for example 3-2.',
         ]);
 
         $studentSearch = trim((string) $request->query('student_search', ''));
         $studentProgramId = $request->query('student_program');
         $studentYearLevel = $request->query('student_year_level');
+        $studentSection = $this->normalizeSection($request->query('student_section'));
 
         $studentsQuery = Student::query()
             ->with(['user', 'program'])
@@ -38,6 +41,7 @@ class StudentAdminController extends Controller
 
             $studentsQuery->where(function ($query) use ($studentSearchLike, $fullNameExpressions) {
                 $query->where('students.student_id_number', 'like', $studentSearchLike)
+                    ->orWhere('students.section', 'like', $studentSearchLike)
                     ->orWhere('users.first_name', 'like', $studentSearchLike)
                     ->orWhere('users.last_name', 'like', $studentSearchLike)
                     ->orWhere('users.middle_initial', 'like', $studentSearchLike);
@@ -56,6 +60,10 @@ class StudentAdminController extends Controller
             $studentsQuery->where('students.year_level', $studentYearLevel);
         }
 
+        if ($studentSection !== null) {
+            $studentsQuery->where('students.section', $studentSection);
+        }
+
         $students = $studentsQuery
             ->orderBy('students.student_id_number')
             ->paginate(25)
@@ -65,10 +73,12 @@ class StudentAdminController extends Controller
             'programs' => \App\Models\Program::orderBy('code')->get(),
             'students' => $students,
             'yearLevels' => [1, 2, 3, 4],
+            'sectionOptions' => $this->sectionOptions(),
             'studentNameExtensions' => User::studentNameExtensionOptions(),
             'studentSearch' => $studentSearch,
             'studentProgramId' => $studentProgramId,
             'studentYearLevel' => $studentYearLevel,
+            'studentSection' => $studentSection,
             'hasStudents' => $students->total() > 0,
         ]);
     }
@@ -88,6 +98,7 @@ class StudentAdminController extends Controller
                 'name_extension' => ['nullable', Rule::in(User::studentNameExtensionOptions())],
                 'program_id' => ['required', 'exists:programs,id'],
                 'year_level' => ['required', 'integer', 'between:1,4'],
+                'section' => $this->sectionRules(),
                 'date_of_birth' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today', 'after_or_equal:1900-01-01'],
                 'password' => ['required', 'string', 'min:8', 'max:72'],
             ],
@@ -122,6 +133,7 @@ class StudentAdminController extends Controller
                 'student_id_number' => $data['student_id_number'],
                 'program_id' => $data['program_id'],
                 'year_level' => $data['year_level'],
+                'section' => $this->normalizeSection($data['section'] ?? null),
                 'date_of_birth' => $data['date_of_birth'] ?? $this->fallbackDateOfBirthFor($data['student_id_number']),
             ]);
         });
@@ -148,6 +160,7 @@ class StudentAdminController extends Controller
                 'name_extension' => ['nullable', Rule::in(User::studentNameExtensionOptions())],
                 'program_id' => ['required', 'exists:programs,id'],
                 'year_level' => ['required', 'integer', 'between:1,4'],
+                'section' => $this->sectionRules(),
                 'date_of_birth' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today', 'after_or_equal:1900-01-01'],
                 'password' => ['nullable', 'string', 'min:8', 'max:72'],
             ],
@@ -182,6 +195,7 @@ class StudentAdminController extends Controller
                 'student_id_number' => $data['student_id_number'],
                 'program_id' => $data['program_id'],
                 'year_level' => $data['year_level'],
+                'section' => $this->normalizeSection($data['section'] ?? null),
                 'date_of_birth' => $data['date_of_birth'] ?? $this->fallbackDateOfBirthFor($data['student_id_number']),
             ]);
         });
@@ -279,6 +293,7 @@ class StudentAdminController extends Controller
             'first_name.max' => 'First name must be 60 characters or fewer.',
             'last_name.max' => 'Last name must be 60 characters or fewer.',
             'middle_initial.regex' => 'Middle initial must be one letter.',
+            'section.regex' => 'Section must use the year-section format, for example 3-2.',
             'date_of_birth.date_format' => 'Birthday must use the YYYY-MM-DD format.',
             'date_of_birth.before_or_equal' => 'Birthday cannot be in the future.',
             'date_of_birth.after_or_equal' => 'Birthday is outside the supported range.',
@@ -295,6 +310,37 @@ class StudentAdminController extends Controller
         $day = 1 + ($number % 28);
 
         return sprintf('%04d-%02d-%02d', $year, $month, $day);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function sectionRules(): array
+    {
+        return ['nullable', 'string', 'regex:/^[1-4]-[1-6]$/'];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function sectionOptions(): array
+    {
+        $sections = [];
+
+        foreach ([1, 2, 3, 4] as $yearLevel) {
+            foreach ([1, 2, 3, 4, 5, 6] as $sectionNumber) {
+                $sections[] = $yearLevel . '-' . $sectionNumber;
+            }
+        }
+
+        return $sections;
+    }
+
+    protected function normalizeSection(mixed $value): ?string
+    {
+        $section = trim((string) ($value ?? ''));
+
+        return $section === '' ? null : $section;
     }
 
     /**

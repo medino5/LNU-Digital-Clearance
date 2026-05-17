@@ -40,6 +40,7 @@ class StudentClearancePayloadBuilderTest extends TestCase
         $student = Student::factory()->for($user, 'user')->for($program, 'program')->create([
             'student_id_number' => '2302314',
             'year_level' => 3,
+            'section' => '3-1',
             'date_of_birth' => '2005-03-14',
         ]);
 
@@ -109,6 +110,7 @@ class StudentClearancePayloadBuilderTest extends TestCase
         $this->assertSame('Doe', $payload['student']['last_name']);
         $this->assertNull($payload['student']['name_extension']);
         $this->assertSame('2005-03-14', $payload['student']['date_of_birth']);
+        $this->assertSame('3-1', $payload['student']['section']);
         $this->assertSame('BSIT', $payload['student']['program']['code']);
         $this->assertSame('2nd Semester 2024-2025', $payload['active_semester']['label']);
         $this->assertSame(Clearance::STATUS_FLAGGED, $payload['clearance']['status']);

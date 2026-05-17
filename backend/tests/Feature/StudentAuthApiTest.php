@@ -64,6 +64,7 @@ class StudentAuthApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('programs.0.code', 'AS')
             ->assertJsonFragment(['label' => '1st Year'])
+            ->assertJsonFragment(['value' => '1-1', 'label' => '1-1', 'year_level' => 1])
             ->assertJsonPath('name_extensions.0', 'Jr');
     }
 
@@ -79,6 +80,7 @@ class StudentAuthApiTest extends TestCase
             'name_extension' => 'Jr',
             'program_id' => $program->id,
             'year_level' => 2,
+            'section' => '2-1',
             'date_of_birth' => '2005-05-21',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -126,6 +128,7 @@ class StudentAuthApiTest extends TestCase
             'email' => 'ana.santos@lnu.edu.ph',
             'program_id' => $program->id,
             'year_level' => 3,
+            'section' => '3-2',
             'date_of_birth' => '2004-08-12',
             'password' => Hash::make('password'),
             'status' => StudentRegistrationRequest::STATUS_PENDING,
@@ -145,6 +148,7 @@ class StudentAuthApiTest extends TestCase
             'student_id_number' => '2408888',
             'program_id' => $program->id,
             'year_level' => 3,
+            'section' => '3-2',
         ]);
 
         $this->assertSame(
@@ -203,6 +207,7 @@ class StudentAuthApiTest extends TestCase
             'last_name' => 'Reyes',
             'program_id' => $program->id,
             'year_level' => 1,
+            'section' => '1-1',
             'date_of_birth' => '2006-01-30',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -224,6 +229,7 @@ class StudentAuthApiTest extends TestCase
             'email' => 'bad@example.com',
             'program_id' => $program->id,
             'year_level' => 5,
+            'section' => '9-9',
             'date_of_birth' => now()->addDay()->format('Y-m-d'),
             'password' => 'password',
             'password_confirmation' => 'different',
@@ -235,6 +241,7 @@ class StudentAuthApiTest extends TestCase
                 'middle_initial',
                 'email',
                 'year_level',
+                'section',
                 'date_of_birth',
                 'password',
             ]);
@@ -373,17 +380,20 @@ class StudentAuthApiTest extends TestCase
         $this->patchJson('/api/me/academic-profile', [
             'program_id' => $program->id,
             'year_level' => 4,
+            'section' => '4-2',
             'date_of_birth' => '2004-04-22',
         ])
             ->assertOk()
             ->assertJsonPath('profile.program.code', 'BAEL')
             ->assertJsonPath('profile.year_level', 4)
+            ->assertJsonPath('profile.section', '4-2')
             ->assertJsonPath('profile.date_of_birth', '2004-04-22');
 
         $student->refresh();
 
         $this->assertSame($program->id, $student->program_id);
         $this->assertSame(4, $student->year_level);
+        $this->assertSame('4-2', $student->section);
         $this->assertSame('2004-04-22', $student->date_of_birth->toDateString());
     }
 
@@ -428,6 +438,7 @@ class StudentAuthApiTest extends TestCase
         $this->patchJson('/api/me/academic-profile', [
             'program_id' => $program->id,
             'year_level' => 4,
+            'section' => '4-1',
             'date_of_birth' => '2004-04-22',
         ])
             ->assertUnprocessable()
@@ -437,6 +448,7 @@ class StudentAuthApiTest extends TestCase
             'id' => $student->id,
             'program_id' => $student->program_id,
             'year_level' => $student->year_level,
+            'section' => $student->section,
         ]);
     }
 
@@ -454,11 +466,13 @@ class StudentAuthApiTest extends TestCase
         $this->patchJson('/api/me/academic-profile', [
             'program_id' => $program->id,
             'year_level' => 2,
+            'section' => '2-3',
             'date_of_birth' => '2005-01-12',
         ])
             ->assertOk()
             ->assertJsonPath('profile.program.code', 'BAEL')
-            ->assertJsonPath('profile.year_level', 2);
+            ->assertJsonPath('profile.year_level', 2)
+            ->assertJsonPath('profile.section', '2-3');
     }
 
     public function test_new_clearance_routes_against_updated_program_and_year_level(): void
@@ -470,6 +484,7 @@ class StudentAuthApiTest extends TestCase
         $this->patchJson('/api/me/academic-profile', [
             'program_id' => $program->id,
             'year_level' => 4,
+            'section' => '4-4',
             'date_of_birth' => '2004-04-22',
         ])->assertOk();
 

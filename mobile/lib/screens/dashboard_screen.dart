@@ -95,6 +95,7 @@ class DashboardScreen extends StatelessWidget {
               programCode: _program?['code'] as String?,
               programName: _program?['name'] as String?,
               yearLevelLabel: _student?['year_level_label'] as String?,
+              sectionLabel: _student?['section_label'] as String?,
               isBusy: isStartingOrResuming,
               onPressed: onStartOrResume,
             )
@@ -188,6 +189,7 @@ class _StartClearanceCard extends StatelessWidget {
     required this.programCode,
     required this.programName,
     required this.yearLevelLabel,
+    required this.sectionLabel,
     required this.isBusy,
     required this.onPressed,
   });
@@ -196,6 +198,7 @@ class _StartClearanceCard extends StatelessWidget {
   final String? programCode;
   final String? programName;
   final String? yearLevelLabel;
+  final String? sectionLabel;
   final bool isBusy;
   final Future<void> Function() onPressed;
 
@@ -274,9 +277,17 @@ class _StartClearanceCard extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  'Section: ${(sectionLabel?.isNotEmpty ?? false) ? sectionLabel : 'Not set'}',
+                  style: const TextStyle(
+                    color: _navy,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Text(
-                  'If either detail is wrong, open Profile and update it first. These details decide which signers receive your clearance.',
+                  'If any detail is wrong, open Profile and update it first. Program and year level decide routing, while section helps offices filter your request.',
                   style: TextStyle(color: Colors.grey.shade800, height: 1.4),
                 ),
               ],
@@ -319,7 +330,7 @@ class _StartClearanceCard extends StatelessWidget {
       builder: (context) => AlertDialog(
         title: const Text('Start clearance now?'),
         content: const Text(
-          'Make sure your program and year level are correct before starting. The system will route your clearance based on those details.',
+          'Make sure your program, year level, and section are correct before starting. Program and year level control routing; section helps offices find your request faster.',
         ),
         actions: [
           TextButton(
