@@ -30,6 +30,12 @@ class StudentRegistrationController extends Controller
                     'value' => $yearLevel,
                     'label' => $this->yearLevelLabel($yearLevel),
                 ]),
+            'sections' => collect($this->sectionOptions())
+                ->map(fn (string $section) => [
+                    'value' => $section,
+                    'label' => $section,
+                    'year_level' => (int) substr($section, 0, 1),
+                ]),
             'name_extensions' => User::studentNameExtensionOptions(),
         ]);
     }
@@ -46,6 +52,9 @@ class StudentRegistrationController extends Controller
                 : null,
             'email' => filled($request->input('email'))
                 ? strtolower(trim((string) $request->input('email')))
+                : null,
+            'section' => filled($request->input('section'))
+                ? trim((string) $request->input('section'))
                 : null,
         ]);
 
@@ -68,6 +77,7 @@ class StudentRegistrationController extends Controller
                 ],
                 'program_id' => ['required', 'integer', 'exists:programs,id'],
                 'year_level' => ['required', 'integer', 'between:1,4'],
+                'section' => ['required', 'string', 'regex:/^[1-4]-[1-6]$/'],
                 'date_of_birth' => ['required', 'date_format:Y-m-d', 'before_or_equal:today', 'after_or_equal:1900-01-01'],
                 'password' => ['required', 'string', 'min:8', 'max:72', 'confirmed'],
             ],
@@ -76,6 +86,8 @@ class StudentRegistrationController extends Controller
                 'student_id_number.size' => 'Student ID must be exactly 7 digits.',
                 'middle_initial.regex' => 'Middle initial must be one letter.',
                 'email.ends_with' => 'Use your LNU institutional email ending in @lnu.edu.ph.',
+                'section.required' => 'Choose your section.',
+                'section.regex' => 'Section must use the year-section format, for example 3-2.',
                 'date_of_birth.required' => 'Birthday is required.',
                 'date_of_birth.date_format' => 'Birthday must use the YYYY-MM-DD format.',
                 'date_of_birth.before_or_equal' => 'Birthday cannot be in the future.',
@@ -100,6 +112,7 @@ class StudentRegistrationController extends Controller
             'email' => filled($data['email'] ?? null) ? strtolower($data['email']) : null,
             'program_id' => $data['program_id'],
             'year_level' => $data['year_level'],
+            'section' => $data['section'],
             'date_of_birth' => $data['date_of_birth'],
             'password' => Hash::make($data['password']),
             'status' => StudentRegistrationRequest::STATUS_PENDING,
@@ -120,6 +133,8 @@ class StudentRegistrationController extends Controller
                 ],
                 'year_level' => $registrationRequest->year_level,
                 'year_level_label' => $registrationRequest->yearLevelLabel(),
+                'section' => $registrationRequest->section,
+                'section_label' => $registrationRequest->sectionLabel(),
                 'date_of_birth' => $registrationRequest->date_of_birth?->toDateString(),
             ],
         ], 202);
@@ -185,5 +200,21 @@ class StudentRegistrationController extends Controller
             4 => '4th Year',
             default => $yearLevel . 'th Year',
         };
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function sectionOptions(): array
+    {
+        $sections = [];
+
+        foreach ([1, 2, 3, 4] as $yearLevel) {
+            foreach ([1, 2, 3, 4, 5, 6] as $sectionNumber) {
+                $sections[] = $yearLevel . '-' . $sectionNumber;
+            }
+        }
+
+        return $sections;
     }
 }

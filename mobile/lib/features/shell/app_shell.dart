@@ -489,6 +489,7 @@ class _AppShellState extends State<AppShell> {
     required String nameExtension,
     required int? programId,
     required int? yearLevel,
+    required String? section,
     required String dateOfBirth,
   }) async {
     if (_isUpdatingAcademicProfile) {
@@ -507,6 +508,7 @@ class _AppShellState extends State<AppShell> {
         nameExtension: nameExtension,
         programId: programId,
         yearLevel: yearLevel,
+        section: section,
         dateOfBirth: dateOfBirth,
       );
 

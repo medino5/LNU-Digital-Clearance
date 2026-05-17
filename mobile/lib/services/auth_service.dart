@@ -190,6 +190,7 @@ class AuthService {
     required String nameExtension,
     required int? programId,
     required int? yearLevel,
+    required String? section,
     required String dateOfBirth,
   }) async {
     final token = await getToken();
@@ -216,6 +217,10 @@ class AuthService {
 
     if (yearLevel != null) {
       body['year_level'] = yearLevel;
+    }
+
+    if (section != null) {
+      body['section'] = section;
     }
 
     final response = await _apiClient.patch(

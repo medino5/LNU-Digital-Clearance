@@ -200,6 +200,7 @@ class CoreSystemSeeder extends Seeder
                 'student_id_number' => '2302314',
                 'program_id' => $programModels['BSIT']->id,
                 'year_level' => 3,
+                'section' => '3-1',
                 'date_of_birth' => '2005-03-14',
             ]
         );

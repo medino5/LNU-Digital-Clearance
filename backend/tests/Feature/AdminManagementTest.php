@@ -551,7 +551,8 @@ class AdminManagementTest extends TestCase
             $response->assertOk()
                 ->assertSee('DIGITAL CLEARANCE')
                 ->assertSee('Log Out')
-                ->assertSee('href="' . $url . '" class="nav-item active">' . $label, false);
+                ->assertSee('href="' . $url . '" class="nav-item active"', false)
+                ->assertSee($label);
 
             $this->assertSame(
                 1,

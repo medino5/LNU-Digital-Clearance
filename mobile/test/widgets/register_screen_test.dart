@@ -25,6 +25,7 @@ void main() {
       expect(find.text('Birthday'), findsOneWidget);
       expect(find.text('Academic Profile'), findsOneWidget);
       expect(find.text('Program'), findsOneWidget);
+      expect(find.text('Section'), findsOneWidget);
       expect(find.text('Already have an account? Sign In'), findsOneWidget);
     });
 
@@ -89,6 +90,16 @@ void main() {
       await tester.tap(find.text('2nd Year').last);
       await tester.pumpAndSettle();
 
+      final sectionDropdown = find.byKey(
+        const Key('registration-section-dropdown'),
+      );
+      await tester.ensureVisible(sectionDropdown);
+      await tester.pumpAndSettle();
+      await tester.tap(sectionDropdown);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('2-1').last);
+      await tester.pumpAndSettle();
+
       await tester.enterText(find.byType(TextFormField).at(4), 'password');
       await tester.enterText(find.byType(TextFormField).at(5), 'password');
       tester.testTextInput.hide();
@@ -113,6 +124,7 @@ void main() {
       expect(registrationService.lastRequest?.middleInitial, 'ñ');
       expect(registrationService.lastRequest?.programId, 1);
       expect(registrationService.lastRequest?.yearLevel, 2);
+      expect(registrationService.lastRequest?.section, '2-1');
       final expectedBirthYear = DateTime.now().year - 12;
       expect(
         registrationService.lastRequest?.dateOfBirth,
@@ -131,6 +143,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextFormField).at(0), 'Bad😊');
+      await tester.enterText(find.byType(TextFormField).at(1), 'Bad123');
       tester.testTextInput.hide();
       await tester.pumpAndSettle();
 
@@ -149,7 +162,7 @@ void main() {
 
       expect(
         find.text(
-          'First Name may only contain letters, spaces, apostrophes, and hyphens.',
+          'Last Name may only contain letters, spaces, apostrophes, and hyphens.',
         ),
         findsOneWidget,
       );

@@ -18,7 +18,7 @@
             <div class="management-card-header">
                 <div>
                     <h2>Review Queue</h2>
-                    <p class="management-card-kicker">Check student identity, program, and year level before creating the account.</p>
+                    <p class="management-card-kicker">Check student identity, program, year level, and section before creating the account.</p>
                 </div>
             </div>
 
@@ -93,6 +93,10 @@
                                 <div>
                                     <dt>Year Level</dt>
                                     <dd>{{ $registrationRequest->yearLevelLabel() }}</dd>
+                                </div>
+                                <div>
+                                    <dt>Section</dt>
+                                    <dd>{{ $registrationRequest->sectionLabel() }}</dd>
                                 </div>
                                 <div>
                                     <dt>Birthday</dt>
@@ -348,4 +352,3 @@
         </style>
     @endpush
 @endsection
-

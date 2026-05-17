@@ -28,6 +28,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   RegistrationOptions _options = RegistrationOptions.empty();
   RegistrationProgram? _selectedProgram;
   RegistrationYearLevel? _selectedYearLevel;
+  RegistrationSection? _selectedSection;
   String _selectedExtension = '';
   int? _selectedBirthYear;
   int? _selectedBirthMonth;
@@ -196,6 +197,7 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
           email: '',
           programId: _selectedProgram!.id,
           yearLevel: _selectedYearLevel!.value,
+          section: _selectedSection!.value,
           dateOfBirth: _birthDateValue!,
           password: _passwordController.text,
           passwordConfirmation: _confirmPasswordController.text,
@@ -442,6 +444,7 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
                                 setState(() {
                                   _selectedProgram = program;
                                   _selectedYearLevel = null;
+                                  _selectedSection = null;
                                 });
                               }
                             : null,
@@ -469,6 +472,7 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
                             ? (yearLevel) {
                                 setState(() {
                                   _selectedYearLevel = yearLevel;
+                                  _selectedSection = null;
                                 });
                               }
                             : null,
@@ -483,6 +487,35 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
                         ),
                         validator: (value) => value == null
                             ? 'Please select your year level.'
+                            : null,
+                      ),
+                      const SizedBox(height: 14),
+                      DropdownButtonFormField<RegistrationSection>(
+                        key: const Key('registration-section-dropdown'),
+                        initialValue: _hasSelectedSection
+                            ? _selectedSection
+                            : null,
+                        isExpanded: true,
+                        items: _buildSectionItems(_availableSections),
+                        onChanged:
+                            canUseAcademicOptions && _selectedYearLevel != null
+                            ? (section) {
+                                setState(() {
+                                  _selectedSection = section;
+                                });
+                              }
+                            : null,
+                        dropdownColor: _field,
+                        style: _inputTextStyle(),
+                        decoration: _inputDecoration(
+                          label: 'Section',
+                          hint: _selectedYearLevel == null
+                              ? 'Select a year level first'
+                              : 'Select your section',
+                          icon: Icons.group_outlined,
+                        ),
+                        validator: (value) => value == null
+                            ? 'Please select your section.'
                             : null,
                       ),
                       const SizedBox(height: 14),
@@ -710,6 +743,49 @@ LNU collects, uses, and discloses personal data for purposes that are directly r
         .map(
           (yearLevel) =>
               DropdownMenuItem(value: yearLevel, child: Text(yearLevel.label)),
+        )
+        .toList(growable: false);
+  }
+
+  List<RegistrationSection> get _availableSections {
+    final selectedYear = _selectedYearLevel?.value;
+
+    if (selectedYear == null) {
+      return const [];
+    }
+
+    final backendSections = _options.sections
+        .where((section) => section.yearLevel == selectedYear)
+        .toList(growable: false);
+
+    if (backendSections.isNotEmpty) {
+      return backendSections;
+    }
+
+    return List<RegistrationSection>.generate(6, (index) {
+      final value = '$selectedYear-${index + 1}';
+      return RegistrationSection(
+        value: value,
+        label: value,
+        yearLevel: selectedYear,
+      );
+    }, growable: false);
+  }
+
+  bool get _hasSelectedSection {
+    final selected = _selectedSection;
+
+    return selected != null &&
+        _availableSections.any((section) => section.value == selected.value);
+  }
+
+  List<DropdownMenuItem<RegistrationSection>> _buildSectionItems(
+    List<RegistrationSection> sections,
+  ) {
+    return sections
+        .map(
+          (section) =>
+              DropdownMenuItem(value: section, child: Text(section.label)),
         )
         .toList(growable: false);
   }

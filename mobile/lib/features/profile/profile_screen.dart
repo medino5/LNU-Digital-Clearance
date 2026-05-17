@@ -50,6 +50,7 @@ class ProfileScreen extends StatelessWidget {
     required String nameExtension,
     required int? programId,
     required int? yearLevel,
+    required String? section,
     required String dateOfBirth,
   })
   onUpdateAcademicProfile;
@@ -285,6 +286,7 @@ class _AcademicProfileCard extends StatefulWidget {
     required String nameExtension,
     required int? programId,
     required int? yearLevel,
+    required String? section,
     required String dateOfBirth,
   })
   onSubmit;
@@ -306,6 +308,7 @@ class _AcademicProfileCardState extends State<_AcademicProfileCard> {
   String _selectedNameExtension = '';
   int? _selectedProgramId;
   int? _selectedYearLevel;
+  String? _selectedSection;
   DateTime? _selectedBirthday;
 
   @override
@@ -341,6 +344,7 @@ class _AcademicProfileCardState extends State<_AcademicProfileCard> {
         widget.student?['name_extension']?.toString() ?? '';
     _selectedProgramId = _asInt(widget.program?['id']);
     _selectedYearLevel = _asInt(widget.student?['year_level']);
+    _selectedSection = widget.student?['section']?.toString();
     _selectedBirthday = DateTime.tryParse(
       widget.student?['date_of_birth']?.toString() ?? '',
     );
@@ -421,6 +425,9 @@ class _AcademicProfileCardState extends State<_AcademicProfileCard> {
     final yearLevel = widget.canEditAcademicRouting
         ? _selectedYearLevel
         : _asInt(widget.student?['year_level']);
+    final section = widget.canEditAcademicRouting
+        ? _selectedSection
+        : widget.student?['section']?.toString();
 
     if (birthday == null) {
       setState(() {
@@ -430,9 +437,12 @@ class _AcademicProfileCardState extends State<_AcademicProfileCard> {
     }
 
     if (widget.canEditAcademicRouting &&
-        (programId == null || yearLevel == null)) {
+        (programId == null ||
+            yearLevel == null ||
+            section == null ||
+            section.isEmpty)) {
       setState(() {
-        _formError = 'Choose your program and year level.';
+        _formError = 'Choose your program, year level, and section.';
       });
       return;
     }
@@ -444,6 +454,7 @@ class _AcademicProfileCardState extends State<_AcademicProfileCard> {
       nameExtension: _selectedNameExtension,
       programId: programId,
       yearLevel: yearLevel,
+      section: section,
       dateOfBirth: _toDateString(birthday),
     );
 
@@ -483,6 +494,9 @@ class _AcademicProfileCardState extends State<_AcademicProfileCard> {
     final hasSelectedYear =
         _selectedYearLevel != null &&
         yearLevels.any((year) => year.value == _selectedYearLevel);
+    final sectionOptions = _sectionOptions(options, _selectedYearLevel);
+    final hasSelectedSection =
+        _selectedSection != null && sectionOptions.contains(_selectedSection);
 
     return _DetailCard(
       title: 'Profile Details',
@@ -525,6 +539,10 @@ class _AcademicProfileCardState extends State<_AcademicProfileCard> {
           label: 'Year Level',
           value:
               widget.student?['year_level_label'] as String? ?? 'Unavailable',
+        ),
+        _DetailRow(
+          label: 'Section',
+          value: widget.student?['section_label'] as String? ?? 'No section',
           isLast: !_isEditing,
         ),
         if (!widget.canEditAcademicRouting) ...[
@@ -532,7 +550,7 @@ class _AcademicProfileCardState extends State<_AcademicProfileCard> {
           _ProfileNotice(
             icon: Icons.lock_clock_rounded,
             text:
-                'Name and birthday can be edited anytime. Program and year level unlock before starting clearance or after completing the current clearance.',
+                'Name and birthday can be edited anytime. Program, year level, and section unlock before starting clearance or after completing the current clearance.',
           ),
         ],
         if (_isEditing) ...[
@@ -692,6 +710,32 @@ class _AcademicProfileCardState extends State<_AcademicProfileCard> {
                           : (value) {
                               setState(() {
                                 _selectedYearLevel = value;
+                                _selectedSection = null;
+                                _formError = null;
+                              });
+                            },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: hasSelectedSection
+                          ? _selectedSection
+                          : null,
+                      decoration: const InputDecoration(labelText: 'Section'),
+                      items: sectionOptions
+                          .map(
+                            (section) => DropdownMenuItem(
+                              value: section,
+                              child: Text(section),
+                            ),
+                          )
+                          .toList(),
+                      validator: (value) =>
+                          value == null ? 'Choose a section.' : null,
+                      onChanged: widget.isBusy
+                          ? null
+                          : (value) {
+                              setState(() {
+                                _selectedSection = value;
                                 _formError = null;
                               });
                             },
@@ -725,6 +769,33 @@ class _AcademicProfileCardState extends State<_AcademicProfileCard> {
     }
 
     return int.tryParse(value?.toString() ?? '');
+  }
+
+  static List<String> _sectionOptions(
+    RegistrationOptions? options,
+    int? selectedYearLevel,
+  ) {
+    if (selectedYearLevel == null) {
+      return const [];
+    }
+
+    final backendSections =
+        options?.sections
+            .where((section) => section.yearLevel == selectedYearLevel)
+            .map((section) => section.value)
+            .where((section) => section.isNotEmpty)
+            .toList(growable: false) ??
+        const <String>[];
+
+    if (backendSections.isNotEmpty) {
+      return backendSections;
+    }
+
+    return List<String>.generate(
+      6,
+      (index) => '$selectedYearLevel-${index + 1}',
+      growable: false,
+    );
   }
 
   static String? _validateName(String? value, String label) {

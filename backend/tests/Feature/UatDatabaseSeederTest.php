@@ -24,6 +24,7 @@ class UatDatabaseSeederTest extends TestCase
         $this->assertSame(1, Student::count());
         $this->assertDatabaseHas('students', [
             'student_id_number' => '2302314',
+            'section' => '3-1',
         ]);
         $this->assertSame(
             '2005-03-14',
@@ -74,6 +75,7 @@ class UatDatabaseSeederTest extends TestCase
             $this->assertMatchesRegularExpression('/^2\d{6}$/', $student->student_id_number);
             $this->assertSame($student->student_id_number, $student->user->username);
             $this->assertNotNull($student->date_of_birth);
+            $this->assertMatchesRegularExpression('/^[1-4]-[1-6]$/', $student->section);
         }
 
         foreach (['BSIT', 'BAEL', 'BSTM', 'BSEntrep', 'AS', 'EC', 'SM'] as $programCode) {
@@ -106,6 +108,7 @@ class UatDatabaseSeederTest extends TestCase
         $this->assertDatabaseHas('students', [
             'student_id_number' => '2401400',
             'year_level' => 4,
+            'section' => '4-2',
         ]);
         $this->assertSame(
             '2001-09-01',
@@ -115,6 +118,7 @@ class UatDatabaseSeederTest extends TestCase
         $this->assertDatabaseHas('students', [
             'student_id_number' => '2400801',
             'year_level' => 1,
+            'section' => '1-1',
             'program_id' => Program::where('code', 'AS')->value('id'),
         ]);
 

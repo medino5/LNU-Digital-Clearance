@@ -44,6 +44,7 @@ class AdminStudentRegistrationRequestController extends Controller
                 $query->where('student_id_number', 'like', $searchLike)
                     ->orWhere('first_name', 'like', $searchLike)
                     ->orWhere('last_name', 'like', $searchLike)
+                    ->orWhere('section', 'like', $searchLike)
                     ->orWhere('email', 'like', $searchLike)
                     ->orWhereHas('program', function ($programQuery) use ($searchLike) {
                         $programQuery
@@ -112,6 +113,7 @@ class AdminStudentRegistrationRequestController extends Controller
                     'student_id_number' => $registrationRequest->student_id_number,
                     'program_id' => $registrationRequest->program_id,
                     'year_level' => $registrationRequest->year_level,
+                    'section' => $registrationRequest->section,
                     'date_of_birth' => $registrationRequest->date_of_birth,
                 ]);
 

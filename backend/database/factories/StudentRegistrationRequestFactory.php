@@ -25,6 +25,7 @@ class StudentRegistrationRequestFactory extends Factory
             'email' => $this->faker->unique()->userName() . '@lnu.edu.ph',
             'program_id' => Program::factory(),
             'year_level' => $this->faker->numberBetween(1, 4),
+            'section' => null,
             'date_of_birth' => $this->faker->dateTimeBetween('-25 years', '-16 years')->format('Y-m-d'),
             'password' => Hash::make('password'),
             'status' => StudentRegistrationRequest::STATUS_PENDING,

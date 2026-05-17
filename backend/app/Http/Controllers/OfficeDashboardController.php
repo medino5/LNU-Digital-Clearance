@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\ClearanceStep;
+use App\Models\OfficeDesignation;
+use App\Models\Program;
 use App\Services\ClearanceWorkflowService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -23,14 +25,40 @@ class OfficeDashboardController extends Controller
         }
 
         $request->validate([
+            'pending_search' => ['nullable', 'string', 'max:120'],
+            'pending_program' => ['nullable', 'integer', 'exists:programs,id'],
+            'pending_year' => ['nullable', 'integer', 'between:1,4'],
+            'pending_section' => ['nullable', 'regex:/^[1-4]-[1-6]$/'],
+            'pending_sort' => ['nullable', 'in:waiting_desc,waiting_asc,student_asc,student_id_asc,program_asc,year_asc,section_asc'],
             'archive_search' => ['nullable', 'string', 'max:120'],
             'archive_status' => ['nullable', 'in:' . ClearanceStep::STATUS_APPROVED . ',' . ClearanceStep::STATUS_FLAGGED],
             'archive_sort' => ['nullable', 'in:processed_desc,processed_asc,student_asc,student_id_asc,program_asc'],
         ], [
+            'pending_search.max' => 'Queue search must be 120 characters or fewer.',
+            'pending_section.regex' => 'Section must use the year-section format, for example 3-2.',
             'archive_search.max' => 'Archive search must be 120 characters or fewer.',
         ]);
 
         $tab = $request->query('tab') === 'archive' ? 'archive' : 'active';
+        $pendingSearch = trim((string) $request->query('pending_search', ''));
+        $pendingProgram = $request->filled('pending_program')
+            ? (int) $request->query('pending_program')
+            : null;
+        $pendingYear = $request->filled('pending_year')
+            ? (int) $request->query('pending_year')
+            : null;
+        $pendingSection = $request->filled('pending_section')
+            ? trim((string) $request->query('pending_section'))
+            : null;
+        $pendingSort = in_array($request->query('pending_sort'), [
+            'waiting_desc',
+            'waiting_asc',
+            'student_asc',
+            'student_id_asc',
+            'program_asc',
+            'year_asc',
+            'section_asc',
+        ], true) ? $request->query('pending_sort') : 'waiting_desc';
         $archiveSearch = trim((string) $request->query('archive_search', ''));
         $archiveStatus = in_array($request->query('archive_status'), [
             ClearanceStep::STATUS_APPROVED,
@@ -57,26 +85,36 @@ class OfficeDashboardController extends Controller
         $pendingCount = 0;
         $archiveCount = 'History';
         $archiveLoadError = null;
+        $programOptions = Program::query()
+            ->orderBy('code')
+            ->get(['id', 'code', 'name']);
+        $yearLevelOptions = [
+            1 => '1st Year',
+            2 => '2nd Year',
+            3 => '3rd Year',
+            4 => '4th Year',
+        ];
+        $sectionOptions = $this->sectionOptions();
 
         if ($hasActiveDesignation) {
-            $baseQuery = ClearanceStep::query()
-                ->select('clearance_steps.*')
-                ->with([
-                    'clearance.student.user',
-                    'clearance.student.program',
-                    'officeDesignation.program',
-                ])
-                ->whereIn('clearance_steps.office_designation_id', $officeDesignations->pluck('id'));
+            $designationIds = $officeDesignations->pluck('id');
+            $baseQuery = $this->pendingQuery($designationIds);
 
             $pendingCount = (clone $baseQuery)
-                ->where('clearance_steps.status', ClearanceStep::STATUS_AWAITING_ACTION)
                 ->count();
 
             if ($tab === 'active') {
-                $pendingSteps = (clone $baseQuery)
-                    ->where('clearance_steps.status', ClearanceStep::STATUS_AWAITING_ACTION)
-                    ->orderByDesc('clearance_steps.updated_at')
-                    ->simplePaginate(20, ['*'], 'pending_page')
+                $pendingSteps = $this->applyPendingSort(
+                    $this->applyPendingFilters(
+                        (clone $baseQuery),
+                        $pendingSearch,
+                        $pendingProgram,
+                        $pendingYear,
+                        $pendingSection,
+                    ),
+                    $pendingSort,
+                )
+                    ->simplePaginate(10, ['clearance_steps.*'], 'pending_page')
                     ->withQueryString();
             } else {
                 try {
@@ -89,7 +127,7 @@ class OfficeDashboardController extends Controller
                     );
 
                     $archiveSteps = $this->applyArchiveSort($archiveQuery, $archiveSort)
-                        ->simplePaginate(20, ['clearance_steps.id'], 'archive_page')
+                        ->simplePaginate(10, ['clearance_steps.id'], 'archive_page')
                         ->withQueryString();
 
                     $archiveSteps = $this->hydrateArchiveRows($archiveSteps);
@@ -110,11 +148,19 @@ class OfficeDashboardController extends Controller
             'pendingSteps' => $pendingSteps,
             'archiveSteps' => $archiveSteps,
             'pendingCount' => $pendingCount,
+            'pendingSearch' => $pendingSearch,
+            'pendingProgram' => $pendingProgram,
+            'pendingYear' => $pendingYear,
+            'pendingSection' => $pendingSection,
+            'pendingSort' => $pendingSort,
             'archiveCount' => $archiveCount,
             'archiveSearch' => $archiveSearch,
             'archiveStatus' => $archiveStatus,
             'archiveSort' => $archiveSort,
             'archiveLoadError' => $archiveLoadError,
+            'programOptions' => $programOptions,
+            'yearLevelOptions' => $yearLevelOptions,
+            'sectionOptions' => $sectionOptions,
         ]);
     }
 
@@ -207,6 +253,112 @@ class OfficeDashboardController extends Controller
         );
     }
 
+    private function pendingQuery($designationIds)
+    {
+        return $this->applyVpsdReadinessGate(
+            ClearanceStep::query()
+                ->select('clearance_steps.*')
+                ->join('clearances', 'clearance_steps.clearance_id', '=', 'clearances.id')
+                ->leftJoin('students', 'clearances.student_id', '=', 'students.id')
+                ->leftJoin('users', 'students.user_id', '=', 'users.id')
+                ->leftJoin('programs', 'students.program_id', '=', 'programs.id')
+                ->leftJoin('office_designations', 'clearance_steps.office_designation_id', '=', 'office_designations.id')
+                ->with([
+                    'clearance.student.user',
+                    'clearance.student.program',
+                    'clearance.steps:id,clearance_id,status,office_type',
+                    'officeDesignation.program',
+                ])
+                ->whereIn('clearance_steps.office_designation_id', $designationIds)
+                ->where('clearance_steps.status', ClearanceStep::STATUS_AWAITING_ACTION)
+        );
+    }
+
+    private function applyVpsdReadinessGate($query)
+    {
+        return $query->where(function ($query) {
+            $query->where('office_designations.office_type', '!=', OfficeDesignation::TYPE_VPSD)
+                ->orWhere(function ($vpsdQuery) {
+                    $vpsdQuery
+                        ->where('office_designations.office_type', OfficeDesignation::TYPE_VPSD)
+                        ->whereNotExists(function ($subQuery) {
+                            $subQuery
+                                ->selectRaw('1')
+                                ->from('clearance_steps as prerequisite_steps')
+                                ->whereColumn('prerequisite_steps.clearance_id', 'clearance_steps.clearance_id')
+                                ->whereColumn('prerequisite_steps.id', '!=', 'clearance_steps.id')
+                                ->where('prerequisite_steps.status', '!=', ClearanceStep::STATUS_APPROVED);
+                        });
+                });
+        });
+    }
+
+    private function applyPendingFilters($query, string $search, ?int $programId, ?int $yearLevel, ?string $section)
+    {
+        if ($programId) {
+            $query->where('students.program_id', $programId);
+        }
+
+        if ($yearLevel) {
+            $query->where('students.year_level', $yearLevel);
+        }
+
+        if ($section !== null && $section !== '') {
+            $query->where('students.section', $section);
+        }
+
+        if ($search !== '') {
+            $searchLike = '%' . $search . '%';
+
+            $query->where(function ($query) use ($searchLike) {
+                $query->where('clearance_steps.office_label', 'like', $searchLike)
+                    ->orWhere('clearances.reference_number', 'like', $searchLike)
+                    ->orWhere('students.student_id_number', 'like', $searchLike)
+                    ->orWhere('students.section', 'like', $searchLike)
+                    ->orWhere('programs.code', 'like', $searchLike)
+                    ->orWhere('programs.name', 'like', $searchLike)
+                    ->orWhere('users.name', 'like', $searchLike)
+                    ->orWhere('users.first_name', 'like', $searchLike)
+                    ->orWhere('users.last_name', 'like', $searchLike);
+            });
+        }
+
+        return $query;
+    }
+
+    private function applyPendingSort($query, string $sort)
+    {
+        return match ($sort) {
+            'waiting_asc' => $query
+                ->orderBy('clearance_steps.created_at')
+                ->orderBy('clearance_steps.id'),
+            'student_asc' => $query
+                ->orderBy('users.last_name')
+                ->orderBy('users.first_name')
+                ->orderBy('users.name')
+                ->orderBy('clearance_steps.created_at'),
+            'student_id_asc' => $query
+                ->orderBy('students.student_id_number')
+                ->orderBy('clearance_steps.created_at'),
+            'program_asc' => $query
+                ->orderBy('programs.code')
+                ->orderBy('users.last_name')
+                ->orderBy('clearance_steps.created_at'),
+            'year_asc' => $query
+                ->orderBy('students.year_level')
+                ->orderBy('programs.code')
+                ->orderBy('users.last_name'),
+            'section_asc' => $query
+                ->orderBy('students.section')
+                ->orderBy('students.year_level')
+                ->orderBy('programs.code')
+                ->orderBy('users.last_name'),
+            default => $query
+                ->orderByDesc('clearance_steps.created_at')
+                ->orderByDesc('clearance_steps.id'),
+        };
+    }
+
     private function applyArchiveFilters($query, string $search, string $status)
     {
         if ($status !== '') {
@@ -221,6 +373,7 @@ class OfficeDashboardController extends Controller
                     ->orWhere('clearance_steps.remarks', 'like', $searchLike)
                     ->orWhere('clearances.reference_number', 'like', $searchLike)
                     ->orWhere('students.student_id_number', 'like', $searchLike)
+                    ->orWhere('students.section', 'like', $searchLike)
                     ->orWhere('programs.code', 'like', $searchLike)
                     ->orWhere('programs.name', 'like', $searchLike)
                     ->orWhere('users.name', 'like', $searchLike)
@@ -318,6 +471,7 @@ class OfficeDashboardController extends Controller
         $studentId = $student?->student_id_number ?: 'No ID';
         $programCode = $student?->program?->code ?: 'No program';
         $yearLevel = $student?->yearLevelLabel() ?: 'No year level';
+        $section = $student?->sectionLabel() ?: 'No section';
         $studentPhoto = $student?->user?->profilePhotoUrl();
         $isRejected = $step->status === ClearanceStep::STATUS_FLAGGED;
 
@@ -327,7 +481,7 @@ class OfficeDashboardController extends Controller
             'status_label' => $isRejected ? 'Rejected' : 'Approved',
             'student_name' => $studentName,
             'student_initial' => $this->nameInitial($studentName),
-            'student_meta' => $studentId . ' | ' . $programCode . ' | ' . $yearLevel,
+            'student_meta' => $studentId . ' | ' . $programCode . ' | ' . $yearLevel . ' | ' . $section,
             'student_photo' => $studentPhoto,
             'student_profile_url' => $student ? route('office.students.show', $student) : '#',
             'student_profile_disabled' => ! $student,
@@ -351,5 +505,21 @@ class OfficeDashboardController extends Controller
             : substr($name, 0, 1);
 
         return strtoupper($firstCharacter ?: '?');
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function sectionOptions(): array
+    {
+        $sections = [];
+
+        foreach ([1, 2, 3, 4] as $yearLevel) {
+            foreach ([1, 2, 3, 4, 5, 6] as $sectionNumber) {
+                $sections[] = $yearLevel . '-' . $sectionNumber;
+            }
+        }
+
+        return $sections;
     }
 }

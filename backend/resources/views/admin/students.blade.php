@@ -62,6 +62,15 @@
                     @endforeach
                 </select>
 
+                <select name="student_section">
+                    <option value="">Section</option>
+                    @foreach($sectionOptions as $section)
+                        <option value="{{ $section }}" {{ (string) $studentSection === (string) $section ? 'selected' : '' }}>
+                            {{ $section }}
+                        </option>
+                    @endforeach
+                </select>
+
                 <button type="submit" class="button">Apply</button>
                 <a href="{{ route('admin.students.index') }}" class="button secondary secondary-button">Reset</a>
             </form>
@@ -83,6 +92,7 @@
                                 <th>Name</th>
                                 <th>Program</th>
                                 <th>Year Level</th>
+                                <th>Section</th>
                                 <th class="management-action-col">Action</th>
                             </tr>
                         </thead>
@@ -104,6 +114,7 @@
                                     </td>
                                     <td>{{ $student->program->code }}</td>
                                     <td>{{ $student->yearLevelLabel() }}</td>
+                                    <td>{{ $student->sectionLabel() }}</td>
                                     <td>
                                         <div class="table-action-stack">
                                             <a
@@ -258,6 +269,24 @@
                             @endif
                         </label>
 
+                        <label>
+                            Section
+                            <select name="section">
+                                <option value="">No section yet</option>
+                                @foreach($sectionOptions as $section)
+                                    <option value="{{ $section }}" {{ $shouldOpenCreate && (string) old('section') === (string) $section ? 'selected' : '' }}>
+                                        {{ $section }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <span class="mini">Use year-section format, such as 3-2.</span>
+                            @if($shouldOpenCreate)
+                                <x-field-error field="section" bag="studentCreate" />
+                            @endif
+                        </label>
+                    </div>
+
+                    <div class="field-grid">
                         <label>
                             Birthday
                             <input
@@ -445,6 +474,24 @@
                         </label>
 
                         <label>
+                            Section
+                            <select name="section">
+                                <option value="">No section yet</option>
+                                @foreach($sectionOptions as $section)
+                                    <option value="{{ $section }}" {{ $shouldOpenEdit ? (((string) old('section', $student->section) === (string) $section) ? 'selected' : '') : (($student->section === $section) ? 'selected' : '') }}>
+                                        {{ $section }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <span class="mini">Use year-section format, such as 3-2.</span>
+                            @if($shouldOpenEdit)
+                                <x-field-error field="section" bag="studentUpdate" />
+                            @endif
+                        </label>
+                    </div>
+
+                    <div class="field-grid">
+                        <label>
                             Birthday
                             <input
                                 type="date"
@@ -579,7 +626,7 @@
     <style>
         .student-filter-bar {
             display: grid;
-            grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) auto auto;
+            grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.8fr) auto auto;
             gap: 10px;
             align-items: center;
         }
@@ -942,5 +989,3 @@
     </script>
     @endpush
 @endsection
-
-

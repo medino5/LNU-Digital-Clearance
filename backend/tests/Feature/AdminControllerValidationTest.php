@@ -312,7 +312,7 @@ class AdminControllerValidationTest extends TestCase
         $this->actingAs($this->admin)
             ->get(route('admin.students.show', $student))
             ->assertOk()
-            ->assertSee('STUDENT PROFILE')
+            ->assertSee('Student Profile')
             ->assertSee('Niña Ñ. Santos')
             ->assertSee('Current Progress')
             ->assertSee('View signers')

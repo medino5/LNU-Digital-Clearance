@@ -228,6 +228,10 @@ class FakeRegistrationService extends RegistrationService {
                RegistrationYearLevel(value: 1, label: '1st Year'),
                RegistrationYearLevel(value: 2, label: '2nd Year'),
              ],
+             sections: [
+               RegistrationSection(value: '1-1', label: '1-1', yearLevel: 1),
+               RegistrationSection(value: '2-1', label: '2-1', yearLevel: 2),
+             ],
              nameExtensions: ['Jr', 'Sr'],
            );
 

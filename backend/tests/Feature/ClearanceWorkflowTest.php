@@ -312,6 +312,69 @@ class ClearanceWorkflowTest extends TestCase
             ->assertDontSee('John A. Doe');
     }
 
+    public function test_vpsd_queue_only_shows_students_after_all_other_offices_approve(): void
+    {
+        $clearance = $this->startClearanceForSeededStudent();
+        $student = $clearance->student()->with('user')->firstOrFail();
+        $vpsdStep = $clearance->steps->firstWhere('office_type', OfficeDesignation::TYPE_VPSD);
+        $vpsdUser = $vpsdStep->officeDesignation->activeUsers->first();
+        $this->assertNotNull($vpsdUser);
+
+        $this->actingAs($vpsdUser)
+            ->get(route('office.dashboard'))
+            ->assertOk()
+            ->assertDontSee('John A. Doe');
+
+        Sanctum::actingAs($student->user);
+        $this->getJson('/api/clearance/current')
+            ->assertOk()
+            ->assertJsonFragment([
+                'office_type' => OfficeDesignation::TYPE_VPSD,
+                'office_label' => 'Vice President for Student Development',
+            ]);
+
+        foreach ($clearance->steps->where('office_type', '!=', OfficeDesignation::TYPE_VPSD) as $step) {
+            $officeUser = $step->officeDesignation->activeUsers->first();
+            $this->assertNotNull($officeUser);
+
+            $this->actingAs($officeUser)
+                ->post(route('office.steps.process', $step), [
+                    'action' => 'approve',
+                    'confirm_action' => 'approve',
+                    'remarks' => 'Approved before VPSD.',
+                ])
+                ->assertRedirect();
+        }
+
+        $this->actingAs($vpsdUser)
+            ->get(route('office.dashboard'))
+            ->assertOk()
+            ->assertSee('John A. Doe')
+            ->assertSee('Vice President for Student Development');
+    }
+
+    public function test_vpsd_cannot_process_clearance_before_other_offices_approve(): void
+    {
+        $clearance = $this->startClearanceForSeededStudent();
+        $vpsdStep = $clearance->steps->firstWhere('office_type', OfficeDesignation::TYPE_VPSD);
+        $vpsdUser = $vpsdStep->officeDesignation->activeUsers->first();
+        $this->assertNotNull($vpsdUser);
+
+        $this->actingAs($vpsdUser)
+            ->from(route('office.dashboard'))
+            ->post(route('office.steps.process', $vpsdStep), [
+                'action' => 'approve',
+                'confirm_action' => 'approve',
+                'remarks' => 'Premature VPSD approval.',
+            ])
+            ->assertRedirect(route('office.dashboard', ['tab' => 'active']))
+            ->assertSessionHas('error', 'VPSD can only process a clearance after every other required office has approved it.');
+
+        $vpsdStep->refresh();
+
+        $this->assertSame(ClearanceStep::STATUS_AWAITING_ACTION, $vpsdStep->status);
+    }
+
     public function test_office_dashboard_shows_empty_state_when_user_has_no_active_designation(): void
     {
         // Ticket 42 replaces the old 404 with a real empty state so office

@@ -23,6 +23,7 @@ class StudentRegistrationRequest extends Model
         'email',
         'program_id',
         'year_level',
+        'section',
         'date_of_birth',
         'password',
         'status',
@@ -75,5 +76,10 @@ class StudentRegistrationRequest extends Model
             4 => '4th Year',
             default => $this->year_level . 'th Year',
         };
+    }
+
+    public function sectionLabel(): string
+    {
+        return filled($this->section) ? $this->section : 'No section';
     }
 }
