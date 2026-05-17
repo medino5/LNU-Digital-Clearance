@@ -104,6 +104,10 @@
                             <h2>Clearance steps awaiting your action</h2>
                             <p class="muted">Only students ready for your current designation appear here. VPSD receives students after every other office signs.</p>
                         </div>
+
+                        <button type="button" class="button workload-report-trigger" id="openWorkloadReport">
+                            Progress Report
+                        </button>
                     </div>
 
                     <form method="GET" action="{{ route('office.dashboard') }}" class="office-queue-filter">
@@ -120,29 +124,43 @@
                             >
                         </label>
 
-                        <label>
-                            <span>Program</span>
-                            <select name="pending_program">
-                                <option value="">All programs</option>
-                                @foreach($programOptions as $program)
-                                    <option value="{{ $program->id }}" @selected((int) $pendingProgram === (int) $program->id)>
-                                        {{ $program->code }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </label>
+                        @if($queueScope['show_program_filter'])
+                            <label>
+                                <span>Program</span>
+                                <select name="pending_program">
+                                    <option value="">All programs</option>
+                                    @foreach($programOptions as $program)
+                                        <option value="{{ $program->id }}" @selected((int) $pendingProgram === (int) $program->id)>
+                                            {{ $program->code }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </label>
+                        @else
+                            <div class="office-fixed-filter">
+                                <span>Program</span>
+                                <strong>{{ $queueScope['fixed_program_code'] ?? 'Scoped' }}</strong>
+                            </div>
+                        @endif
 
-                        <label>
-                            <span>Year Level</span>
-                            <select name="pending_year">
-                                <option value="">All years</option>
-                                @foreach($yearLevelOptions as $yearValue => $yearLabel)
-                                    <option value="{{ $yearValue }}" @selected((int) $pendingYear === (int) $yearValue)>
-                                        {{ $yearLabel }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </label>
+                        @if($queueScope['show_year_filter'])
+                            <label>
+                                <span>Year Level</span>
+                                <select name="pending_year">
+                                    <option value="">All years</option>
+                                    @foreach($yearLevelOptions as $yearValue => $yearLabel)
+                                        <option value="{{ $yearValue }}" @selected((int) $pendingYear === (int) $yearValue)>
+                                            {{ $yearLabel }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </label>
+                        @else
+                            <div class="office-fixed-filter">
+                                <span>Year Level</span>
+                                <strong>{{ $queueScope['fixed_year_label'] ?? 'Scoped' }}</strong>
+                            </div>
+                        @endif
 
                         <label>
                             <span>Section</span>
@@ -189,6 +207,7 @@
                                 $approvedSteps = $clearanceSteps->where('status', \App\Models\ClearanceStep::STATUS_APPROVED)->count();
                                 $waitingSteps = $clearanceSteps->where('status', \App\Models\ClearanceStep::STATUS_AWAITING_ACTION)->count();
                                 $progressPercent = $totalSteps > 0 ? (int) floor(($approvedSteps / $totalSteps) * 100) : 0;
+                                $progressColor = "color-mix(in srgb, #166534 {$progressPercent}%, #991B1B)";
                             @endphp
 
                             <div class="record office-record pending-record">
@@ -256,7 +275,7 @@
                                             <span>{{ $approvedSteps }}/{{ $totalSteps }} signed</span>
                                         </div>
                                         <div class="clearance-mini-progress-track" aria-hidden="true">
-                                            <span style="width: {{ $progressPercent }}%"></span>
+                                            <span style="width: {{ $progressPercent }}%; --progress-color: {{ $progressColor }}"></span>
                                         </div>
                                     </div>
 
@@ -268,11 +287,6 @@
                                     <p class="mini">
                                         <strong>Clearance status:</strong>
                                         {{ ucwords(str_replace('_', ' ', $step->clearance->status)) }}
-                                    </p>
-
-                                    <p class="mini">
-                                        <strong>Last note:</strong>
-                                        {{ $step->remarks ?: '-' }}
                                     </p>
                                 </div>
                             </div>
@@ -523,6 +537,87 @@
 
             <div class="office-profile-modal-footer">
                 <button type="button" class="office-cancel-link" id="cancelOfficeStudentProfile">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="office-modal-backdrop office-profile-backdrop" id="workloadReportModal" hidden>
+        <div class="office-profile-modal workload-report-modal" role="dialog" aria-modal="true" aria-labelledby="workloadReportTitle">
+            <div class="office-modal-header">
+                <div>
+                    <div class="eyebrow">Progress Report</div>
+                    <h2 id="workloadReportTitle">Remaining workload</h2>
+                </div>
+
+                <button type="button" class="office-modal-close" id="closeWorkloadReport" aria-label="Close progress report">
+                    &times;
+                </button>
+            </div>
+
+            <div class="office-profile-modal-body">
+                <div class="workload-report-summary">
+                    <div>
+                        <span>Active Queue</span>
+                        <strong>{{ number_format($workloadReport['total']) }}</strong>
+                        <p>students still waiting for this designation set</p>
+                    </div>
+                </div>
+
+                @php
+                    $reportSections = collect([
+                        $queueScope['show_program_filter'] ? [
+                            'title' => 'By Program',
+                            'items' => $workloadReport['by_program'],
+                        ] : null,
+                        $queueScope['show_year_filter'] ? [
+                            'title' => 'By Year Level',
+                            'items' => $workloadReport['by_year'],
+                        ] : null,
+                        [
+                            'title' => 'By Section',
+                            'items' => $workloadReport['by_section'],
+                        ],
+                    ])->filter();
+                @endphp
+
+                <div class="workload-report-grid">
+                    @foreach($reportSections as $reportSection)
+                        @php
+                            $items = collect($reportSection['items']);
+                            $maxTotal = max((int) $items->max('total'), 1);
+                        @endphp
+
+                        <section class="workload-report-card">
+                            <div class="workload-report-card-header">
+                                <h3>{{ $reportSection['title'] }}</h3>
+                                <span>{{ number_format($items->sum('total')) }} waiting</span>
+                            </div>
+
+                            <div class="workload-report-bars">
+                                @forelse($items as $item)
+                                    @php
+                                        $barPercent = max(8, (int) round(((int) $item->total / $maxTotal) * 100));
+                                    @endphp
+                                    <div class="workload-report-row">
+                                        <div class="workload-report-label">
+                                            <strong>{{ $item->label ?? 'No label' }}</strong>
+                                            <span>{{ number_format((int) $item->total) }}</span>
+                                        </div>
+                                        <div class="workload-report-track" aria-hidden="true">
+                                            <span style="width: {{ $barPercent }}%"></span>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="empty-state">No waiting students in this group.</div>
+                                @endforelse
+                            </div>
+                        </section>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="office-profile-modal-footer">
+                <button type="button" class="office-cancel-link" id="cancelWorkloadReport">Close</button>
             </div>
         </div>
     </div>
@@ -803,7 +898,8 @@
         }
 
         .office-archive-filter label,
-        .office-queue-filter label {
+        .office-queue-filter label,
+        .office-fixed-filter {
             display: grid;
             gap: 6px;
             font-weight: 700;
@@ -811,10 +907,26 @@
         }
 
         .office-archive-filter span,
-        .office-queue-filter span {
+        .office-queue-filter span,
+        .office-fixed-filter span {
             font-size: 0.82rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+        }
+
+        .office-fixed-filter {
+            min-height: 38px;
+            align-self: stretch;
+            justify-content: end;
+            padding: 7px 11px;
+            border: 1px dashed rgba(14, 42, 71, 0.2);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.58);
+        }
+
+        .office-fixed-filter strong {
+            color: var(--navy-deep);
+            font-size: 0.94rem;
         }
 
         .office-archive-filter input,
@@ -951,12 +1063,14 @@
             display: block;
             height: 100%;
             border-radius: inherit;
-            background: linear-gradient(90deg, var(--office-accent), #f0cf73);
+            background: var(--progress-color, #D4A53A);
+            transition: width 0.18s ease, background-color 0.18s ease;
         }
 
         .button.ghost,
         .detail-trigger,
-        .profile-link {
+        .profile-link,
+        .workload-report-trigger {
             background: white;
             border: 1px solid rgba(22, 56, 95, 0.22);
             color: var(--navy);
@@ -970,10 +1084,15 @@
 
         .button.ghost:hover,
         .detail-trigger:hover,
-        .profile-link:hover {
+        .profile-link:hover,
+        .workload-report-trigger:hover {
             transform: translateY(-1px);
             box-shadow: 0 6px 14px rgba(16, 24, 40, 0.08);
             border-color: rgba(22, 56, 95, 0.35);
+        }
+
+        .workload-report-trigger {
+            white-space: nowrap;
         }
 
         .office-simple-pagination {
@@ -1115,6 +1234,112 @@
             padding: 1rem 1.5rem;
             background: var(--bg-surface);
             border-top: 1px solid var(--border-subtle);
+        }
+
+        .workload-report-modal {
+            max-width: 880px;
+        }
+
+        .workload-report-summary {
+            margin-bottom: 1rem;
+        }
+
+        .workload-report-summary > div {
+            padding: 1.25rem;
+            border: 1px solid var(--border-subtle);
+            border-radius: 1rem;
+            background:
+                radial-gradient(circle at top right, rgba(212, 165, 58, 0.18), transparent 34%),
+                #fff;
+        }
+
+        .workload-report-summary span,
+        .workload-report-card-header span {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .workload-report-summary strong {
+            display: block;
+            margin: 0.15rem 0;
+            color: var(--brand-navy);
+            font-size: clamp(2rem, 4vw, 3rem);
+            line-height: 1;
+        }
+
+        .workload-report-summary p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .workload-report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+        }
+
+        .workload-report-card {
+            display: grid;
+            gap: 0.9rem;
+            padding: 1rem;
+            border: 1px solid var(--border-subtle);
+            border-radius: 1rem;
+            background: #fff;
+        }
+
+        .workload-report-card-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .workload-report-card-header h3 {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .workload-report-bars {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .workload-report-row {
+            display: grid;
+            gap: 0.35rem;
+        }
+
+        .workload-report-label {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            color: var(--text-primary);
+            font-size: 0.88rem;
+        }
+
+        .workload-report-label span {
+            color: var(--text-muted);
+            font-weight: 800;
+        }
+
+        .workload-report-track {
+            height: 8px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(14, 42, 71, 0.09);
+        }
+
+        .workload-report-track span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--brand-navy), var(--brand-gold));
         }
 
         .office-modal-header {
@@ -1489,6 +1714,10 @@
             const profileLinks = document.querySelectorAll('[data-office-profile-link]');
             const closeProfileModal = document.getElementById('closeOfficeStudentProfile');
             const cancelProfileModal = document.getElementById('cancelOfficeStudentProfile');
+            const workloadReportModal = document.getElementById('workloadReportModal');
+            const openWorkloadReport = document.getElementById('openWorkloadReport');
+            const closeWorkloadReport = document.getElementById('closeWorkloadReport');
+            const cancelWorkloadReport = document.getElementById('cancelWorkloadReport');
 
             const reopenStepId = @json(old('step_id'));
             const oldRemarks = @json(old('remarks'));
@@ -1601,6 +1830,10 @@
                 });
             });
 
+            openWorkloadReport?.addEventListener('click', function () {
+                showModal(workloadReportModal);
+            });
+
             if (reopenStepId) {
                 const matchingFlagButton = Array.from(flagButtons).find(button => button.dataset.stepId === String(reopenStepId));
 
@@ -1657,7 +1890,15 @@
                 hideModal(profileModal);
             });
 
-            [detailModal, approveModal, flagModal, undoModal, undoFlagModal, profileModal].forEach(modal => {
+            closeWorkloadReport?.addEventListener('click', function () {
+                hideModal(workloadReportModal);
+            });
+
+            cancelWorkloadReport?.addEventListener('click', function () {
+                hideModal(workloadReportModal);
+            });
+
+            [detailModal, approveModal, flagModal, undoModal, undoFlagModal, profileModal, workloadReportModal].forEach(modal => {
                 if (!modal) {
                     return;
                 }
@@ -1671,7 +1912,7 @@
 
             document.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape') {
-                    [detailModal, approveModal, flagModal, undoModal, undoFlagModal, profileModal].forEach(modal => {
+                    [detailModal, approveModal, flagModal, undoModal, undoFlagModal, profileModal, workloadReportModal].forEach(modal => {
                         if (!modal) {
                             return;
                         }

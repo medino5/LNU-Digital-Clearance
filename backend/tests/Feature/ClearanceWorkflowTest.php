@@ -312,6 +312,31 @@ class ClearanceWorkflowTest extends TestCase
             ->assertDontSee('John A. Doe');
     }
 
+    public function test_office_dashboard_hides_filters_already_fixed_by_designation_scope(): void
+    {
+        $clearance = $this->startClearanceForSeededStudent();
+
+        $bsitTreasurer = User::where('username', 'bsit.treasurer')->firstOrFail();
+        $this->actingAs($bsitTreasurer)
+            ->get(route('office.dashboard'))
+            ->assertOk()
+            ->assertSee('Progress Report')
+            ->assertDontSee('name="pending_program"', false)
+            ->assertSee('name="pending_year"', false)
+            ->assertSee('name="pending_section"', false);
+
+        $yearStep = $clearance->steps->firstWhere('office_type', OfficeDesignation::TYPE_YEAR_LEVEL_TREASURER);
+        $yearTreasurer = $yearStep->officeDesignation->activeUsers->first();
+        $this->assertNotNull($yearTreasurer);
+
+        $this->actingAs($yearTreasurer)
+            ->get(route('office.dashboard'))
+            ->assertOk()
+            ->assertSee('name="pending_program"', false)
+            ->assertDontSee('name="pending_year"', false)
+            ->assertSee('name="pending_section"', false);
+    }
+
     public function test_vpsd_queue_only_shows_students_after_all_other_offices_approve(): void
     {
         $clearance = $this->startClearanceForSeededStudent();

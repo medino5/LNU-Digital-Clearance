@@ -8,6 +8,7 @@ use App\Models\Program;
 use App\Services\ClearanceWorkflowService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use RuntimeException;
 use Throwable;
 
@@ -79,12 +80,19 @@ class OfficeDashboardController extends Controller
             ->values();
 
         $hasActiveDesignation = $officeDesignations->isNotEmpty();
+        $queueScope = $this->queueScope($officeDesignations);
 
         $pendingSteps = collect();
         $archiveSteps = collect();
         $pendingCount = 0;
         $archiveCount = 'History';
         $archiveLoadError = null;
+        $workloadReport = [
+            'total' => 0,
+            'by_program' => collect(),
+            'by_year' => collect(),
+            'by_section' => collect(),
+        ];
         $programOptions = Program::query()
             ->orderBy('code')
             ->get(['id', 'code', 'name']);
@@ -94,7 +102,16 @@ class OfficeDashboardController extends Controller
             3 => '3rd Year',
             4 => '4th Year',
         ];
-        $sectionOptions = $this->sectionOptions();
+
+        if (! $queueScope['show_program_filter']) {
+            $pendingProgram = null;
+        }
+
+        if (! $queueScope['show_year_filter']) {
+            $pendingYear = null;
+        }
+
+        $sectionOptions = $this->sectionOptions($pendingYear ?: $queueScope['fixed_year']);
 
         if ($hasActiveDesignation) {
             $designationIds = $officeDesignations->pluck('id');
@@ -102,6 +119,7 @@ class OfficeDashboardController extends Controller
 
             $pendingCount = (clone $baseQuery)
                 ->count();
+            $workloadReport = $this->workloadReport((clone $baseQuery));
 
             if ($tab === 'active') {
                 $pendingSteps = $this->applyPendingSort(
@@ -153,6 +171,8 @@ class OfficeDashboardController extends Controller
             'pendingYear' => $pendingYear,
             'pendingSection' => $pendingSection,
             'pendingSort' => $pendingSort,
+            'queueScope' => $queueScope,
+            'workloadReport' => $workloadReport,
             'archiveCount' => $archiveCount,
             'archiveSearch' => $archiveSearch,
             'archiveStatus' => $archiveStatus,
@@ -429,6 +449,89 @@ class OfficeDashboardController extends Controller
         };
     }
 
+    /**
+     * @param  Collection<int, OfficeDesignation>  $officeDesignations
+     * @return array{
+     *     show_program_filter: bool,
+     *     show_year_filter: bool,
+     *     fixed_program_id: ?int,
+     *     fixed_program_code: ?string,
+     *     fixed_year: ?int,
+     *     fixed_year_label: ?string
+     * }
+     */
+    private function queueScope(Collection $officeDesignations): array
+    {
+        $designationCount = $officeDesignations->count();
+        $programIds = $officeDesignations
+            ->pluck('program_id')
+            ->filter()
+            ->unique()
+            ->values();
+        $yearLevels = $officeDesignations
+            ->pluck('year_level')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $hasSingleProgramScope = $designationCount > 0
+            && $programIds->count() === 1
+            && $officeDesignations->every(fn (OfficeDesignation $designation) => filled($designation->program_id));
+        $hasSingleYearScope = $designationCount > 0
+            && $yearLevels->count() === 1
+            && $officeDesignations->every(fn (OfficeDesignation $designation) => filled($designation->year_level));
+
+        $fixedYear = $hasSingleYearScope ? (int) $yearLevels->first() : null;
+        $fixedProgramId = $hasSingleProgramScope ? (int) $programIds->first() : null;
+        $fixedProgram = $fixedProgramId
+            ? $officeDesignations->firstWhere('program_id', $fixedProgramId)?->program
+            : null;
+
+        return [
+            'show_program_filter' => ! $hasSingleProgramScope,
+            'show_year_filter' => ! $hasSingleYearScope,
+            'fixed_program_id' => $fixedProgramId,
+            'fixed_program_code' => $fixedProgram?->code,
+            'fixed_year' => $fixedYear,
+            'fixed_year_label' => $fixedYear ? ($this->yearLevelOptions()[$fixedYear] ?? 'Year ' . $fixedYear) : null,
+        ];
+    }
+
+    /**
+     * @return array{total: int, by_program: Collection<int, object>, by_year: Collection<int, object>, by_section: Collection<int, object>}
+     */
+    private function workloadReport($baseQuery): array
+    {
+        return [
+            'total' => (clone $baseQuery)->count(),
+            'by_program' => (clone $baseQuery)
+                ->reorder()
+                ->selectRaw("COALESCE(programs.code, 'No program') as label, COUNT(*) as total")
+                ->groupBy('programs.code')
+                ->orderBy('programs.code')
+                ->get(),
+            'by_year' => (clone $baseQuery)
+                ->reorder()
+                ->selectRaw('students.year_level as year_level, COUNT(*) as total')
+                ->groupBy('students.year_level')
+                ->orderBy('students.year_level')
+                ->get()
+                ->map(function ($row) {
+                    $year = (int) $row->year_level;
+                    $row->label = $this->yearLevelOptions()[$year] ?? 'No year level';
+
+                    return $row;
+                }),
+            'by_section' => (clone $baseQuery)
+                ->reorder()
+                ->selectRaw("COALESCE(students.section, 'No section') as label, students.year_level as year_level, COUNT(*) as total")
+                ->groupBy('students.section', 'students.year_level')
+                ->orderBy('students.year_level')
+                ->orderBy('students.section')
+                ->get(),
+        ];
+    }
+
     private function hydrateArchiveRows($archiveSteps)
     {
         $archiveStepIds = $archiveSteps->getCollection()
@@ -510,11 +613,26 @@ class OfficeDashboardController extends Controller
     /**
      * @return array<int, string>
      */
-    private function sectionOptions(): array
+    private function yearLevelOptions(): array
+    {
+        return [
+            1 => '1st Year',
+            2 => '2nd Year',
+            3 => '3rd Year',
+            4 => '4th Year',
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function sectionOptions(?int $onlyYearLevel = null): array
     {
         $sections = [];
 
-        foreach ([1, 2, 3, 4] as $yearLevel) {
+        $yearLevels = $onlyYearLevel ? [$onlyYearLevel] : [1, 2, 3, 4];
+
+        foreach ($yearLevels as $yearLevel) {
             foreach ([1, 2, 3, 4, 5, 6] as $sectionNumber) {
                 $sections[] = $yearLevel . '-' . $sectionNumber;
             }
