@@ -504,14 +504,12 @@ class OfficeDashboardController extends Controller
     {
         return [
             'total' => (clone $baseQuery)->count(),
-            'by_program' => (clone $baseQuery)
-                ->reorder()
+            'by_program' => $this->workloadAggregateQuery($baseQuery)
                 ->selectRaw("COALESCE(programs.code, 'No program') as label, COUNT(*) as total")
                 ->groupBy('programs.code')
                 ->orderBy('programs.code')
                 ->get(),
-            'by_year' => (clone $baseQuery)
-                ->reorder()
+            'by_year' => $this->workloadAggregateQuery($baseQuery)
                 ->selectRaw('students.year_level as year_level, COUNT(*) as total')
                 ->groupBy('students.year_level')
                 ->orderBy('students.year_level')
@@ -522,14 +520,27 @@ class OfficeDashboardController extends Controller
 
                     return $row;
                 }),
-            'by_section' => (clone $baseQuery)
-                ->reorder()
+            'by_section' => $this->workloadAggregateQuery($baseQuery)
                 ->selectRaw("COALESCE(students.section, 'No section') as label, students.year_level as year_level, COUNT(*) as total")
                 ->groupBy('students.section', 'students.year_level')
                 ->orderBy('students.year_level')
                 ->orderBy('students.section')
                 ->get(),
         ];
+    }
+
+    private function workloadAggregateQuery($baseQuery)
+    {
+        $query = (clone $baseQuery)
+            ->withoutEagerLoads()
+            ->reorder();
+
+        // The pending queue query selects clearance_steps.* for card rendering.
+        // Reset it before grouping so MySQL production does not reject the
+        // aggregate with ONLY_FULL_GROUP_BY enabled.
+        $query->getQuery()->columns = null;
+
+        return $query;
     }
 
     private function hydrateArchiveRows($archiveSteps)
