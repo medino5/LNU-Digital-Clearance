@@ -4,7 +4,6 @@ use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminClearanceDetailController;
 use App\Http\Controllers\AdminClearanceReportController;
 use App\Http\Controllers\AdminAnalyticsController;
-use App\Http\Controllers\AdminMaintenanceController;
 use App\Http\Controllers\AdminStudentRegistrationRequestController;
 use App\Http\Controllers\AdminOfficeDesignationController;
 use App\Http\Controllers\OfficeAccountAdminController;
@@ -40,10 +39,6 @@ Route::prefix('admin')
         Route::get('/', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
         Route::get('/dashboard/snapshots', [AdminDashboardController::class, 'snapshots'])
             ->name('admin.dashboard.snapshots');
-        Route::post('/maintenance/uat-seeder', [AdminMaintenanceController::class, 'runUatSeeder'])
-            ->name('admin.maintenance.uat-seeder.run');
-        Route::get('/maintenance/uat-seeder/status', [AdminMaintenanceController::class, 'uatSeederStatus'])
-            ->name('admin.maintenance.uat-seeder.status');
         Route::get('/programs', [ProgramAdminController::class, 'index'])->name('admin.programs.index');
         Route::get('/semesters', [SemesterAdminController::class, 'index'])->name('admin.semesters.index');
         Route::get('/routing', [AdminOfficeDesignationController::class, 'index'])->name('admin.routing.index');
