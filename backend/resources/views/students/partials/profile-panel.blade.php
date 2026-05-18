@@ -77,7 +77,7 @@
         <div class="profile-section-header">
             <div>
                 <div class="eyebrow">Clearance Steps</div>
-                <h2>Current clearance routing</h2>
+                <h2>Current clearance designations</h2>
             </div>
         </div>
 

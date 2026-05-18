@@ -1,5 +1,5 @@
 @extends('layouts.portal', [
-    'title' => 'Routing',
+    'title' => 'Designations',
     'subtitle' => 'Assign current holders to each active designation.',
 ])
 
@@ -16,6 +16,5 @@
         ])
     </div>
 @endsection
-
 
 

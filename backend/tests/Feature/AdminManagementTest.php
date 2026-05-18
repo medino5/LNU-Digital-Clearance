@@ -350,8 +350,8 @@ class AdminManagementTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.routing.index'))
             ->assertOk()
-            ->assertSee('Routing Configuration')
-            ->assertSee('Create Routing Office')
+            ->assertSee('Designations')
+            ->assertSee('Create Designation')
             ->assertSee('Holder Assignment')
             ->assertSee('Search designation')
             ->assertSee('All program scopes')
@@ -368,7 +368,7 @@ class AdminManagementTest extends TestCase
             ->assertSee('Get started')
             ->assertSee('Create Student')
             ->assertSee('Create Office Account')
-            ->assertSee('Manage Routing Offices')
+            ->assertSee('Manage Designations')
             ->assertSee('Go to Download Reports')
             ->assertSee('Directory Setup')
             ->assertSee('Term Activity')
@@ -391,7 +391,11 @@ class AdminManagementTest extends TestCase
     public function test_admin_can_create_and_remove_routing_office_from_routing_page(): void
     {
         $admin = User::where('username', 'mis.admin')->firstOrFail();
-        $program = Program::where('code', 'BSIT')->firstOrFail();
+        $program = Program::factory()->create([
+            'code' => 'BSA',
+            'name' => 'Bachelor of Science in Accountancy',
+            'org_name' => 'Accountancy Society',
+        ]);
 
         $this->actingAs($admin)
             ->post(route('admin.office-designations.store'), [
@@ -401,7 +405,7 @@ class AdminManagementTest extends TestCase
             ])
             ->assertRedirect(route('admin.routing.index'));
 
-        $designation = \App\Models\OfficeDesignation::where('key', 'bsit-acad-org-adviser')->firstOrFail();
+        $designation = \App\Models\OfficeDesignation::where('key', 'bsa-acad-org-adviser')->firstOrFail();
 
         $this->assertTrue($designation->is_active);
         $this->assertSame('BSIT Program Adviser', $designation->display_name);
@@ -411,6 +415,27 @@ class AdminManagementTest extends TestCase
             ->assertRedirect(route('admin.routing.index'));
 
         $this->assertFalse($designation->fresh()->is_active);
+    }
+
+    public function test_admin_cannot_create_duplicate_active_designation_scope(): void
+    {
+        $admin = User::where('username', 'mis.admin')->firstOrFail();
+        $program = Program::where('code', 'BSIT')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->from(route('admin.routing.index'))
+            ->post(route('admin.office-designations.store'), [
+                'office_type' => \App\Models\OfficeDesignation::TYPE_ACAD_ORG_TREASURER,
+                'program_id' => $program->id,
+                'display_name' => 'Duplicate BSIT Treasurer',
+            ])
+            ->assertRedirect(route('admin.routing.index') . '#designation-create')
+            ->assertSessionHasErrors(['office_type'], null, 'designationCreate');
+
+        $this->assertDatabaseMissing('office_designations', [
+            'display_name' => 'Duplicate BSIT Treasurer',
+            'is_active' => true,
+        ]);
     }
 
     public function test_admin_dashboard_snapshot_endpoint_filters_by_academic_year_and_semester(): void
@@ -507,8 +532,8 @@ class AdminManagementTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.routing.index'))
             ->assertOk()
-            ->assertSee('Routing Configuration')
-            ->assertSee('Create Routing Office');
+            ->assertSee('Designations')
+            ->assertSee('Create Designation');
 
         $this->actingAs($admin)
             ->get(route('admin.clearance-history.index'))
@@ -532,7 +557,7 @@ class AdminManagementTest extends TestCase
             route('admin.dashboard') => 'Dashboard',
             route('admin.programs.index') => 'Programs',
             route('admin.semesters.index') => 'Semesters',
-            route('admin.routing.index') => 'Routing',
+            route('admin.routing.index') => 'Designations',
             route('admin.students.index') => 'Students',
             route('admin.office-accounts.index') => 'Office Accounts',
             route('admin.analytics.index') => 'Analytics',

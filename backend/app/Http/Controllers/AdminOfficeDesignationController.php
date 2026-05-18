@@ -151,6 +151,14 @@ class AdminOfficeDesignationController extends Controller
         $displayName = trim($validated['display_name'] ?? '') ?: $this->defaultDesignationName($officeType, $program, $yearLevel);
         $key = $this->designationKey($officeType, $program, $yearLevel);
 
+        if ($this->activeDesignationExists($key)) {
+            throw $this->formValidationException(
+                ['office_type' => 'A designation already exists for this type and scope. Remove the existing designation first if you need to replace it.'],
+                'designationCreate',
+                $redirectTo,
+            );
+        }
+
         OfficeDesignation::query()->updateOrCreate(
             ['key' => $key],
             [
@@ -165,7 +173,7 @@ class AdminOfficeDesignationController extends Controller
         return $this->redirectWithMessage(
             route('admin.routing.index'),
             'success',
-            'Routing office saved successfully.',
+            'Designation saved successfully.',
         );
     }
 
@@ -185,7 +193,7 @@ class AdminOfficeDesignationController extends Controller
         return $this->redirectWithMessage(
             route('admin.routing.index'),
             'success',
-            'Routing office removed from new clearances.',
+            'Designation removed from new clearances.',
         );
     }
 
@@ -281,6 +289,14 @@ class AdminOfficeDesignationController extends Controller
             OfficeDesignation::TYPE_VPSD => 'vpsd-office',
             default => Str::slug($officeType),
         };
+    }
+
+    private function activeDesignationExists(string $key): bool
+    {
+        return OfficeDesignation::query()
+            ->where('key', $key)
+            ->where('is_active', true)
+            ->exists();
     }
 
     private function defaultDesignationName(string $officeType, ?Program $program, ?int $yearLevel): string

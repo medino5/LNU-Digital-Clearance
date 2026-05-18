@@ -1,15 +1,16 @@
 <section id="routing-configuration" class="admin-section-card routing-management-card">
     <div class="routing-page-header">
         <div>
-            <h1>Routing Configuration</h1>
-            <p>Manage clearance routes, office designations, and active holders.</p>
+            <h1>Designations</h1>
+            <p>Manage clearance signer roles, scopes, and active holders.</p>
         </div>
     </div>
 
     <div class="routing-create-panel" id="designation-create">
         <div class="routing-create-copy">
-            <span class="eyebrow">Routing Offices</span>
-            <h2>Create Routing Office</h2>
+            <span class="eyebrow">Signer Setup</span>
+            <h2>Create Designation</h2>
+            <p>Choose the role type and scope. Duplicate active designations are blocked to keep the signing order predictable.</p>
         </div>
 
         <form method="POST" action="{{ route('admin.office-designations.store') }}" class="routing-create-form">
@@ -65,7 +66,7 @@
             </label>
 
             <button type="submit" data-loading-button data-loading-text="Saving...">
-                Save Routing Office
+                Save Designation
             </button>
         </form>
     </div>
@@ -345,15 +346,43 @@
         align-items: end;
         padding: 1.5rem;
         border: 1px solid var(--border-subtle);
-        border-radius: 0.75rem;
-        background: var(--bg-surface);
-        box-shadow: var(--card-shadow);
+        border-radius: 1.1rem;
+        background:
+            radial-gradient(circle at top left, rgba(212, 165, 58, 0.2), transparent 34%),
+            linear-gradient(135deg, var(--bg-surface), rgba(247, 245, 239, 0.78));
+        box-shadow: 0 18px 42px rgba(24, 58, 99, 0.08);
+        overflow: hidden;
+        min-width: 0;
+        position: relative;
+    }
+
+    .routing-create-panel::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 5px;
+        background: linear-gradient(180deg, var(--brand-gold), var(--brand-navy));
+    }
+
+    .routing-create-copy {
+        display: grid;
+        gap: 0.45rem;
+        min-width: 0;
     }
 
     .routing-create-copy h2 {
         margin: 4px 0 0;
         color: var(--text-primary);
-        font-size: 1.25rem;
+        font-size: 1.35rem;
+        letter-spacing: -0.03em;
+    }
+
+    .routing-create-copy p {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 0.875rem;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
     }
 
     .routing-create-form {
@@ -361,6 +390,7 @@
         grid-template-columns: repeat(4, minmax(150px, 1fr)) auto;
         gap: 1rem;
         align-items: start;
+        min-width: 0;
     }
 
     .routing-create-form label,
@@ -399,6 +429,7 @@
         text-transform: none;
         letter-spacing: normal;
         font-weight: 600;
+        min-width: 0;
     }
 
     .routing-create-form button {
@@ -526,6 +557,7 @@
         font-size: 15px;
         font-weight: 800;
         line-height: 1.35;
+        overflow-wrap: anywhere;
     }
 
     .routing-muted {
@@ -533,6 +565,7 @@
         color: var(--text-muted);
         font-size: 12px;
         line-height: 1.35;
+        overflow-wrap: anywhere;
     }
 
     .routing-holder-unassigned {
@@ -835,9 +868,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     routingSection.querySelectorAll('[data-routing-delete-form]').forEach(function (form) {
         form.addEventListener('submit', function (event) {
-            const name = form.dataset.routingDeleteName || 'this routing office';
+            const name = form.dataset.routingDeleteName || 'this designation';
 
-            if (!window.confirm('Remove ' + name + ' from new clearance routing? Existing history stays intact.')) {
+            if (!window.confirm('Remove ' + name + ' from new clearance designations? Existing history stays intact.')) {
                 event.preventDefault();
             }
         });
@@ -982,4 +1015,3 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endpush
-

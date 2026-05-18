@@ -1000,16 +1000,16 @@
                 'keywords' => ['add semester', 'create semester', 'new semester', 'active semester'],
             ],
             [
-                'title' => 'Routing Configuration',
-                'description' => 'Review designation routing and assignment rules.',
+                'title' => 'Designations',
+                'description' => 'Review designation scopes and assignment rules.',
                 'url' => route('admin.routing.index') . '#routing-configuration',
                 'keywords' => ['routing', 'route', 'designation', 'designations', 'configuration'],
             ],
             [
-                'title' => 'Create Routing Office',
-                'description' => 'Add VPSD, librarian, adviser, or student-led routing offices.',
+                'title' => 'Create Designation',
+                'description' => 'Add VPSD, librarian, adviser, or student-led signer designations.',
                 'url' => route('admin.routing.index') . '#designation-create',
-                'keywords' => ['create routing office', 'add routing office', 'vpsd', 'librarian', 'adviser', 'treasurer'],
+                'keywords' => ['create routing office', 'add routing office', 'create designation', 'add designation', 'vpsd', 'librarian', 'adviser', 'treasurer'],
             ],
             [
                 'title' => 'Assign Designation Holder',
@@ -1072,7 +1072,7 @@
                 </a>
                 <a href="{{ route('admin.routing.index') }}" class="nav-item {{ request()->routeIs('admin.routing.*') ? 'active' : '' }}">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3v6a3 3 0 0 0 3 3h6a3 3 0 0 1 3 3v6"/><path d="M6 21v-6a3 3 0 0 1 3-3"/><path d="M18 3v6"/></svg>
-                    <span>Routing</span>
+                    <span>Designations</span>
                 </a>
                 <a href="{{ route('admin.students.index') }}" class="nav-item {{ request()->routeIs('admin.students.*') ? 'active' : '' }}">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-8 0v2"/><path d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>

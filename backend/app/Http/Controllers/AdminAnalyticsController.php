@@ -136,7 +136,7 @@ class AdminAnalyticsController extends Controller
             ? Semester::find((int) $request->query('semester_id'))
             : null;
         $scope = $this->normalizeScope(
-            $request->query('scope', $legacySemester ? self::SCOPE_SCHOOL_YEAR_SEMESTER : null),
+            $request->query('scope', self::SCOPE_SCHOOL_YEAR_SEMESTER),
         );
         $academicYears = $this->academicYearOptions();
         $selectedAcademicYear = $this->normalizeAcademicYear(

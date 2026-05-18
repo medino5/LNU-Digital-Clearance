@@ -1,6 +1,6 @@
 @extends('layouts.portal', [
     'title' => 'Dashboard',
-    'subtitle' => 'Start here to navigate programs, semesters, routing, accounts, reports, and analytics.',
+    'subtitle' => 'Start here to navigate programs, semesters, designations, accounts, reports, and analytics.',
 ])
 
 @section('page')
@@ -95,8 +95,8 @@
                             </svg>
                         </span>
                         <span class="quick-action-content">
-                            <span class="quick-action-label">Manage Routing Offices</span>
-                            <span class="quick-action-copy">Create routes and assign holders.</span>
+                            <span class="quick-action-label">Manage Designations</span>
+                            <span class="quick-action-copy">Create signer roles and assign holders.</span>
                             <span class="quick-action-link">Open &rarr;</span>
                         </span>
                     </a>
@@ -206,6 +206,12 @@
             display: grid;
             gap: 1.5rem;
             font-size: 0.96rem;
+            min-width: 0;
+        }
+
+        .admin-page,
+        .admin-page * {
+            overflow-wrap: anywhere;
         }
 
         .admin-section-card {
@@ -257,8 +263,9 @@
 
         .dashboard-command-metrics {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
             gap: 0.7rem;
+            min-width: 0;
         }
 
         .command-metric {
@@ -271,6 +278,7 @@
             background: rgba(255, 255, 255, 0.76);
             border: 1px solid rgba(22, 52, 92, 0.1);
             box-shadow: 0 12px 28px rgba(24, 58, 99, 0.06);
+            min-width: 0;
         }
 
         .command-metric.warning {
@@ -280,7 +288,7 @@
 
         .command-metric span {
             color: var(--text-primary);
-            font-size: 1.45rem;
+            font-size: clamp(1.1rem, 2vw, 1.45rem);
             font-weight: 800;
             letter-spacing: -0.04em;
             line-height: 1;
@@ -312,7 +320,7 @@
 
         .quick-action-grid {
             display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
             gap: 0.875rem;
             align-items: stretch;
         }
@@ -443,18 +451,18 @@
 
         .snapshot-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(170px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
             justify-content: center;
             gap: 12px;
         }
 
         .snapshot-grid.activity-grid {
-            grid-template-columns: repeat(5, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
         }
 
         .stat-tile {
             display: grid;
-            grid-template-columns: auto minmax(0, 1fr);
+            grid-template-columns: minmax(0, auto) minmax(0, 1fr);
             justify-items: stretch;
             text-align: left;
             gap: 6px;
@@ -464,6 +472,7 @@
             border-radius: 18px;
             min-height: 110px;
             box-shadow: 0 14px 34px rgba(24, 58, 99, 0.05);
+            min-width: 0;
         }
 
         .stat-tile .eyebrow {
@@ -474,20 +483,23 @@
 
         .metric-circle {
             grid-row: span 2;
-            width: 54px;
-            height: 54px;
+            width: clamp(46px, 5vw, 54px);
+            height: clamp(46px, 5vw, 54px);
             border-radius: 50%;
             display: grid;
             place-items: center;
             background: linear-gradient(135deg, var(--text-primary) 0%, var(--brand-navy) 100%);
             color: var(--bg-surface);
             font-weight: 700;
-            font-size: 1.2rem;
+            font-size: clamp(0.92rem, 1.6vw, 1.2rem);
             box-shadow: 0 6px 14px rgba(23, 60, 102, 0.2);
         }
 
         .metric-circle span {
             line-height: 1;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .stat-hint {
@@ -576,6 +588,7 @@
             line-height: 1.4;
             color: var(--text-primary);
             text-align: center;
+            max-width: 100%;
         }
 
         .status-chart-layout {
@@ -635,6 +648,7 @@
             border-radius: 16px;
             background: var(--bg-surface);
             border: 1px solid var(--border-subtle);
+            min-width: 0;
         }
 
         .status-dot {
@@ -648,6 +662,7 @@
         .status-legend-copy {
             display: grid;
             gap: 4px;
+            min-width: 0;
         }
 
         .status-legend-copy strong {

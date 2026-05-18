@@ -28,14 +28,7 @@
             </div>
 
             <form method="GET" action="{{ route('admin.analytics.index') }}" class="analytics-scope-form" data-analytics-filter-form>
-                <label>
-                    Scope
-                    <select name="scope" data-analytics-scope>
-                        @foreach($scopeOptions as $value => $label)
-                            <option value="{{ $value }}" @selected($selectedScope === $value)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </label>
+                <input type="hidden" name="scope" value="school_year_semester">
 
                 <label>
                     School Year
@@ -48,9 +41,9 @@
                     </select>
                 </label>
 
-                <label data-semester-field>
+                <label>
                     Semester
-                    <select name="semester_term" data-semester-select>
+                    <select name="semester_term">
                         @foreach($semesterTerms as $value => $label)
                             <option value="{{ $value }}" @selected($selectedSemesterTerm === $value)>{{ $label }}</option>
                         @endforeach
@@ -283,6 +276,11 @@
             min-width: 0;
         }
 
+        .analytics-dashboard-page,
+        .analytics-dashboard-page * {
+            overflow-wrap: anywhere;
+        }
+
         .analytics-hero,
         .analytics-panel,
         .analytics-metric {
@@ -327,11 +325,11 @@
 
         .analytics-scope-form {
             display: grid;
-            grid-template-columns: repeat(3, minmax(140px, 1fr));
+            grid-template-columns: repeat(3, minmax(130px, 1fr)) auto auto;
             gap: 8px;
             align-items: end;
             justify-self: end;
-            width: min(100%, 780px);
+            width: min(100%, 860px);
             min-width: 0;
         }
 
@@ -499,6 +497,7 @@
             margin: 0;
             color: var(--text-primary);
             font-size: 1.05rem;
+            line-height: 1.2;
         }
 
         .analytics-panel-heading span {
@@ -556,6 +555,7 @@
             color: var(--text-muted);
             font-weight: 800;
             text-align: center;
+            line-height: 1.25;
         }
 
         .analytics-legend {
@@ -642,6 +642,7 @@
             grid-template-columns: auto 1fr;
             gap: 4px 10px;
             align-items: center;
+            min-width: 0;
         }
 
         .analytics-status-list span {
@@ -678,6 +679,7 @@
             grid-template-columns: minmax(0, 0.75fr) minmax(120px, 1fr) auto;
             gap: 12px;
             align-items: center;
+            min-width: 0;
         }
 
         .analytics-horizontal-row strong,
@@ -807,6 +809,7 @@
             align-items: center;
             padding: 10px;
             border-radius: 16px;
+            min-width: 0;
         }
 
         .analytics-bottleneck-list > div > span {
@@ -853,6 +856,7 @@
             padding: 12px;
             border-radius: 16px;
             border: 1px solid rgba(23, 60, 102, 0.08);
+            min-width: 0;
         }
 
         .analytics-insight-icon {
@@ -870,6 +874,7 @@
             display: block;
             color: var(--text-primary);
             margin-bottom: 6px;
+            line-height: 1.25;
         }
 
         .analytics-insight span {
@@ -923,26 +928,4 @@
     </style>
     @endpush
 
-    @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const scopeSelect = document.querySelector('[data-analytics-scope]');
-            const semesterField = document.querySelector('[data-semester-field]');
-            const semesterSelect = document.querySelector('[data-semester-select]');
-
-            if (!scopeSelect || !semesterField || !semesterSelect) {
-                return;
-            }
-
-            const syncSemester = () => {
-                const showSemester = scopeSelect.value === 'school_year_semester';
-                semesterField.hidden = !showSemester;
-                semesterSelect.disabled = !showSemester;
-            };
-
-            scopeSelect.addEventListener('change', syncSemester);
-            syncSemester();
-        });
-    </script>
-    @endpush
 @endsection

@@ -153,9 +153,9 @@ class AdminDashboardController extends Controller
                     ],
                     [
                         'key' => 'routing_designations',
-                        'label' => 'Routing Designations',
+                        'label' => 'Designations',
                         'value' => OfficeDesignation::query()->where('is_active', true)->count(),
-                        'hint' => 'Active routes',
+                        'hint' => 'Active signers',
                     ],
                 ],
                 'activity' => [
