@@ -26,6 +26,7 @@ class HistoricalClearanceDemoSeeder extends Seeder
         ['label' => '2nd Semester 2023-2024', 'academic_year' => '2023-2024', 'starts_at' => '2024-02-05 08:00:00'],
         ['label' => '1st Semester 2024-2025', 'academic_year' => '2024-2025', 'starts_at' => '2024-09-02 08:00:00'],
         ['label' => '2nd Semester 2024-2025', 'academic_year' => '2024-2025', 'starts_at' => '2025-02-03 08:00:00'],
+        ['label' => '1st Semester 2025-2026', 'academic_year' => '2025-2026', 'starts_at' => '2025-09-01 08:00:00'],
     ];
 
     public function run(): void

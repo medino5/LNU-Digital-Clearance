@@ -139,7 +139,7 @@ class UatDatabaseSeederTest extends TestCase
             'name_extension' => null,
         ]);
 
-        $this->assertSame(12320, DB::table('clearances')
+        $this->assertSame(16240, DB::table('clearances')
             ->where('status', 'completed')
             ->where('reference_number', 'like', 'CLR-%')
             ->count());
@@ -156,6 +156,7 @@ class UatDatabaseSeederTest extends TestCase
             '2nd Semester 2023-2024' => 2240,
             '1st Semester 2024-2025' => 3920,
             '2nd Semester 2024-2025' => 3920,
+            '1st Semester 2025-2026' => 3920,
         ] as $semesterLabel => $expectedCount) {
             $this->assertSame($expectedCount, (int) $completedBySemester[$semesterLabel]);
         }
@@ -168,17 +169,17 @@ class UatDatabaseSeederTest extends TestCase
             ->pluck('total', 'program_code');
 
         foreach (['BSIT', 'BAEL', 'BSTM', 'BSENTREP', 'AS', 'EC', 'SM'] as $programCode) {
-            $this->assertSame(1760, (int) $completedByProgram[$programCode]);
+            $this->assertSame(2320, (int) $completedByProgram[$programCode]);
         }
 
         $this->assertSame(6000, DB::table('clearances')
-            ->where('semester_label', '1st Semester 2025-2026')
+            ->where('semester_label', '2nd Semester 2025-2026')
             ->whereIn('status', ['in_progress', 'flagged'])
             ->count());
 
         $this->assertSame(30000, DB::table('clearance_steps')
             ->join('clearances', 'clearance_steps.clearance_id', '=', 'clearances.id')
-            ->where('clearances.semester_label', '1st Semester 2025-2026')
+            ->where('clearances.semester_label', '2nd Semester 2025-2026')
             ->count());
     }
 }

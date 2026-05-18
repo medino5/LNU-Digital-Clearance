@@ -72,10 +72,27 @@ class CoreSystemSeeder extends Seeder
 
         Semester::query()->update(['is_active' => false]);
 
+        Semester::query()
+            ->where('academic_year', '2026-2027')
+            ->doesntHave('clearances')
+            ->delete();
+
+        Semester::query()
+            ->where('academic_year', '2026-2027')
+            ->update(['is_active' => false]);
+
         Semester::updateOrCreate(
-            ['label' => '2nd Semester 2024-2025'],
+            ['label' => '1st Semester 2025-2026'],
             [
-                'academic_year' => '2024-2025',
+                'academic_year' => '2025-2026',
+                'is_active' => false,
+            ]
+        );
+
+        Semester::updateOrCreate(
+            ['label' => '2nd Semester 2025-2026'],
+            [
+                'academic_year' => '2025-2026',
                 'is_active' => true,
             ]
         );

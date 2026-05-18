@@ -21,7 +21,7 @@ class CurrentClearanceDemoSeeder extends Seeder
         Semester::query()->update(['is_active' => false]);
 
         $semester = Semester::query()->updateOrCreate(
-            ['label' => '1st Semester 2025-2026'],
+            ['label' => '2nd Semester 2025-2026'],
             [
                 'academic_year' => '2025-2026',
                 'is_active' => true,
@@ -37,7 +37,7 @@ class CurrentClearanceDemoSeeder extends Seeder
 
         $designationMap = $this->designationMap();
         $adminId = DB::table('users')->where('username', 'mis.admin')->value('id');
-        $baseStartedAt = CarbonImmutable::parse('2025-09-01 08:00:00');
+        $baseStartedAt = CarbonImmutable::parse('2026-02-02 08:00:00');
         $targetStudentIds = Student::query()
             ->orderBy('student_id_number')
             ->limit($targetCount)
