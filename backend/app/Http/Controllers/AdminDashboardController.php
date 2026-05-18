@@ -18,12 +18,15 @@ class AdminDashboardController extends Controller
     public function index()
     {
         $snapshotData = $this->buildSnapshotData();
+        $activeSemester = Semester::active()->first(['id', 'label', 'academic_year']);
         $semesters = Cache::remember('admin.dashboard.semester-options', now()->addMinutes(5), fn () => Semester::query()
             ->orderByDesc('academic_year')
             ->orderBy('label')
             ->get(['id', 'label', 'academic_year']));
 
         return view('admin.dashboard', array_merge($snapshotData, [
+            'dashboardHighlights' => $this->buildDashboardHighlights($activeSemester),
+            'activeSemester' => $activeSemester,
             'academicYears' => $semesters
                 ->pluck('academic_year')
                 ->filter()
@@ -196,6 +199,34 @@ class AdminDashboardController extends Controller
             'statusChart' => $statusChart,
             'statusChartTotal' => $statusChartTotal,
             'statusChartHasData' => $statusChartTotal > 0,
+        ];
+    }
+
+    private function buildDashboardHighlights(?Semester $activeSemester): array
+    {
+        $activeTermClearances = Clearance::query()
+            ->when($activeSemester, fn ($query) => $query->where('semester_id', $activeSemester->id));
+
+        $statusCounts = (clone $activeTermClearances)
+            ->selectRaw('status, count(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+
+        $activeTermTotal = (int) $statusCounts->sum();
+        $completed = (int) ($statusCounts[Clearance::STATUS_COMPLETED] ?? 0);
+        $flagged = (int) ($statusCounts[Clearance::STATUS_FLAGGED] ?? 0);
+        $inProgress = (int) ($statusCounts[Clearance::STATUS_IN_PROGRESS] ?? 0);
+
+        return [
+            'active_term_label' => $activeSemester?->label ?? 'No active semester',
+            'active_term_total' => $activeTermTotal,
+            'active_term_completed' => $completed,
+            'active_term_in_progress' => $inProgress,
+            'active_term_flagged' => $flagged,
+            'completion_rate' => $activeTermTotal > 0 ? (int) round(($completed / $activeTermTotal) * 100) : 0,
+            'pending_registrations' => StudentRegistrationRequest::query()
+                ->where('status', StudentRegistrationRequest::STATUS_PENDING)
+                ->count(),
         ];
     }
 

@@ -7,11 +7,38 @@
     <div class="admin-page">
         @include('admin.partials.page-feedback')
 
+        <section class="dashboard-command-strip">
+            <div class="dashboard-command-copy">
+                <div class="eyebrow">Active Term</div>
+                <h1>{{ $dashboardHighlights['active_term_label'] }}</h1>
+                <p>Current clearance activity, registration work, and the next admin actions in one view.</p>
+            </div>
+
+            <div class="dashboard-command-metrics" aria-label="Current term summary">
+                <div class="command-metric">
+                    <span>{{ number_format($dashboardHighlights['active_term_total']) }}</span>
+                    <small>Current clearances</small>
+                </div>
+                <div class="command-metric">
+                    <span>{{ number_format($dashboardHighlights['active_term_in_progress']) }}</span>
+                    <small>In progress</small>
+                </div>
+                <div class="command-metric warning">
+                    <span>{{ number_format($dashboardHighlights['active_term_flagged']) }}</span>
+                    <small>Needs attention</small>
+                </div>
+                <div class="command-metric">
+                    <span>{{ number_format($dashboardHighlights['pending_registrations']) }}</span>
+                    <small>Registration requests</small>
+                </div>
+            </div>
+        </section>
+
         <section class="dashboard-intro-shell">
             <div class="admin-section-card dashboard-quick-actions">
                 <div>
                     <h1>Get started</h1>
-                    <p class="section-copy">Choose what you want to do next.</p>
+                    <p class="section-copy">Jump to the most common admin tasks.</p>
                 </div>
 
                 <div class="quick-action-grid">
@@ -24,8 +51,8 @@
                         </span>
                         <span class="quick-action-content">
                             <span class="quick-action-label">Create Student</span>
-                            <span class="quick-action-copy">Add or update student accounts.</span>
-                            <span class="quick-action-link">Open →</span>
+                            <span class="quick-action-copy">Add student records and account access.</span>
+                            <span class="quick-action-link">Open &rarr;</span>
                         </span>
                     </a>
 
@@ -38,8 +65,8 @@
                         </span>
                         <span class="quick-action-content">
                             <span class="quick-action-label">Review Requests</span>
-                            <span class="quick-action-copy">Approve mobile registrations.</span>
-                            <span class="quick-action-link">Open →</span>
+                            <span class="quick-action-copy">Approve or reject mobile sign-ups.</span>
+                            <span class="quick-action-link">Open &rarr;</span>
                         </span>
                     </a>
 
@@ -54,7 +81,7 @@
                         <span class="quick-action-content">
                             <span class="quick-action-label">Create Office Account</span>
                             <span class="quick-action-copy">Set up staff signers.</span>
-                            <span class="quick-action-link">Open →</span>
+                            <span class="quick-action-link">Open &rarr;</span>
                         </span>
                     </a>
 
@@ -70,7 +97,7 @@
                         <span class="quick-action-content">
                             <span class="quick-action-label">Manage Routing Offices</span>
                             <span class="quick-action-copy">Create routes and assign holders.</span>
-                            <span class="quick-action-link">Open →</span>
+                            <span class="quick-action-link">Open &rarr;</span>
                         </span>
                     </a>
 
@@ -85,8 +112,8 @@
                         </span>
                         <span class="quick-action-content">
                             <span class="quick-action-label">Go to Download Reports</span>
-                            <span class="quick-action-copy">Choose report filters.</span>
-                            <span class="quick-action-link">Open →</span>
+                            <span class="quick-action-copy">Export clearance records by period.</span>
+                            <span class="quick-action-link">Open &rarr;</span>
                         </span>
                     </a>
                 </div>
@@ -129,6 +156,7 @@
                 <div class="snapshot-group">
                     <div class="snapshot-group-heading">
                         <span>Directory Setup</span>
+                        <small>Mostly stable</small>
                     </div>
                     <div class="snapshot-grid" data-snapshot-group="stable"></div>
                 </div>
@@ -136,6 +164,7 @@
                 <div class="snapshot-group">
                     <div class="snapshot-group-heading">
                         <span>Term Activity</span>
+                        <small>Changes with filters</small>
                     </div>
                     <div class="snapshot-grid activity-grid" data-snapshot-group="activity"></div>
                 </div>
@@ -189,6 +218,83 @@
             box-shadow: var(--card-shadow);
         }
 
+        .dashboard-command-strip {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(520px, 0.95fr);
+            gap: 1rem;
+            align-items: stretch;
+            padding: 1.35rem;
+            border: 1px solid rgba(231, 227, 216, 0.88);
+            border-radius: 1.15rem;
+            background:
+                radial-gradient(circle at top left, rgba(212, 165, 58, 0.18), transparent 32%),
+                linear-gradient(135deg, var(--bg-surface), rgba(247, 245, 239, 0.86));
+            box-shadow: var(--card-shadow);
+        }
+
+        .dashboard-command-copy {
+            display: grid;
+            align-content: center;
+            gap: 0.35rem;
+            min-width: 0;
+        }
+
+        .dashboard-command-copy h1 {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: clamp(1.55rem, 2.2vw, 2.25rem);
+            line-height: 1.05;
+            letter-spacing: -0.045em;
+            font-weight: 700;
+        }
+
+        .dashboard-command-copy p {
+            max-width: 62ch;
+            margin: 0;
+            color: var(--text-muted);
+            line-height: 1.45;
+        }
+
+        .dashboard-command-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.7rem;
+        }
+
+        .command-metric {
+            display: grid;
+            align-content: center;
+            gap: 0.25rem;
+            min-height: 104px;
+            padding: 0.95rem;
+            border-radius: 1rem;
+            background: rgba(255, 255, 255, 0.76);
+            border: 1px solid rgba(22, 52, 92, 0.1);
+            box-shadow: 0 12px 28px rgba(24, 58, 99, 0.06);
+        }
+
+        .command-metric.warning {
+            background: var(--status-warning-bg);
+            border-color: rgba(146, 64, 14, 0.14);
+        }
+
+        .command-metric span {
+            color: var(--text-primary);
+            font-size: 1.45rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            line-height: 1;
+        }
+
+        .command-metric small {
+            color: var(--text-muted);
+            font-size: 0.74rem;
+            font-weight: 800;
+            line-height: 1.25;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
         .dashboard-intro-shell {
             display: grid;
             gap: 14px;
@@ -196,8 +302,12 @@
 
         .dashboard-quick-actions {
             display: grid;
-            gap: 1rem;
+            grid-template-columns: 180px minmax(0, 1fr);
+            gap: 1.1rem;
             align-items: start;
+            background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(247, 245, 239, 0.7)),
+                var(--bg-surface);
         }
 
         .quick-action-grid {
@@ -215,14 +325,14 @@
             min-height: 124px;
             height: 100%;
             padding: 0.875rem;
-            border-radius: 0.75rem;
+            border-radius: 1rem;
             text-decoration: none;
             color: var(--text-primary);
-            background: var(--bg-surface);
-            border: 1px solid var(--border-subtle);
-            box-shadow: var(--card-shadow);
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(231, 227, 216, 0.9);
+            box-shadow: none;
             cursor: pointer;
-            transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+            transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
         }
         .quick-action-card::after {
             content: none;
@@ -231,7 +341,8 @@
         .quick-action-card:hover {
             transform: translateY(-2px);
             border-color: var(--brand-gold);
-            background: var(--bg-app);
+            background: var(--bg-surface);
+            box-shadow: 0 14px 30px rgba(24, 58, 99, 0.08);
         }
 
         .quick-action-label {
@@ -297,6 +408,12 @@
             opacity: 0.72;
         }
 
+        .dashboard-snapshots {
+            background:
+                radial-gradient(circle at top right, rgba(22, 52, 92, 0.08), transparent 30%),
+                var(--bg-surface);
+        }
+
         .snapshot-groups {
             display: grid;
             gap: 16px;
@@ -337,14 +454,15 @@
 
         .stat-tile {
             display: grid;
-            justify-items: center;
-            text-align: center;
+            grid-template-columns: auto minmax(0, 1fr);
+            justify-items: stretch;
+            text-align: left;
             gap: 6px;
-            padding: 15px 12px;
+            padding: 16px;
             background: rgba(255, 255, 255, 0.54);
             border: 1px solid rgba(23, 60, 102, 0.1);
             border-radius: 18px;
-            min-height: 120px;
+            min-height: 110px;
             box-shadow: 0 14px 34px rgba(24, 58, 99, 0.05);
         }
 
@@ -355,8 +473,9 @@
         }
 
         .metric-circle {
-            width: 58px;
-            height: 58px;
+            grid-row: span 2;
+            width: 54px;
+            height: 54px;
             border-radius: 50%;
             display: grid;
             place-items: center;
@@ -365,7 +484,6 @@
             font-weight: 700;
             font-size: 1.2rem;
             box-shadow: 0 6px 14px rgba(23, 60, 102, 0.2);
-            margin-bottom: 6px;
         }
 
         .metric-circle span {
@@ -376,6 +494,7 @@
             color: var(--text-muted);
             font-size: 0.78rem;
             font-weight: 700;
+            align-self: start;
         }
 
         .dashboard-chart-grid {
@@ -389,7 +508,9 @@
             min-height: 100%;
             padding: 18px;
             border-radius: 22px;
-            background: rgba(255, 255, 255, 0.58);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(247, 245, 239, 0.62)),
+                var(--bg-surface);
             border: 1px solid rgba(23, 60, 102, 0.1);
             box-shadow: 0 18px 42px rgba(24, 58, 99, 0.07);
         }
@@ -552,6 +673,15 @@
         }
 
         @media (max-width: 1100px) {
+            .dashboard-command-strip,
+            .dashboard-quick-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-command-metrics {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
             .dashboard-chart-grid {
                 grid-template-columns: 1fr;
             }
@@ -583,6 +713,10 @@
         }
 
         @media (max-width: 720px) {
+            .dashboard-command-metrics {
+                grid-template-columns: 1fr;
+            }
+
             .snapshot-grid,
             .snapshot-grid.activity-grid {
                 grid-template-columns: 1fr;
@@ -715,7 +849,7 @@ document.addEventListener("DOMContentLoaded", function () {
             hint.className = "stat-hint";
             hint.textContent = stat.hint || "";
 
-            card.append(label, metric, hint);
+            card.append(metric, label, hint);
             return card;
         }));
     }
@@ -947,6 +1081,4 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 @endpush
-
-
 
