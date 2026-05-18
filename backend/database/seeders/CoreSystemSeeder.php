@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Support\OfficeDesignationBackfill;
 use App\Support\StudentNameFormatter;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class CoreSystemSeeder extends Seeder
@@ -34,7 +35,7 @@ class CoreSystemSeeder extends Seeder
                 'org_name' => 'Tourism Circle',
             ],
             [
-                'code' => 'BSEntrep',
+                'code' => 'BSENTREP',
                 'name' => 'Bachelor of Science in Entrepreneurship',
                 'org_name' => 'Entrep Society',
             ],
@@ -54,6 +55,11 @@ class CoreSystemSeeder extends Seeder
                 'org_name' => 'Math Student Society',
             ],
         ];
+
+        $this->mergeLegacyProgramCode('BSEntrep', 'BSENTREP', [
+            'name' => 'Bachelor of Science in Entrepreneurship',
+            'org_name' => 'Entrep Society',
+        ]);
 
         $programModels = collect($programs)->mapWithKeys(function (array $program) {
             $model = Program::updateOrCreate(
@@ -123,7 +129,7 @@ class CoreSystemSeeder extends Seeder
                     'BSIT' => 'Aira Valdez',
                     'BAEL' => 'Elena Garcia',
                     'BSTM' => 'Marco Rivera',
-                    'BSEntrep' => 'Nina Torres',
+                    'BSENTREP' => 'Nina Torres',
                     'AS' => 'Rica Manalo',
                     'EC' => 'Hazel Aquino',
                     'SM' => 'Daniel Reyes',
@@ -139,7 +145,7 @@ class CoreSystemSeeder extends Seeder
                     'BSIT' => 'Prof. Ramon Cruz',
                     'BAEL' => 'Prof. Lucia Mendoza',
                     'BSTM' => 'Prof. Celeste Ramos',
-                    'BSEntrep' => 'Prof. Joel Mercado',
+                    'BSENTREP' => 'Prof. Joel Mercado',
                     'AS' => 'Prof. Miriam Santiago',
                     'EC' => 'Prof. Arlene Bautista',
                     'SM' => 'Prof. Victor Dizon',
@@ -204,5 +210,55 @@ class CoreSystemSeeder extends Seeder
                 'date_of_birth' => '2005-03-14',
             ]
         );
+    }
+
+    /**
+     * Merge old mixed-case program seed data into the canonical uppercase code.
+     */
+    private function mergeLegacyProgramCode(string $legacyCode, string $canonicalCode, array $attributes): void
+    {
+        DB::transaction(function () use ($legacyCode, $canonicalCode, $attributes): void {
+            $legacy = Program::query()->where('code', $legacyCode)->first();
+
+            if (! $legacy) {
+                return;
+            }
+
+            $canonical = Program::query()->where('code', $canonicalCode)->first();
+
+            if (! $canonical) {
+                $legacy->update([
+                    'code' => $canonicalCode,
+                    ...$attributes,
+                ]);
+
+                return;
+            }
+
+            DB::table('students')
+                ->where('program_id', $legacy->id)
+                ->update(['program_id' => $canonical->id]);
+
+            DB::table('office_accounts')
+                ->where('program_id', $legacy->id)
+                ->update(['program_id' => $canonical->id]);
+
+            DB::table('office_designations')
+                ->where('program_id', $legacy->id)
+                ->update(['program_id' => $canonical->id]);
+
+            if (DB::getSchemaBuilder()->hasTable('student_registration_requests')) {
+                DB::table('student_registration_requests')
+                    ->where('program_id', $legacy->id)
+                    ->update(['program_id' => $canonical->id]);
+            }
+
+            DB::table('clearances')
+                ->where('program_code', $legacyCode)
+                ->update(['program_code' => $canonicalCode]);
+
+            $canonical->update($attributes + ['code' => $canonicalCode]);
+            $legacy->delete();
+        });
     }
 }

@@ -16,7 +16,7 @@ class UatStudentSeeder extends Seeder
         'BSIT' => 1142,
         'BAEL' => 1143,
         'BSTM' => 1143,
-        'BSEntrep' => 1143,
+        'BSENTREP' => 1143,
         'AS' => 1143,
         'EC' => 1143,
         'SM' => 1142,
@@ -141,7 +141,7 @@ class UatStudentSeeder extends Seeder
             'Lee', 'Tanaka', 'Sullivan', 'Miller', 'Reyes-Chua', 'Dela Pena',
         ];
 
-        $programOffset = array_search($programCode, ['BSIT', 'BAEL', 'BSTM', 'BSEntrep', 'AS', 'EC', 'SM'], true) ?: 0;
+        $programOffset = array_search($programCode, ['BSIT', 'BAEL', 'BSTM', 'BSENTREP', 'AS', 'EC', 'SM'], true) ?: 0;
 
         return [
             'first_name' => $firstNames[($studentNumber + ($programOffset * 11)) % count($firstNames)],

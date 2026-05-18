@@ -82,7 +82,7 @@ class UatDatabaseSeederTest extends TestCase
             'BSIT' => 1142,
             'BAEL' => 1143,
             'BSTM' => 1143,
-            'BSEntrep' => 1143,
+            'BSENTREP' => 1143,
             'AS' => 1143,
             'EC' => 1143,
             'SM' => 1142,
@@ -167,7 +167,7 @@ class UatDatabaseSeederTest extends TestCase
             ->groupBy('program_code')
             ->pluck('total', 'program_code');
 
-        foreach (['BSIT', 'BAEL', 'BSTM', 'BSEntrep', 'AS', 'EC', 'SM'] as $programCode) {
+        foreach (['BSIT', 'BAEL', 'BSTM', 'BSENTREP', 'AS', 'EC', 'SM'] as $programCode) {
             $this->assertSame(1760, (int) $completedByProgram[$programCode]);
         }
 
