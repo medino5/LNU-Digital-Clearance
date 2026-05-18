@@ -93,6 +93,45 @@
             </div>
         </section>
 
+        <section class="admin-section-card uat-seeder-panel" data-uat-seeder-panel>
+            <div>
+                <div class="eyebrow">Maintenance</div>
+                <h2>Demo Data Seeder</h2>
+                <p class="section-copy compact-copy">
+                    Use this if Render deploy did not run the UAT seed automatically. It starts in the background and may take a few minutes.
+                </p>
+                <p class="mini" data-uat-seeder-status>
+                    Seeder status is loading...
+                </p>
+            </div>
+
+            <form method="POST" action="{{ route('admin.maintenance.uat-seeder.run') }}" class="uat-seeder-form">
+                @csrf
+                <input type="hidden" name="_form_key" value="uatSeeder">
+
+                <label>
+                    <span>Confirmation</span>
+                    <input
+                        type="text"
+                        name="seed_confirmation"
+                        placeholder="RUN UAT SEEDER"
+                        autocomplete="off"
+                        maxlength="32"
+                    >
+                    <x-field-error field="seed_confirmation" bag="uatSeeder" />
+                </label>
+
+                <button type="submit" data-loading-button data-loading-text="Starting...">
+                    Run Seeder
+                </button>
+            </form>
+
+            <details class="uat-seeder-log">
+                <summary>Seeder log</summary>
+                <pre data-uat-seeder-log>No log output yet.</pre>
+            </details>
+        </section>
+
         <section class="admin-section-card dashboard-snapshots" data-dashboard-snapshots>
             <div class="snapshot-header">
                 <div>
@@ -177,6 +216,71 @@
             display: grid;
             gap: 1.5rem;
             font-size: 0.96rem;
+        }
+
+        .uat-seeder-panel {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(260px, 420px);
+            gap: 1rem;
+            align-items: start;
+        }
+
+        .uat-seeder-panel h2 {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 1.15rem;
+        }
+
+        .uat-seeder-form {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 0.75rem;
+            align-items: end;
+        }
+
+        .uat-seeder-form label {
+            display: grid;
+            gap: 0.35rem;
+        }
+
+        .uat-seeder-form label > span {
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .uat-seeder-log {
+            grid-column: 1 / -1;
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 0.75rem;
+        }
+
+        .uat-seeder-log summary {
+            cursor: pointer;
+            color: var(--brand-navy);
+            font-size: 0.85rem;
+            font-weight: 800;
+        }
+
+        .uat-seeder-log pre {
+            max-height: 240px;
+            overflow: auto;
+            margin: 0.75rem 0 0;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            background: #0E2A47;
+            color: #F7F5EF;
+            font-size: 0.78rem;
+            white-space: pre-wrap;
+        }
+
+        @media (max-width: 900px) {
+            .uat-seeder-panel,
+            .uat-seeder-form {
+                grid-template-columns: 1fr;
+            }
         }
 
         .admin-section-card {
@@ -686,6 +790,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const academicYearFilter = document.querySelector("[data-snapshot-academic-year]");
     const semesterFilter = document.querySelector("[data-snapshot-semester]");
     const snapshotEndpoint = @json(route('admin.dashboard.snapshots'));
+    const uatSeederStatusEndpoint = @json(route('admin.maintenance.uat-seeder.status'));
+    const uatSeederStatus = document.querySelector("[data-uat-seeder-status]");
+    const uatSeederLog = document.querySelector("[data-uat-seeder-log]");
     const initialSnapshot = @json($initialSnapshotPayload);
     let snapshotController = null;
     const snapshotCache = new Map();
@@ -930,6 +1037,44 @@ document.addEventListener("DOMContentLoaded", function () {
     academicYearFilter?.addEventListener("change", loadSnapshot);
     semesterFilter?.addEventListener("change", loadSnapshot);
 
+    async function loadUatSeederStatus() {
+        if (!uatSeederStatus && !uatSeederLog) return;
+
+        try {
+            const response = await fetch(uatSeederStatusEndpoint, {
+                headers: { "Accept": "application/json" },
+            });
+
+            if (!response.ok) {
+                throw new Error("Seeder status request failed");
+            }
+
+            const payload = await response.json();
+            const status = payload.status || "unknown";
+            const message = payload.message || "Seeder status unavailable.";
+            const startedAt = payload.started_at ? ` Started: ${payload.started_at}` : "";
+            const finishedAt = payload.finished_at ? ` Finished: ${payload.finished_at}` : "";
+
+            if (uatSeederStatus) {
+                uatSeederStatus.textContent = `${status.toUpperCase()}: ${message}${startedAt}${finishedAt}`;
+            }
+
+            if (uatSeederLog) {
+                uatSeederLog.textContent = payload.log_tail || "No log output yet.";
+            }
+
+            if (status === "running") {
+                window.setTimeout(loadUatSeederStatus, 8000);
+            }
+        } catch (error) {
+            if (uatSeederStatus) {
+                uatSeederStatus.textContent = "Seeder status could not be loaded.";
+            }
+        }
+    }
+
+    loadUatSeederStatus();
+
     document.querySelectorAll("form").forEach(form => {
         form.addEventListener("submit", function () {
             const btn = form.querySelector("button[type=submit]");
@@ -947,6 +1092,4 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 @endpush
-
-
 
