@@ -120,6 +120,18 @@ class HistoricalClearanceDemoSeeder extends Seeder
             return;
         }
 
+        $completedGeneratedStudentIds = $this->completedGeneratedStudentIds($semester, $students);
+
+        if ($completedGeneratedStudentIds->isNotEmpty()) {
+            $students = $students
+                ->reject(fn (Student $student) => $completedGeneratedStudentIds->contains($student->id))
+                ->values();
+        }
+
+        if ($students->isEmpty()) {
+            return;
+        }
+
         $clearanceRows = [];
 
         foreach ($students as $studentIndex => $student) {
@@ -203,7 +215,7 @@ class HistoricalClearanceDemoSeeder extends Seeder
                     'clearance_id' => $clearance->id,
                     'office_designation_id' => $designation->id,
                     'status' => ClearanceStep::STATUS_APPROVED,
-                    'remarks' => 'Approved during clearance processing.',
+                    'remarks' => 'Cleared by assigned office.',
                     'signed_at' => $signedAt,
                     'office_label' => $designation->display_name,
                     'office_type' => $designation->office_type,
@@ -246,7 +258,7 @@ class HistoricalClearanceDemoSeeder extends Seeder
                     'actor_user_id' => $context['actor_user_id'] ?? null,
                     'actor_role' => 'office',
                     'action' => 'approved',
-                    'remarks' => 'Approved during clearance processing.',
+                    'remarks' => 'Cleared by assigned office.',
                     'created_at' => $signedAt,
                     'updated_at' => $signedAt,
                 ];
@@ -255,6 +267,27 @@ class HistoricalClearanceDemoSeeder extends Seeder
         foreach (array_chunk($eventRows, 1000) as $chunk) {
             DB::table('clearance_step_events')->insert($chunk);
         }
+    }
+
+    private function completedGeneratedStudentIds(Semester $semester, Collection $students): Collection
+    {
+        $studentIds = $students->pluck('id');
+
+        if ($studentIds->isEmpty()) {
+            return collect();
+        }
+
+        return DB::table('clearances')
+            ->join('clearance_steps', 'clearance_steps.clearance_id', '=', 'clearances.id')
+            ->join('clearance_step_events', 'clearance_step_events.clearance_step_id', '=', 'clearance_steps.id')
+            ->where('clearances.semester_id', $semester->id)
+            ->whereIn('clearances.student_id', $studentIds)
+            ->where('clearances.status', Clearance::STATUS_COMPLETED)
+            ->where('clearances.reference_number', 'like', 'CLR-%')
+            ->groupBy('clearances.id', 'clearances.student_id')
+            ->havingRaw('COUNT(DISTINCT clearance_steps.id) >= 1')
+            ->havingRaw('COUNT(clearance_step_events.id) >= 2')
+            ->pluck('clearances.student_id');
     }
 
     /**

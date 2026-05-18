@@ -154,8 +154,9 @@
                                     <p class="mini">
                                         {{ $step->signed_at?->format('M d, Y h:i A') ?? $lastEvent?->created_at?->format('M d, Y h:i A') ?? 'No action yet' }}
                                     </p>
-                                    @if($step->remarks || $lastEvent?->remarks)
-                                        <p class="mini profile-history-remarks">{{ $step->remarks ?: $lastEvent->remarks }}</p>
+                                    @php($historyRemark = $step->remarks ?: $lastEvent?->remarks)
+                                    @if($historyRemark && $historyRemark !== 'Approved during clearance processing.')
+                                        <p class="mini profile-history-remarks">{{ $historyRemark }}</p>
                                     @endif
                                 </div>
                             </div>
@@ -170,4 +171,3 @@
         </div>
     </section>
 </article>
-

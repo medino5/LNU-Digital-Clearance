@@ -190,7 +190,7 @@ class CurrentClearanceDemoSeeder extends Seeder
                             'action' => $action,
                             'remarks' => $action === 'flagged'
                                 ? 'Please verify the submitted clearance details.'
-                                : 'Approved during clearance processing.',
+                                : 'Cleared by assigned office.',
                             'created_at' => $signedAt,
                             'updated_at' => $signedAt,
                         ];
