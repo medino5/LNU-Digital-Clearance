@@ -132,7 +132,7 @@ class OfficeDashboardController extends Controller
                     ),
                     $pendingSort,
                 )
-                    ->simplePaginate(10, ['clearance_steps.*'], 'pending_page')
+                    ->paginate(10, ['clearance_steps.*'], 'pending_page')
                     ->withQueryString();
             } else {
                 try {
@@ -145,7 +145,7 @@ class OfficeDashboardController extends Controller
                     );
 
                     $archiveSteps = $this->applyArchiveSort($archiveQuery, $archiveSort)
-                        ->simplePaginate(10, ['clearance_steps.id'], 'archive_page')
+                        ->paginate(10, ['clearance_steps.id'], 'archive_page')
                         ->withQueryString();
 
                     $archiveSteps = $this->hydrateArchiveRows($archiveSteps);

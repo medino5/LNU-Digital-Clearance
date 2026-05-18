@@ -123,8 +123,8 @@ class AdminClearanceReportExportTest extends TestCase
         $this->assertStringContainsString('BSIT', $workbookXml);
 
         $this->assertStringContainsString('Completed Clearance Report', $summarySheetXml);
-        $this->assertStringContainsString('2nd Semester 2024-2025', $summarySheetXml);
-        $this->assertStringContainsString('2024-2025', $summarySheetXml);
+        $this->assertStringContainsString($semester->label, $summarySheetXml);
+        $this->assertStringContainsString($semester->displayAcademicYear(), $summarySheetXml);
         $this->assertStringContainsString('BSIT', $summarySheetXml);
 
         $this->assertStringContainsString('2302314', $programSheetXml);
@@ -179,7 +179,7 @@ class AdminClearanceReportExportTest extends TestCase
         $admin = $this->seededAdminUser();
 
         $semester = Semester::create([
-            'label' => '1st Semester 2025-2026',
+            'label' => 'Midyear 2025-2026',
             'academic_year' => '2025-2026',
             'is_active' => false,
         ]);
@@ -204,7 +204,7 @@ class AdminClearanceReportExportTest extends TestCase
         $admin = $this->seededAdminUser();
 
         $semester = Semester::create([
-            'label' => '1st Semester 2025-2026',
+            'label' => 'Midyear 2025-2026',
             'academic_year' => '2025-2026',
             'is_active' => false,
         ]);

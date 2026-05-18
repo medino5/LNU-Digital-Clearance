@@ -264,8 +264,11 @@
             <div class="analytics-insight-grid">
                 @foreach($recentInsights as $insight)
                     <article class="analytics-insight analytics-tone-{{ $insight['tone'] }}">
-                        <strong>{{ $insight['title'] }}</strong>
-                        <span>{{ $insight['body'] }}</span>
+                        <span class="analytics-insight-icon">{{ strtoupper(substr($insight['title'], 0, 1)) }}</span>
+                        <div>
+                            <strong>{{ $insight['title'] }}</strong>
+                            <span>{{ $insight['body'] }}</span>
+                        </div>
                     </article>
                 @endforeach
             </div>
@@ -276,7 +279,7 @@
     <style>
         .analytics-dashboard-page {
             display: grid;
-            gap: 14px;
+            gap: 10px;
             min-width: 0;
         }
 
@@ -292,10 +295,10 @@
         .analytics-hero {
             display: grid;
             grid-template-columns: minmax(260px, 1fr) minmax(360px, auto);
-            gap: 16px;
+            gap: 12px;
             align-items: start;
-            padding: 18px;
-            border-radius: 20px;
+            padding: 14px;
+            border-radius: 18px;
             background:
                 radial-gradient(circle at top left, rgba(241, 190, 72, 0.2), transparent 32%),
                 linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-surface) 100%);
@@ -325,7 +328,7 @@
         .analytics-scope-form {
             display: grid;
             grid-template-columns: repeat(3, minmax(140px, 1fr));
-            gap: 10px;
+            gap: 8px;
             align-items: end;
             justify-self: end;
             width: min(100%, 780px);
@@ -346,8 +349,8 @@
         .analytics-scope-form select,
         .analytics-scope-form button,
         .analytics-scope-form a {
-            min-height: 42px;
-            border-radius: 14px;
+            min-height: 38px;
+            border-radius: 12px;
             font: inherit;
             font-weight: 850;
         }
@@ -365,7 +368,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 0 16px;
+            padding: 0 12px;
             border: 0;
             text-decoration: none;
             cursor: pointer;
@@ -388,21 +391,21 @@
         .analytics-metric-grid {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 12px;
+            gap: 10px;
         }
 
         .analytics-metric {
             display: grid;
             grid-template-columns: auto 1fr;
-            gap: 12px;
+            gap: 10px;
             align-items: center;
-            padding: 15px;
-            border-radius: 18px;
+            padding: 12px;
+            border-radius: 16px;
         }
 
         .analytics-metric-icon {
-            width: 48px;
-            height: 48px;
+            width: 42px;
+            height: 42px;
             display: grid;
             place-items: center;
             border-radius: 15px;
@@ -461,7 +464,7 @@
         .analytics-secondary-grid,
         .analytics-bottom-grid {
             display: grid;
-            gap: 12px;
+            gap: 10px;
             align-items: stretch;
             min-width: 0;
         }
@@ -479,8 +482,8 @@
         }
 
         .analytics-panel {
-            padding: 16px;
-            border-radius: 20px;
+            padding: 12px;
+            border-radius: 18px;
             overflow: hidden;
         }
 
@@ -489,7 +492,7 @@
             justify-content: space-between;
             gap: 14px;
             align-items: start;
-            margin-bottom: 18px;
+            margin-bottom: 10px;
         }
 
         .analytics-panel-heading h2 {
@@ -509,8 +512,8 @@
             grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
             gap: 16px;
             align-items: end;
-            min-height: 260px;
-            padding: 12px 4px 0;
+            min-height: 210px;
+            padding: 8px 4px 0;
             border-bottom: 1px solid var(--border-subtle);
         }
 
@@ -518,7 +521,7 @@
             display: grid;
             gap: 8px;
             justify-items: center;
-            min-height: 240px;
+            min-height: 200px;
         }
 
         .analytics-bar-stack {
@@ -526,7 +529,7 @@
             gap: 5px;
             align-items: end;
             justify-content: center;
-            height: 170px;
+            height: 135px;
             width: 100%;
         }
 
@@ -558,7 +561,7 @@
         .analytics-legend {
             display: flex;
             gap: 18px;
-            margin-top: 15px;
+            margin-top: 10px;
             color: var(--text-muted);
             font-weight: 800;
         }
@@ -592,7 +595,7 @@
         }
 
         .analytics-donut {
-            width: 190px;
+            width: 160px;
             aspect-ratio: 1;
             display: grid;
             place-items: center;
@@ -604,7 +607,7 @@
         .analytics-donut::after {
             content: "";
             position: absolute;
-            inset: 44px;
+            inset: 36px;
             border-radius: 50%;
             background: var(--bg-surface);
             box-shadow: inset 0 0 0 1px var(--border-subtle);
@@ -631,7 +634,7 @@
 
         .analytics-status-list {
             display: grid;
-            gap: 15px;
+            gap: 10px;
         }
 
         .analytics-status-list div {
@@ -667,7 +670,7 @@
         .analytics-mini-trend,
         .analytics-insight-grid {
             display: grid;
-            gap: 12px;
+            gap: 8px;
         }
 
         .analytics-horizontal-row {
@@ -715,8 +718,8 @@
             display: grid;
             gap: 7px;
             justify-items: start;
-            padding: 14px;
-            border-radius: 18px;
+            padding: 12px;
+            border-radius: 16px;
             background: var(--bg-surface);
             color: var(--text-primary);
         }
@@ -733,7 +736,7 @@
         }
 
         .analytics-average-card strong {
-            font-size: 1.9rem;
+            font-size: 1.55rem;
             line-height: 1;
         }
 
@@ -765,13 +768,13 @@
             display: grid;
             place-items: center;
             gap: 15px;
-            min-height: 230px;
+            min-height: 180px;
             text-align: center;
         }
 
         .analytics-rate-gauge {
-            width: 190px;
-            height: 98px;
+            width: 160px;
+            height: 84px;
             display: grid;
             place-items: end center;
             padding-bottom: 12px;
@@ -792,8 +795,7 @@
         }
 
         .analytics-bottleneck-list div,
-        .analytics-program-list > div,
-        .analytics-insight {
+        .analytics-program-list > div {
             border: 1px solid var(--border-subtle);
             background: var(--bg-surface);
         }
@@ -803,7 +805,7 @@
             grid-template-columns: auto 1fr;
             gap: 12px;
             align-items: center;
-            padding: 12px;
+            padding: 10px;
             border-radius: 16px;
         }
 
@@ -834,18 +836,34 @@
             grid-template-columns: minmax(0, 1fr) minmax(140px, 1.2fr) auto;
             gap: 12px;
             align-items: center;
-            padding: 12px;
+            padding: 10px;
             border-radius: 16px;
             min-width: 0;
         }
 
         .analytics-insight-grid {
-            grid-template-columns: repeat(5, minmax(0, 1fr));
+            grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
         .analytics-insight {
-            padding: 14px;
-            border-radius: 18px;
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            gap: 10px;
+            align-items: start;
+            padding: 12px;
+            border-radius: 16px;
+            border: 1px solid rgba(23, 60, 102, 0.08);
+        }
+
+        .analytics-insight-icon {
+            width: 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.7);
+            color: currentColor;
+            font-weight: 950;
         }
 
         .analytics-insight strong {
@@ -858,6 +876,11 @@
             color: var(--text-muted);
             font-weight: 750;
             line-height: 1.4;
+        }
+
+        .analytics-insight .analytics-insight-icon {
+            color: currentColor;
+            line-height: 1;
         }
 
         .analytics-empty {
@@ -878,7 +901,6 @@
                 grid-template-columns: 1fr;
             }
 
-            .analytics-scope-form,
             .analytics-insight-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
@@ -924,6 +946,3 @@
     </script>
     @endpush
 @endsection
-
-
-

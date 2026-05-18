@@ -48,6 +48,12 @@
                         <span>{{ $currentOfficeUser?->username }}</span>
                     </div>
 
+                    @if($hasActiveDesignation)
+                        <button type="button" class="topbar-action office-dropdown-action" data-open-workload-report>
+                            Workload Report
+                        </button>
+                    @endif
+
                     <form method="POST" action="{{ route('portal.logout') }}">
                         @csrf
                         <button type="submit" class="topbar-action">Sign Out</button>
@@ -105,7 +111,7 @@
                             <p class="muted">Only students ready for your current designation appear here. VPSD receives students after every other office signs.</p>
                         </div>
 
-                        <button type="button" class="button workload-report-trigger" id="openWorkloadReport">
+                        <button type="button" class="button workload-report-trigger" data-open-workload-report>
                             Progress Report
                         </button>
                     </div>
@@ -207,7 +213,12 @@
                                 $approvedSteps = $clearanceSteps->where('status', \App\Models\ClearanceStep::STATUS_APPROVED)->count();
                                 $waitingSteps = $clearanceSteps->where('status', \App\Models\ClearanceStep::STATUS_AWAITING_ACTION)->count();
                                 $progressPercent = $totalSteps > 0 ? (int) floor(($approvedSteps / $totalSteps) * 100) : 0;
-                                $progressColor = "color-mix(in srgb, #166534 {$progressPercent}%, #991B1B)";
+                                $progressColor = match (true) {
+                                    $progressPercent >= 80 => '#166534',
+                                    $progressPercent >= 55 => '#65A30D',
+                                    $progressPercent >= 30 => '#D97706',
+                                    default => '#991B1B',
+                                };
                             @endphp
 
                             <div class="record office-record pending-record">
@@ -297,23 +308,7 @@
                         @endforelse
                     </div>
 
-                    @if(method_exists($pendingSteps, 'hasPages') && $pendingSteps->hasPages())
-                        <nav class="pagination-wrapper office-simple-pagination" aria-label="Active queue pagination">
-                            @if($pendingSteps->onFirstPage())
-                                <span class="button ghost is-disabled" aria-disabled="true">Previous</span>
-                            @else
-                                <a class="button ghost" href="{{ $pendingSteps->previousPageUrl() }}">Previous</a>
-                            @endif
-
-                            <span class="office-page-indicator">Page {{ $pendingSteps->currentPage() }}</span>
-
-                            @if($pendingSteps->hasMorePages())
-                                <a class="button ghost" href="{{ $pendingSteps->nextPageUrl() }}">Next</a>
-                            @else
-                                <span class="button ghost is-disabled" aria-disabled="true">Next</span>
-                            @endif
-                        </nav>
-                    @endif
+                    @include('office.partials.pagination', ['paginator' => $pendingSteps, 'label' => 'Active queue pagination'])
                 </section>
             @else
                 <section class="office-panel">
@@ -457,23 +452,7 @@
                         @endforelse
                     </div>
 
-                    @if(method_exists($archiveSteps, 'hasPages') && $archiveSteps->hasPages())
-                        <nav class="pagination-wrapper office-simple-pagination" aria-label="Archive pagination">
-                            @if($archiveSteps->onFirstPage())
-                                <span class="button ghost is-disabled" aria-disabled="true">Previous</span>
-                            @else
-                                <a class="button ghost" href="{{ $archiveSteps->previousPageUrl() }}">Previous</a>
-                            @endif
-
-                            <span class="office-page-indicator">Page {{ $archiveSteps->currentPage() }}</span>
-
-                            @if($archiveSteps->hasMorePages())
-                                <a class="button ghost" href="{{ $archiveSteps->nextPageUrl() }}">Next</a>
-                            @else
-                                <span class="button ghost is-disabled" aria-disabled="true">Next</span>
-                            @endif
-                        </nav>
-                    @endif
+                    @include('office.partials.pagination', ['paginator' => $archiveSteps, 'label' => 'Archive pagination'])
                 </section>
             @endif
         @endif
@@ -1095,18 +1074,54 @@
             white-space: nowrap;
         }
 
-        .office-simple-pagination {
+        .office-pagination {
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            gap: 10px;
+            gap: 6px;
             margin-top: 16px;
+            flex-wrap: wrap;
         }
 
-        .office-page-indicator {
+        .office-page-link,
+        .office-page-ellipsis {
+            min-width: 38px;
+            min-height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 12px;
+            border-radius: 999px;
+            border: 1px solid var(--office-line);
+            background: var(--office-surface);
+            color: var(--navy);
+            font-size: 0.86rem;
+            font-weight: 850;
+            text-decoration: none;
+        }
+
+        .office-page-link:hover {
+            border-color: rgba(22, 56, 95, 0.35);
+            background: #edf4ff;
+        }
+
+        .office-page-link.is-current {
+            background: var(--office-secondary);
+            border-color: var(--office-secondary);
+            color: #fff;
+        }
+
+        .office-page-link.is-disabled {
+            pointer-events: none;
+            opacity: 0.42;
+        }
+
+        .office-page-ellipsis {
+            min-width: 24px;
+            padding: 0 4px;
+            border-color: transparent;
+            background: transparent;
             color: var(--muted);
-            font-size: 0.9rem;
-            font-weight: 800;
         }
 
         .button.ghost.is-disabled,
@@ -1598,6 +1613,12 @@
             border-color: var(--navy);
         }
 
+        .office-user-dropdown .office-dropdown-action {
+            background: #edf4ff;
+            color: var(--navy);
+            border-color: rgba(22, 56, 95, 0.18);
+        }
+
         .topbar-logo {
             height: 65px;
             width: auto;
@@ -1715,7 +1736,7 @@
             const closeProfileModal = document.getElementById('closeOfficeStudentProfile');
             const cancelProfileModal = document.getElementById('cancelOfficeStudentProfile');
             const workloadReportModal = document.getElementById('workloadReportModal');
-            const openWorkloadReport = document.getElementById('openWorkloadReport');
+            const workloadReportButtons = document.querySelectorAll('[data-open-workload-report]');
             const closeWorkloadReport = document.getElementById('closeWorkloadReport');
             const cancelWorkloadReport = document.getElementById('cancelWorkloadReport');
 
@@ -1830,8 +1851,13 @@
                 });
             });
 
-            openWorkloadReport?.addEventListener('click', function () {
-                showModal(workloadReportModal);
+            workloadReportButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    showModal(workloadReportModal);
+                    document.querySelectorAll('.office-user-menu[open]').forEach(menu => {
+                        menu.removeAttribute('open');
+                    });
+                });
             });
 
             if (reopenStepId) {

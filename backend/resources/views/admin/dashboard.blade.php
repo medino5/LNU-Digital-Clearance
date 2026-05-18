@@ -25,7 +25,7 @@
                 </div>
                 <div class="command-metric warning">
                     <span>{{ number_format($dashboardHighlights['active_term_flagged']) }}</span>
-                    <small>Needs attention</small>
+                    <small>Flagged/rejected signs</small>
                 </div>
                 <div class="command-metric">
                     <span>{{ number_format($dashboardHighlights['pending_registrations']) }}</span>
