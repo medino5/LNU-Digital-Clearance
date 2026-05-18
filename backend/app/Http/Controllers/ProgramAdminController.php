@@ -14,8 +14,23 @@ class ProgramAdminController extends Controller
 {
     public function index()
     {
+        $programs = Program::withCount('students')->orderBy('code')->get();
+        $totalStudents = (int) $programs->sum('students_count');
+        $programCount = $programs->count();
+        $largestProgram = $programs->sortByDesc('students_count')->first();
+        $maxStudents = max((int) ($largestProgram?->students_count ?? 0), 1);
+
         return view('admin.programs', [
-            'programs' => Program::withCount('students')->orderBy('code')->get(),
+            'programs' => $programs,
+            'programStats' => [
+                'total_students' => $totalStudents,
+                'program_count' => $programCount,
+                'programs_with_students' => $programs->where('students_count', '>', 0)->count(),
+                'average_students' => $programCount > 0 ? (int) round($totalStudents / $programCount) : 0,
+                'largest_program_code' => $largestProgram?->code ?? 'None',
+                'largest_program_students' => (int) ($largestProgram?->students_count ?? 0),
+                'max_students' => $maxStudents,
+            ],
         ]);
     }
 

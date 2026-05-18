@@ -28,10 +28,94 @@
             </button>
         </section>
 
+        <section class="program-overview-grid" aria-label="Program overview">
+            <article class="program-metric-card">
+                <span class="program-metric-icon">S</span>
+                <div>
+                    <p>Total Students</p>
+                    <strong>{{ number_format($programStats['total_students']) }}</strong>
+                    <span>Across {{ number_format($programStats['program_count']) }} official programs</span>
+                </div>
+            </article>
+
+            <article class="program-metric-card">
+                <span class="program-metric-icon">P</span>
+                <div>
+                    <p>Programs With Students</p>
+                    <strong>{{ number_format($programStats['programs_with_students']) }}/{{ number_format($programStats['program_count']) }}</strong>
+                    <span>{{ number_format($programStats['program_count'] - $programStats['programs_with_students']) }} still need enrolled records</span>
+                </div>
+            </article>
+
+            <article class="program-metric-card">
+                <span class="program-metric-icon">L</span>
+                <div>
+                    <p>Largest Roster</p>
+                    <strong>{{ $programStats['largest_program_code'] }}</strong>
+                    <span>{{ number_format($programStats['largest_program_students']) }} students</span>
+                </div>
+            </article>
+
+            <article class="program-metric-card">
+                <span class="program-metric-icon">A</span>
+                <div>
+                    <p>Average Roster</p>
+                    <strong>{{ number_format($programStats['average_students']) }}</strong>
+                    <span>Students per program</span>
+                </div>
+            </article>
+        </section>
+
+        <section class="admin-section-card management-card program-distribution-card">
+            <div class="management-card-header">
+                <div>
+                    <div class="eyebrow">Enrollment Distribution</div>
+                    <h2>Program roster balance</h2>
+                    <p class="management-card-kicker">Quickly spot which programs have complete rosters and which ones still need student records.</p>
+                </div>
+            </div>
+
+            <div class="program-distribution-list">
+                @foreach($programs as $program)
+                    @php
+                        $barWidth = $programStats['max_students'] > 0
+                            ? max(2, min(100, round(($program->students_count / $programStats['max_students']) * 100)))
+                            : 0;
+                        $share = $programStats['total_students'] > 0
+                            ? round(($program->students_count / $programStats['total_students']) * 100, 1)
+                            : 0;
+                        $statusClass = match (true) {
+                            $program->students_count === 0 => 'danger',
+                            $program->students_count < ($programStats['max_students'] * 0.25) => 'warning',
+                            default => 'success',
+                        };
+                        $statusLabel = match ($statusClass) {
+                            'danger' => 'No students',
+                            'warning' => 'Low roster',
+                            default => 'Active roster',
+                        };
+                    @endphp
+
+                    <div class="program-distribution-row">
+                        <div class="program-distribution-label">
+                            <strong>{{ $program->code }}</strong>
+                            <span>{{ number_format($program->students_count) }} students / {{ $share }}%</span>
+                        </div>
+                        <div class="program-distribution-track" aria-label="{{ $program->code }} student distribution">
+                            <span class="program-distribution-fill {{ $statusClass }}" style="width: {{ $barWidth }}%"></span>
+                        </div>
+                        <span class="program-status-pill {{ $statusClass }}">{{ $statusLabel }}</span>
+                    </div>
+                @endforeach
+            </div>
+        </section>
+
         <section class="admin-section-card management-card" id="program-records">
             <div class="management-card-header">
                 <div>
                     <div class="eyebrow">Program Records</div>
+                    <h2>Official programs</h2>
+                    <p class="management-card-kicker">Program code, organization label, roster count, and available maintenance actions.</p>
                 </div>
             </div>
 
@@ -43,6 +127,7 @@
                             <th>Program Name</th>
                             <th>Organization</th>
                             <th>Students</th>
+                            <th>Status</th>
                             <th class="management-action-col">Action</th>
                         </tr>
                     </thead>
@@ -50,6 +135,19 @@
                         @forelse($programs as $program)
                             @php
                                 $programUpdateFormKey = 'program-update-' . $program->id;
+                                $share = $programStats['total_students'] > 0
+                                    ? round(($program->students_count / $programStats['total_students']) * 100, 1)
+                                    : 0;
+                                $rowStatusClass = match (true) {
+                                    $program->students_count === 0 => 'danger',
+                                    $program->students_count < ($programStats['max_students'] * 0.25) => 'warning',
+                                    default => 'success',
+                                };
+                                $rowStatusLabel = match ($rowStatusClass) {
+                                    'danger' => 'No students',
+                                    'warning' => 'Low roster',
+                                    default => 'Active',
+                                };
                             @endphp
 
                             <tr>
@@ -62,7 +160,15 @@
                                 <td>
                                     <span class="org-pill">{{ $program->org_name }}</span>
                                 </td>
-                                <td>{{ number_format($program->students_count) }}</td>
+                                <td>
+                                    <div class="program-table-count">
+                                        <strong>{{ number_format($program->students_count) }}</strong>
+                                        <span>{{ $share }}% of total</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="program-status-pill {{ $rowStatusClass }}">{{ $rowStatusLabel }}</span>
+                                </td>
                                 <td>
                                     <div class="table-action-stack">
                                         <button
@@ -87,7 +193,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5">
+                                <td colspan="6">
                                     <div class="empty-state">No programs added yet.</div>
                                 </td>
                             </tr>
@@ -321,7 +427,201 @@
     </div>
 
     @include('admin.partials.management-page-styles')
+
+    @push('styles')
+        <style>
+            .program-overview-grid {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 1rem;
+            }
+
+            .program-metric-card {
+                display: flex;
+                align-items: flex-start;
+                gap: 0.9rem;
+                min-height: 128px;
+                padding: 1.1rem;
+                border: 1px solid var(--border-subtle);
+                border-radius: 1rem;
+                background:
+                    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(247, 245, 239, 0.78)),
+                    var(--bg-surface);
+                box-shadow: var(--card-shadow);
+            }
+
+            .program-metric-icon {
+                width: 42px;
+                height: 42px;
+                display: grid;
+                place-items: center;
+                flex: 0 0 auto;
+                border-radius: 14px;
+                background: rgba(22, 52, 92, 0.09);
+                color: var(--brand-navy);
+                font-size: 1.1rem;
+                font-weight: 800;
+            }
+
+            .program-metric-card p,
+            .program-metric-card strong,
+            .program-metric-card span {
+                display: block;
+                margin: 0;
+            }
+
+            .program-metric-card p {
+                color: var(--text-muted);
+                font-size: 0.72rem;
+                font-weight: 800;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
+            .program-metric-card strong {
+                margin-top: 0.25rem;
+                color: var(--text-primary);
+                font-size: 1.6rem;
+                line-height: 1.05;
+                letter-spacing: -0.04em;
+            }
+
+            .program-metric-card span:not(.program-metric-icon) {
+                margin-top: 0.35rem;
+                color: var(--text-muted);
+                font-size: 0.84rem;
+                line-height: 1.35;
+            }
+
+            .program-distribution-card {
+                background:
+                    radial-gradient(circle at top left, rgba(212, 165, 58, 0.12), transparent 34%),
+                    var(--bg-surface);
+            }
+
+            .program-distribution-list {
+                display: grid;
+                gap: 0.9rem;
+            }
+
+            .program-distribution-row {
+                display: grid;
+                grid-template-columns: minmax(150px, 190px) minmax(160px, 1fr) auto;
+                align-items: center;
+                gap: 1rem;
+                padding: 0.9rem 1rem;
+                border: 1px solid rgba(231, 227, 216, 0.88);
+                border-radius: 0.9rem;
+                background: rgba(255, 255, 255, 0.72);
+            }
+
+            .program-distribution-label strong,
+            .program-distribution-label span {
+                display: block;
+            }
+
+            .program-distribution-label strong {
+                color: var(--text-primary);
+                font-size: 0.95rem;
+            }
+
+            .program-distribution-label span {
+                margin-top: 0.15rem;
+                color: var(--text-muted);
+                font-size: 0.78rem;
+                white-space: nowrap;
+            }
+
+            .program-distribution-track {
+                position: relative;
+                height: 0.72rem;
+                overflow: hidden;
+                border-radius: 999px;
+                background: rgba(15, 23, 42, 0.08);
+            }
+
+            .program-distribution-fill {
+                position: absolute;
+                inset: 0 auto 0 0;
+                border-radius: inherit;
+                background: var(--brand-navy);
+            }
+
+            .program-distribution-fill.success {
+                background: linear-gradient(90deg, var(--status-info-text), var(--status-success-text));
+            }
+
+            .program-distribution-fill.warning {
+                background: linear-gradient(90deg, var(--brand-gold), var(--status-warning-text));
+            }
+
+            .program-distribution-fill.danger {
+                background: linear-gradient(90deg, var(--status-danger-bg), var(--status-danger-text));
+            }
+
+            .program-status-pill {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 98px;
+                padding: 0.35rem 0.65rem;
+                border-radius: 999px;
+                font-size: 0.72rem;
+                font-weight: 800;
+                white-space: nowrap;
+            }
+
+            .program-status-pill.success {
+                background: var(--status-success-bg);
+                color: var(--status-success-text);
+            }
+
+            .program-status-pill.warning {
+                background: var(--status-warning-bg);
+                color: var(--status-warning-text);
+            }
+
+            .program-status-pill.danger {
+                background: var(--status-danger-bg);
+                color: var(--status-danger-text);
+            }
+
+            .program-table-count {
+                display: grid;
+                gap: 0.15rem;
+            }
+
+            .program-table-count strong {
+                color: var(--text-primary);
+                font-size: 0.95rem;
+            }
+
+            .program-table-count span {
+                color: var(--text-muted);
+                font-size: 0.76rem;
+                white-space: nowrap;
+            }
+
+            @media (max-width: 1180px) {
+                .program-overview-grid {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+            }
+
+            @media (max-width: 760px) {
+                .program-overview-grid,
+                .program-distribution-row {
+                    grid-template-columns: 1fr;
+                }
+
+                .program-distribution-row {
+                    align-items: stretch;
+                }
+
+                .program-status-pill {
+                    width: fit-content;
+                }
+            }
+        </style>
+    @endpush
 @endsection
-
-
-

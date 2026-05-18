@@ -276,16 +276,16 @@ class AdminManagementTest extends TestCase
         // This checks the active-semester rule that drives clearance creation:
         // only one semester should remain active after an admin update.
         $admin = User::where('username', 'mis.admin')->firstOrFail();
-        $current = Semester::where('label', '2nd Semester 2024-2025')->firstOrFail();
+        $current = Semester::where('label', '2nd Semester 2025-2026')->firstOrFail();
 
         $this->actingAs($admin)->post(route('admin.semesters.store'), [
-            'label' => '1st Semester 2025-2026',
+            'label' => 'Midyear 2025-2026',
             'academic_year' => '2025-2026',
             'is_active' => '1',
         ])->assertRedirect();
 
         $current->refresh();
-        $next = Semester::where('label', '1st Semester 2025-2026')->firstOrFail();
+        $next = Semester::where('label', 'Midyear 2025-2026')->firstOrFail();
 
         $this->assertFalse($current->is_active);
         $this->assertTrue($next->is_active);
@@ -421,10 +421,7 @@ class AdminManagementTest extends TestCase
             'program_id' => $student->program_id,
             'year_level' => 2,
         ]);
-        $targetSemester = Semester::factory()->create([
-            'label' => '1st Semester 2025-2026',
-            'academic_year' => '2025-2026',
-        ]);
+        $targetSemester = Semester::where('label', '1st Semester 2025-2026')->firstOrFail();
         $otherSemester = Semester::factory()->create([
             'label' => '2nd Semester 2023-2024',
             'academic_year' => '2023-2024',
@@ -467,11 +464,8 @@ class AdminManagementTest extends TestCase
             'program_id' => $student->program_id,
             'year_level' => 4,
         ]);
-        $baseSemester = Semester::where('label', '2nd Semester 2024-2025')->firstOrFail();
-        $olderSemester = Semester::factory()->create([
-            'label' => '1st Semester 2024-2025',
-            'academic_year' => '2024-2025',
-        ]);
+        $baseSemester = Semester::where('label', '2nd Semester 2025-2026')->firstOrFail();
+        $olderSemester = Semester::where('label', '1st Semester 2025-2026')->firstOrFail();
 
         \App\Models\Clearance::factory()->forStudentAndSemester($student, $olderSemester)->create([
             'status' => \App\Models\Clearance::STATUS_COMPLETED,
@@ -490,8 +484,8 @@ class AdminManagementTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('1st Semester 2024-2025')
-            ->assertSee('2nd Semester 2024-2025')
+            ->assertSee('1st Semester 2025-2026')
+            ->assertSee('2nd Semester 2025-2026')
             ->assertSee('In Progress')
             ->assertSee('Flagged')
             ->assertSee('Completed')
