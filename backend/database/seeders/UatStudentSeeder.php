@@ -3,10 +3,10 @@
 namespace Database\Seeders;
 
 use App\Models\Program;
-use App\Models\Student;
 use App\Models\User;
 use App\Support\StudentNameFormatter;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use RuntimeException;
 
@@ -21,6 +21,8 @@ class UatStudentSeeder extends Seeder
         'EC' => 1143,
         'SM' => 1142,
     ];
+
+    private const UPSERT_CHUNK_SIZE = 500;
 
     public function run(): void
     {
@@ -40,6 +42,9 @@ class UatStudentSeeder extends Seeder
                 throw new RuntimeException('Missing program for UAT roster: ' . $programCode);
             }
 
+            $userRows = [];
+            $studentPayloads = [];
+
             foreach ($this->yearLevelCounts(self::GENERATED_COUNTS_BY_PROGRAM[$programCode]) as $yearLevel => $yearCount) {
                 for ($studentInYear = 1; $studentInYear <= $yearCount; $studentInYear++) {
                     $studentId = sprintf('24%05d', $studentNumber);
@@ -50,38 +55,98 @@ class UatStudentSeeder extends Seeder
                         $nameParts['last_name'],
                         $nameParts['name_extension'],
                     );
+                    $timestamp = now()->toDateTimeString();
 
-                    $user = User::updateOrCreate(
-                        ['username' => $studentId],
-                        [
-                            'name' => $displayName,
-                            'first_name' => $nameParts['first_name'],
-                            'middle_initial' => $nameParts['middle_initial'],
-                            'last_name' => $nameParts['last_name'],
-                            'name_extension' => $nameParts['name_extension'],
-                            'email' => null,
-                            'password' => $defaultPassword,
-                            'role' => User::ROLE_STUDENT,
-                            'is_student' => true,
-                            'is_staff' => false,
-                        ]
-                    );
+                    $userRows[] = [
+                        'name' => $displayName,
+                        'username' => $studentId,
+                        'first_name' => $nameParts['first_name'],
+                        'middle_initial' => $nameParts['middle_initial'],
+                        'last_name' => $nameParts['last_name'],
+                        'name_extension' => $nameParts['name_extension'],
+                        'email' => null,
+                        'password' => $defaultPassword,
+                        'role' => User::ROLE_STUDENT,
+                        'is_student' => true,
+                        'is_staff' => false,
+                        'created_at' => $timestamp,
+                        'updated_at' => $timestamp,
+                    ];
 
-                    Student::updateOrCreate(
-                        ['student_id_number' => $studentId],
-                        [
-                            'user_id' => $user->id,
-                            'program_id' => $program->id,
-                            'year_level' => $yearLevel,
-                            'section' => $this->sectionFor($yearLevel, $studentInYear),
-                            'date_of_birth' => $this->dateOfBirthFor($studentNumber),
-                        ]
-                    );
+                    $studentPayloads[] = [
+                        'student_id_number' => $studentId,
+                        'program_id' => $program->id,
+                        'year_level' => $yearLevel,
+                        'section' => $this->sectionFor($yearLevel, $studentInYear),
+                        'date_of_birth' => $this->dateOfBirthFor($studentNumber),
+                        'created_at' => $timestamp,
+                        'updated_at' => $timestamp,
+                    ];
 
                     $studentNumber++;
                 }
             }
+
+            $this->upsertProgramRoster($programCode, $userRows, $studentPayloads);
         }
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $userRows
+     * @param  array<int, array<string, mixed>>  $studentPayloads
+     */
+    protected function upsertProgramRoster(string $programCode, array $userRows, array $studentPayloads): void
+    {
+        $studentIds = array_column($studentPayloads, 'student_id_number');
+
+        foreach (array_chunk($userRows, self::UPSERT_CHUNK_SIZE) as $chunk) {
+            DB::table('users')->upsert(
+                $chunk,
+                ['username'],
+                [
+                    'name',
+                    'first_name',
+                    'middle_initial',
+                    'last_name',
+                    'name_extension',
+                    'email',
+                    'role',
+                    'is_student',
+                    'is_staff',
+                    'updated_at',
+                ]
+            );
+        }
+
+        $userIds = User::query()
+            ->whereIn('username', $studentIds)
+            ->pluck('id', 'username');
+
+        $studentRows = array_map(
+            static function (array $payload) use ($userIds): array {
+                $payload['user_id'] = $userIds[$payload['student_id_number']];
+
+                return $payload;
+            },
+            $studentPayloads
+        );
+
+        foreach (array_chunk($studentRows, self::UPSERT_CHUNK_SIZE) as $chunk) {
+            DB::table('students')->upsert(
+                $chunk,
+                ['student_id_number'],
+                [
+                    'user_id',
+                    'program_id',
+                    'year_level',
+                    'section',
+                    'date_of_birth',
+                    'updated_at',
+                ]
+            );
+        }
+
+        $this->command?->info(sprintf('Seeded/updated %s UAT students for %s.', count($studentRows), $programCode));
     }
 
     /**
