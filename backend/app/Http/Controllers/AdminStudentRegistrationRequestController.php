@@ -169,7 +169,7 @@ class AdminStudentRegistrationRequestController extends Controller
         return $this->redirectWithMessage(
             $redirectTo,
             'success',
-            'Student registration request rejected.',
+            'Student registration request declined.',
         );
     }
 

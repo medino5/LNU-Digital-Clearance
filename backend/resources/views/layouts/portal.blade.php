@@ -543,6 +543,7 @@
             display: flex;
             flex-direction: column;
             gap: 5px;
+            flex: 1;
         }
 
         .nav-item {
@@ -607,6 +608,15 @@
             gap: 16px;
             z-index: 999;
             box-shadow: 0 4px 18px rgba(14, 39, 66, 0.10);
+            transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+            will-change: transform;
+        }
+
+        .admin-header.is-hidden:not(:focus-within) {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-110%);
+            box-shadow: none;
         }
 
         .admin-current-page {
@@ -640,24 +650,15 @@
         .admin-header-tools {
             flex: 1;
             min-width: 0;
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(320px, 520px) minmax(0, 1fr);
+            display: flex;
+            justify-content: center;
             align-items: center;
-            gap: 12px;
         }
 
         .admin-action-search {
             position: relative;
-            width: 100%;
-            grid-column: 2;
-            justify-self: center;
+            width: min(560px, 70vw);
             transition: opacity 0.18s ease, transform 0.18s ease;
-        }
-
-        .admin-header.is-search-hidden .admin-action-search:not(:focus-within) {
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(-14px);
         }
 
         .admin-action-search-input {
@@ -790,17 +791,10 @@
 
             .admin-header-tools {
                 width: 100%;
-                grid-template-columns: minmax(0, 1fr) auto;
             }
 
             .admin-action-search {
-                grid-column: 1;
                 width: 100%;
-            }
-
-            .admin-user {
-                grid-column: 2;
-                align-self: flex-end;
             }
         }
 
@@ -905,6 +899,45 @@
             align-items: center;
             padding: 10px 14px;
             justify-content: center;
+        }
+
+        .sidebar-account {
+            position: relative;
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .sidebar-account .admin-user-menu {
+            display: block;
+        }
+
+        .sidebar-account .admin-user-menu summary {
+            width: 100%;
+            justify-content: space-between;
+            padding: 6px 7px 6px 10px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .sidebar-account .admin-user-name {
+            max-width: 118px;
+        }
+
+        .sidebar-account .admin-user-avatar {
+            flex: 0 0 32px;
+            width: 32px;
+            height: 32px;
+        }
+
+        .sidebar-account .admin-user-dropdown {
+            position: fixed;
+            top: auto;
+            right: auto;
+            left: 16px;
+            bottom: 76px;
+            width: 250px;
+            z-index: 1200;
         }
 
         .admin-content {
@@ -1109,6 +1142,33 @@
                     <span>Download Reports</span>
                 </a>
             </nav>
+
+            <div class="sidebar-account">
+                <details class="admin-user-menu">
+                    <summary aria-label="Open admin account menu">
+                        <span class="admin-user-name">{{ $currentAdminName }}</span>
+                        <span class="admin-user-avatar">
+                            @if($currentAdminPhoto)
+                                <img src="{{ $currentAdminPhoto }}" alt="{{ $currentAdminName }} profile picture">
+                            @else
+                                {{ strtoupper(substr($currentAdminName, 0, 1)) }}
+                            @endif
+                        </span>
+                    </summary>
+
+                    <div class="admin-user-dropdown">
+                        <div>
+                            <strong>{{ $currentAdminName }}</strong>
+                            <span>{{ $currentAdmin?->username }}</span>
+                        </div>
+
+                        <form method="POST" action="{{ route('portal.logout') }}">
+                            @csrf
+                            <button type="submit">Log Out</button>
+                        </form>
+                    </div>
+                </details>
+            </div>
         </aside>
 
         <main class="admin-main">
@@ -1140,32 +1200,6 @@
                         ></div>
                     </div>
 
-                    <div class="admin-user">
-                        <details class="admin-user-menu">
-                            <summary aria-label="Open admin account menu">
-                                <span class="admin-user-name">{{ $currentAdminName }}</span>
-                                <span class="admin-user-avatar">
-                                    @if($currentAdminPhoto)
-                                        <img src="{{ $currentAdminPhoto }}" alt="{{ $currentAdminName }} profile picture">
-                                    @else
-                                        {{ strtoupper(substr($currentAdminName, 0, 1)) }}
-                                    @endif
-                                </span>
-                            </summary>
-
-                            <div class="admin-user-dropdown">
-                                <div>
-                                    <strong>{{ $currentAdminName }}</strong>
-                                    <span>{{ $currentAdmin?->username }}</span>
-                                </div>
-
-                                <form method="POST" action="{{ route('portal.logout') }}">
-                                    @csrf
-                                    <button type="submit">Log Out</button>
-                                </form>
-                            </div>
-                        </details>
-                    </div>
                 </div>
             </header>
 
@@ -1309,20 +1343,20 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         if (adminActionSearch && adminActionSearchInput && adminActionSearchResults) {
-            const showAdminSearch = function () {
-                adminHeader?.classList.remove('is-search-hidden');
+            const showAdminHeader = function () {
+                adminHeader?.classList.remove('is-hidden');
             };
 
-            const hideAdminSearch = function () {
+            const hideAdminHeader = function () {
                 if (!adminActionSearch.matches(':focus-within')) {
-                    adminHeader?.classList.add('is-search-hidden');
+                    adminHeader?.classList.add('is-hidden');
                 }
             };
 
             adminActionSearchInput.addEventListener('input', renderAdminActionResults);
 
             adminActionSearchInput.addEventListener('focus', function () {
-                showAdminSearch();
+                showAdminHeader();
 
                 if (adminActionSearchInput.value.trim() !== '') {
                     renderAdminActionResults();
@@ -1368,9 +1402,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 const currentScrollY = window.scrollY || 0;
 
                 if (currentScrollY <= 80 || currentScrollY < lastAdminScrollY) {
-                    showAdminSearch();
+                    showAdminHeader();
                 } else if (currentScrollY > lastAdminScrollY + 8) {
-                    hideAdminSearch();
+                    hideAdminHeader();
                 }
 
                 lastAdminScrollY = currentScrollY;
@@ -1378,7 +1412,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             document.addEventListener('mousemove', function (event) {
                 if (event.clientY <= 72) {
-                    showAdminSearch();
+                    showAdminHeader();
                 }
             }, { passive: true });
         }

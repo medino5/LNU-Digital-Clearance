@@ -65,7 +65,7 @@
                         </span>
                         <span class="quick-action-content">
                             <span class="quick-action-label">Review Requests</span>
-                            <span class="quick-action-copy">Approve or reject mobile sign-ups.</span>
+                            <span class="quick-action-copy">Approve or decline mobile sign-ups.</span>
                             <span class="quick-action-link">Open &rarr;</span>
                         </span>
                     </a>

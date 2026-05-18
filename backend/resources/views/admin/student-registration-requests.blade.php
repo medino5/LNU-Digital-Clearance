@@ -10,7 +10,7 @@
         <section class="management-header">
             <div>
                 <h1>Registration Requests</h1>
-                <p>Mobile account sign-ups stay pending here until an admin approves or rejects them.</p>
+                <p>Mobile account sign-ups stay pending here until an admin approves or declines them.</p>
             </div>
         </section>
 
@@ -93,7 +93,7 @@
                                 </div>
 
                                 <span class="badge {{ $registrationRequest->status }}">
-                                    {{ ucfirst($registrationRequest->status) }}
+                                    {{ $registrationRequest->status === \App\Models\StudentRegistrationRequest::STATUS_REJECTED ? 'Declined' : ucfirst($registrationRequest->status) }}
                                 </span>
                             </div>
 
@@ -154,11 +154,11 @@
                                         method="POST"
                                         action="{{ route('admin.registration-requests.reject', $registrationRequest) }}"
                                         class="registration-reject-form"
-                                        onsubmit="return confirm('Reject this student registration request?');"
+                                        onsubmit="return confirm('Decline this student registration request?');"
                                     >
                                         @csrf
-                                        <button type="submit" class="warn" data-loading-button data-loading-text="Rejecting...">
-                                            Reject
+                                        <button type="submit" class="warn" data-loading-button data-loading-text="Declining...">
+                                            Decline
                                         </button>
                                     </form>
                                 </div>
