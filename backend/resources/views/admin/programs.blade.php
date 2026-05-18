@@ -103,7 +103,7 @@
                                                 class="button warn table-action-button"
                                                 data-modal-open="program-delete-{{ $program->id }}"
                                             >
-                                                Delete
+                                                Remove
                                             </button>
                                         @endif
                                     </div>

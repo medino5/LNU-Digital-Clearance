@@ -25,7 +25,7 @@
                 </div>
                 <div class="command-metric warning">
                     <span>{{ number_format($dashboardHighlights['active_term_flagged']) }}</span>
-                    <small>Flagged/rejected signs</small>
+                    <small>Flagged</small>
                 </div>
                 <div class="command-metric">
                     <span>{{ number_format($dashboardHighlights['pending_registrations']) }}</span>
@@ -420,6 +420,7 @@
             background:
                 radial-gradient(circle at top right, rgba(22, 52, 92, 0.08), transparent 30%),
                 var(--bg-surface);
+            overflow: hidden;
         }
 
         .snapshot-groups {
@@ -441,6 +442,7 @@
             font-weight: 800;
             padding-bottom: 6px;
             border-bottom: 1px solid rgba(23, 60, 102, 0.1);
+            min-width: 0;
         }
 
         .snapshot-group-heading small {
@@ -462,10 +464,10 @@
 
         .stat-tile {
             display: grid;
-            grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+            grid-template-columns: auto minmax(0, 1fr);
             justify-items: stretch;
             text-align: left;
-            gap: 6px;
+            gap: 8px 10px;
             padding: 16px;
             background: rgba(255, 255, 255, 0.54);
             border: 1px solid rgba(23, 60, 102, 0.1);
@@ -473,6 +475,7 @@
             min-height: 110px;
             box-shadow: 0 14px 34px rgba(24, 58, 99, 0.05);
             min-width: 0;
+            overflow: hidden;
         }
 
         .stat-tile .eyebrow {
@@ -483,9 +486,12 @@
 
         .metric-circle {
             grid-row: span 2;
-            width: clamp(46px, 5vw, 54px);
-            height: clamp(46px, 5vw, 54px);
-            border-radius: 50%;
+            width: auto;
+            min-width: 64px;
+            max-width: 92px;
+            height: 48px;
+            padding: 0 12px;
+            border-radius: 18px;
             display: grid;
             place-items: center;
             background: linear-gradient(135deg, var(--text-primary) 0%, var(--brand-navy) 100%);
@@ -499,7 +505,8 @@
             line-height: 1;
             max-width: 100%;
             overflow: hidden;
-            text-overflow: ellipsis;
+            text-overflow: clip;
+            font-variant-numeric: tabular-nums;
         }
 
         .stat-hint {
@@ -507,6 +514,7 @@
             font-size: 0.78rem;
             font-weight: 700;
             align-self: start;
+            line-height: 1.25;
         }
 
         .dashboard-chart-grid {
@@ -525,6 +533,8 @@
                 var(--bg-surface);
             border: 1px solid rgba(23, 60, 102, 0.1);
             box-shadow: 0 18px 42px rgba(24, 58, 99, 0.07);
+            min-width: 0;
+            overflow: hidden;
         }
 
         .chart-panel-header {
@@ -543,11 +553,12 @@
 
         .semester-chart {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
-            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
+            gap: clamp(10px, 1.5vw, 16px);
             align-items: end;
-            min-height: 290px;
+            min-height: 270px;
             padding-top: 12px;
+            min-width: 0;
         }
 
         .semester-bar-group {
@@ -565,8 +576,8 @@
 
         .semester-bar-track {
             width: 100%;
-            max-width: 64px;
-            height: 180px;
+            max-width: 58px;
+            height: clamp(135px, 16vw, 180px);
             border-radius: 999px;
             background: linear-gradient(180deg, var(--status-info-bg) 0%, var(--status-info-bg) 100%);
             display: flex;
@@ -589,18 +600,21 @@
             color: var(--text-primary);
             text-align: center;
             max-width: 100%;
+            word-break: normal;
+            overflow-wrap: break-word;
         }
 
         .status-chart-layout {
             display: grid;
-            grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
-            gap: 24px;
+            grid-template-columns: minmax(150px, 0.8fr) minmax(0, 1fr);
+            gap: clamp(14px, 2vw, 24px);
             align-items: center;
+            min-width: 0;
         }
 
         .status-donut {
-            width: 220px;
-            height: 220px;
+            width: clamp(160px, 18vw, 210px);
+            height: clamp(160px, 18vw, 210px);
             border-radius: 50%;
             position: relative;
             display: grid;
@@ -610,8 +624,8 @@
         }
 
         .status-donut-hole {
-            width: 118px;
-            height: 118px;
+            width: 54%;
+            height: 54%;
             border-radius: 50%;
             background: var(--bg-surface);
             display: grid;
@@ -622,10 +636,13 @@
 
         .status-donut-total {
             display: block;
-            font-size: 2rem;
+            font-size: clamp(1.35rem, 2.4vw, 1.85rem);
             font-weight: 700;
             color: var(--text-primary);
             line-height: 1;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: clip;
         }
 
         .status-donut-caption {
@@ -644,7 +661,7 @@
             display: flex;
             gap: 12px;
             align-items: flex-start;
-            padding: 12px 14px;
+            padding: 10px 12px;
             border-radius: 16px;
             background: var(--bg-surface);
             border: 1px solid var(--border-subtle);

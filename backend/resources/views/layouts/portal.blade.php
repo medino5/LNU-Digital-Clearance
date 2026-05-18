@@ -640,15 +640,24 @@
         .admin-header-tools {
             flex: 1;
             min-width: 0;
-            display: flex;
-            justify-content: flex-end;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(320px, 520px) minmax(0, 1fr);
             align-items: center;
             gap: 12px;
         }
 
         .admin-action-search {
             position: relative;
-            width: min(520px, 44vw);
+            width: 100%;
+            grid-column: 2;
+            justify-self: center;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+
+        .admin-header.is-search-hidden .admin-action-search:not(:focus-within) {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-14px);
         }
 
         .admin-action-search-input {
@@ -781,13 +790,16 @@
 
             .admin-header-tools {
                 width: 100%;
+                grid-template-columns: minmax(0, 1fr) auto;
             }
 
             .admin-action-search {
+                grid-column: 1;
                 width: 100%;
             }
 
             .admin-user {
+                grid-column: 2;
                 align-self: flex-end;
             }
         }
@@ -801,6 +813,8 @@
         .admin-user {
             position: relative;
             flex: 0 0 auto;
+            grid-column: 3;
+            justify-self: end;
         }
 
         .admin-user-menu summary {
@@ -1206,8 +1220,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const adminActionSearch = document.querySelector('[data-admin-action-search]');
         const adminActionSearchInput = document.querySelector('[data-admin-action-search-input]');
         const adminActionSearchResults = document.querySelector('[data-admin-action-search-results]');
+        const adminHeader = document.querySelector('.admin-header');
         let adminActionActiveIndex = 0;
         let adminActionRenderedLinks = [];
+        let lastAdminScrollY = window.scrollY || 0;
 
         const normalizeAdminActionSearch = function (value) {
             return String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
@@ -1293,9 +1309,21 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         if (adminActionSearch && adminActionSearchInput && adminActionSearchResults) {
+            const showAdminSearch = function () {
+                adminHeader?.classList.remove('is-search-hidden');
+            };
+
+            const hideAdminSearch = function () {
+                if (!adminActionSearch.matches(':focus-within')) {
+                    adminHeader?.classList.add('is-search-hidden');
+                }
+            };
+
             adminActionSearchInput.addEventListener('input', renderAdminActionResults);
 
             adminActionSearchInput.addEventListener('focus', function () {
+                showAdminSearch();
+
                 if (adminActionSearchInput.value.trim() !== '') {
                     renderAdminActionResults();
                 }
@@ -1335,6 +1363,24 @@ document.addEventListener('DOMContentLoaded', function () {
                     closeAdminActionResults();
                 }
             });
+
+            window.addEventListener('scroll', function () {
+                const currentScrollY = window.scrollY || 0;
+
+                if (currentScrollY <= 80 || currentScrollY < lastAdminScrollY) {
+                    showAdminSearch();
+                } else if (currentScrollY > lastAdminScrollY + 8) {
+                    hideAdminSearch();
+                }
+
+                lastAdminScrollY = currentScrollY;
+            }, { passive: true });
+
+            document.addEventListener('mousemove', function (event) {
+                if (event.clientY <= 72) {
+                    showAdminSearch();
+                }
+            }, { passive: true });
         }
 
         const highlightAdminHashTarget = function () {
