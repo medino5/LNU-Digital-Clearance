@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Student;
 use App\Models\StudentRegistrationRequest;
+use App\Models\Program;
 use App\Models\User;
 use App\Support\StudentNameFormatter;
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ class AdminStudentRegistrationRequestController extends Controller
     {
         $request->validate([
             'search' => ['nullable', 'string', 'max:50'],
+            'program_id' => ['nullable', 'integer', 'exists:programs,id'],
             'status' => ['nullable', 'in:' . implode(',', [
                 StudentRegistrationRequest::STATUS_PENDING,
                 StudentRegistrationRequest::STATUS_APPROVED,
@@ -32,10 +34,15 @@ class AdminStudentRegistrationRequestController extends Controller
         ], true) ? $request->query('status') : StudentRegistrationRequest::STATUS_PENDING;
 
         $search = trim((string) $request->query('search', ''));
+        $programId = $request->filled('program_id') ? (int) $request->query('program_id') : null;
 
         $requestsQuery = StudentRegistrationRequest::query()
             ->with(['program', 'reviewer', 'createdUser'])
             ->where('status', $status);
+
+        if ($programId) {
+            $requestsQuery->where('program_id', $programId);
+        }
 
         if ($search !== '') {
             $searchLike = '%' . $search . '%';
@@ -61,16 +68,20 @@ class AdminStudentRegistrationRequestController extends Controller
                 ->withQueryString(),
             'status' => $status,
             'search' => $search,
-            'pendingCount' => StudentRegistrationRequest::query()
-                ->where('status', StudentRegistrationRequest::STATUS_PENDING)
-                ->count(),
-            'approvedCount' => StudentRegistrationRequest::query()
-                ->where('status', StudentRegistrationRequest::STATUS_APPROVED)
-                ->count(),
-            'rejectedCount' => StudentRegistrationRequest::query()
-                ->where('status', StudentRegistrationRequest::STATUS_REJECTED)
-                ->count(),
+            'programs' => Program::query()->orderBy('code')->get(['id', 'code', 'name']),
+            'programId' => $programId,
+            'pendingCount' => $this->statusCount(StudentRegistrationRequest::STATUS_PENDING, $programId),
+            'approvedCount' => $this->statusCount(StudentRegistrationRequest::STATUS_APPROVED, $programId),
+            'rejectedCount' => $this->statusCount(StudentRegistrationRequest::STATUS_REJECTED, $programId),
         ]);
+    }
+
+    private function statusCount(string $status, ?int $programId): int
+    {
+        return StudentRegistrationRequest::query()
+            ->where('status', $status)
+            ->when($programId, fn ($query) => $query->where('program_id', $programId))
+            ->count();
     }
 
     public function approve(Request $request, StudentRegistrationRequest $registrationRequest)

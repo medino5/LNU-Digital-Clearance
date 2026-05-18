@@ -742,11 +742,22 @@
         .pagination-wrapper {
             display: flex;
             justify-content: center;
+            align-items: center;
             margin-top: 18px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .pagination-wrapper nav {
+            width: 100%;
+            display: flex;
+            justify-content: center;
         }
 
         .pagination {
             display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
             gap: 6px;
             list-style: none;
             padding: 0;

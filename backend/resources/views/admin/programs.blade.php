@@ -24,7 +24,7 @@
                 class="management-primary-action"
                 data-modal-open="program-create-card"
             >
-                Add Program
+                + Add Program
             </button>
         </section>
 

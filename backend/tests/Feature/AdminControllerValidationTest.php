@@ -613,6 +613,35 @@ class AdminControllerValidationTest extends TestCase
             ->assertSessionHasErrors('search');
     }
 
+    public function test_registration_requests_can_be_filtered_by_program(): void
+    {
+        $bsit = Program::factory()->create(['code' => 'BSIT']);
+        $bael = Program::factory()->create(['code' => 'BAEL']);
+
+        StudentRegistrationRequest::factory()->create([
+            'first_name' => 'Filtered',
+            'last_name' => 'Applicant',
+            'program_id' => $bsit->id,
+        ]);
+
+        StudentRegistrationRequest::factory()->create([
+            'first_name' => 'Hidden',
+            'last_name' => 'Applicant',
+            'program_id' => $bael->id,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.registration-requests.index', [
+                'status' => StudentRegistrationRequest::STATUS_PENDING,
+                'program_id' => $bsit->id,
+            ]))
+            ->assertOk()
+            ->assertSee('Filtered')
+            ->assertSee('Applicant')
+            ->assertDontSee('Hidden Applicant')
+            ->assertSee('BSIT');
+    }
+
     public function test_program_delete_is_not_allowed_while_registration_requests_exist(): void
     {
         $program = Program::factory()->create(['code' => 'BSCR']);

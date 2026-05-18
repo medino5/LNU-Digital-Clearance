@@ -24,22 +24,22 @@
 
             <div class="registration-status-tabs" aria-label="Registration request status">
                 <a
-                    href="{{ route('admin.registration-requests.index', array_filter(['status' => 'pending', 'search' => $search])) }}"
+                    href="{{ route('admin.registration-requests.index', array_filter(['status' => 'pending', 'search' => $search, 'program_id' => $programId])) }}"
                     class="registration-status-tab pending {{ $status === 'pending' ? 'active' : '' }}"
                 >
                     Pending <span>{{ $pendingCount }}</span>
                 </a>
                 <a
-                    href="{{ route('admin.registration-requests.index', array_filter(['status' => 'approved', 'search' => $search])) }}"
+                    href="{{ route('admin.registration-requests.index', array_filter(['status' => 'approved', 'search' => $search, 'program_id' => $programId])) }}"
                     class="registration-status-tab approved {{ $status === 'approved' ? 'active' : '' }}"
                 >
                     Approved <span>{{ $approvedCount }}</span>
                 </a>
                 <a
-                    href="{{ route('admin.registration-requests.index', array_filter(['status' => 'rejected', 'search' => $search])) }}"
+                    href="{{ route('admin.registration-requests.index', array_filter(['status' => 'rejected', 'search' => $search, 'program_id' => $programId])) }}"
                     class="registration-status-tab rejected {{ $status === 'rejected' ? 'active' : '' }}"
                 >
-                    Rejected <span>{{ $rejectedCount }}</span>
+                    Declined <span>{{ $rejectedCount }}</span>
                 </a>
             </div>
 
@@ -57,13 +57,25 @@
                     >
                 </label>
 
+                <label>
+                    Program
+                    <select name="program_id">
+                        <option value="">All programs</option>
+                        @foreach($programs as $program)
+                            <option value="{{ $program->id }}" @selected((string) $programId === (string) $program->id)>
+                                {{ $program->code }} - {{ $program->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </label>
+
                 <button type="submit" class="management-primary-action">Search</button>
                 <a href="{{ route('admin.registration-requests.index') }}" class="button secondary management-secondary-action">Reset</a>
             </form>
 
             @if($requests->isEmpty())
                 <div class="empty-state">
-                    No {{ $status }} registration requests found.
+                    No {{ $status === 'rejected' ? 'declined' : $status }} registration requests found.
                 </div>
             @else
                 <div class="registration-request-list">
@@ -237,12 +249,13 @@
 
             .registration-search-form {
                 display: grid;
-                grid-template-columns: minmax(240px, 1fr) auto auto;
+                grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) auto auto;
                 gap: 10px;
                 align-items: end;
             }
 
-            .registration-search-form input {
+            .registration-search-form input,
+            .registration-search-form select {
                 width: 100%;
             }
 
@@ -336,12 +349,19 @@
                 color: var(--status-success-text);
             }
 
+            @media (max-width: 980px) {
+                .registration-search-form {
+                    grid-template-columns: 1fr 1fr;
+                }
+            }
+
             @media (max-width: 720px) {
                 .registration-request-actions,
                 .registration-reject-form,
                 .registration-search-form {
                     display: grid;
                     width: 100%;
+                    grid-template-columns: 1fr;
                 }
 
                 .registration-request-actions form,

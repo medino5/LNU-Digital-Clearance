@@ -60,7 +60,7 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <div class="table-action-group">
+                                    <div class="table-action-stack">
                                         <button
                                             type="button"
                                             class="button secondary table-action-button"
@@ -79,11 +79,11 @@
 
                                             <button
                                                 type="submit"
-                                                class="button danger table-action-button"
+                                                class="button warn table-action-button"
                                                 data-loading-button
-                                                data-loading-text="Deleting..."
+                                                data-loading-text="Removing..."
                                             >
-                                                Delete
+                                                Remove
                                             </button>
                                         </form>
                                     </div>
@@ -258,6 +258,4 @@
 
     @include('admin.partials.management-page-styles')
 @endsection
-
-
 

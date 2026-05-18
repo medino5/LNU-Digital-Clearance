@@ -4,71 +4,83 @@
             <h1>Designations</h1>
             <p>Manage clearance signer roles, scopes, and active holders.</p>
         </div>
+
+        <button type="button" class="routing-primary-action" data-designation-create-open>
+            + Create Designation
+        </button>
     </div>
 
-    <div class="routing-create-panel" id="designation-create">
-        <div class="routing-create-copy">
-            <span class="eyebrow">Signer Setup</span>
-            <h2>Create Designation</h2>
-            <p>Choose the role type and scope. Duplicate active designations are blocked to keep the signing order predictable.</p>
+    <div class="routing-modal-backdrop designation-create-backdrop" id="designationCreateModal" @if($activeFormKey !== 'designation-create') hidden @endif>
+        <div class="routing-modal designation-create-modal" id="designation-create" role="dialog" aria-modal="true" aria-labelledby="designationCreateTitle">
+            <div class="routing-modal-header">
+                <div>
+                    <div class="eyebrow">Signer Setup</div>
+                    <h2 id="designationCreateTitle">Create Designation</h2>
+                    <p>Choose the role type and scope. Duplicate active designations are blocked.</p>
+                </div>
+                <button type="button" class="modal-close-button" data-designation-create-close>&times;</button>
+            </div>
+
+            <form method="POST" action="{{ route('admin.office-designations.store') }}" class="routing-create-form">
+                @csrf
+                <input type="hidden" name="_form_key" value="designation-create">
+
+                <label>
+                    <span>Designation Type</span>
+                    <select name="office_type" data-designation-type required>
+                        @foreach($designationTypeOptions as $value => $label)
+                            <option value="{{ $value }}" @selected(old('office_type') === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    <x-field-error field="office_type" bag="designationCreate" />
+                </label>
+
+                <label data-designation-program-scope>
+                    <span>Program Scope</span>
+                    <select name="program_id">
+                        <option value="">Select program</option>
+                        @foreach($programs as $program)
+                            <option value="{{ $program->id }}" @selected((string) old('program_id') === (string) $program->id)>
+                                {{ $program->code }} - {{ $program->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <x-field-error field="program_id" bag="designationCreate" />
+                </label>
+
+                <label data-designation-year-scope>
+                    <span>Year Level Scope</span>
+                    <select name="year_level">
+                        <option value="">Select year</option>
+                        @foreach([1, 2, 3, 4] as $yearLevel)
+                            <option value="{{ $yearLevel }}" @selected((string) old('year_level') === (string) $yearLevel)>
+                                Year {{ $yearLevel }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <x-field-error field="year_level" bag="designationCreate" />
+                </label>
+
+                <label>
+                    <span>Display Name</span>
+                    <input
+                        type="text"
+                        name="display_name"
+                        value="{{ old('display_name') }}"
+                        maxlength="120"
+                        placeholder="Optional custom name"
+                    >
+                    <x-field-error field="display_name" bag="designationCreate" />
+                </label>
+
+                <div class="routing-modal-actions">
+                    <button type="button" class="secondary" data-designation-create-close>Cancel</button>
+                    <button type="submit" data-loading-button data-loading-text="Saving...">
+                        Save Designation
+                    </button>
+                </div>
+            </form>
         </div>
-
-        <form method="POST" action="{{ route('admin.office-designations.store') }}" class="routing-create-form">
-            @csrf
-            <input type="hidden" name="_form_key" value="designation-create">
-
-            <label>
-                <span>Designation Type</span>
-                <select name="office_type" data-designation-type required>
-                    @foreach($designationTypeOptions as $value => $label)
-                        <option value="{{ $value }}" @selected(old('office_type') === $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
-                <x-field-error field="office_type" bag="designationCreate" />
-            </label>
-
-            <label data-designation-program-scope>
-                <span>Program Scope</span>
-                <select name="program_id">
-                    <option value="">Select program</option>
-                    @foreach($programs as $program)
-                        <option value="{{ $program->id }}" @selected((string) old('program_id') === (string) $program->id)>
-                            {{ $program->code }} - {{ $program->name }}
-                        </option>
-                    @endforeach
-                </select>
-                <x-field-error field="program_id" bag="designationCreate" />
-            </label>
-
-            <label data-designation-year-scope>
-                <span>Year Level Scope</span>
-                <select name="year_level">
-                    <option value="">Select year</option>
-                    @foreach([1, 2, 3, 4] as $yearLevel)
-                        <option value="{{ $yearLevel }}" @selected((string) old('year_level') === (string) $yearLevel)>
-                            Year {{ $yearLevel }}
-                        </option>
-                    @endforeach
-                </select>
-                <x-field-error field="year_level" bag="designationCreate" />
-            </label>
-
-            <label>
-                <span>Display Name</span>
-                <input
-                    type="text"
-                    name="display_name"
-                    value="{{ old('display_name') }}"
-                    maxlength="120"
-                    placeholder="Optional custom name"
-                >
-                <x-field-error field="display_name" bag="designationCreate" />
-            </label>
-
-            <button type="submit" data-loading-button data-loading-text="Saving...">
-                Save Designation
-            </button>
-        </form>
     </div>
 
     <div class="routing-records-card">
@@ -339,55 +351,18 @@
         font-size: 0.875rem;
     }
 
-    .routing-create-panel {
-        display: grid;
-        grid-template-columns: minmax(180px, 0.7fr) minmax(0, 2.3fr);
-        gap: 1.5rem;
-        align-items: end;
-        padding: 1.5rem;
-        border: 1px solid var(--border-subtle);
-        border-radius: 1.1rem;
-        background:
-            radial-gradient(circle at top left, rgba(212, 165, 58, 0.2), transparent 34%),
-            linear-gradient(135deg, var(--bg-surface), rgba(247, 245, 239, 0.78));
-        box-shadow: 0 18px 42px rgba(24, 58, 99, 0.08);
-        overflow: hidden;
-        min-width: 0;
-        position: relative;
-    }
-
-    .routing-create-panel::before {
-        content: "";
-        position: absolute;
-        inset: 0 auto 0 0;
-        width: 5px;
-        background: linear-gradient(180deg, var(--brand-gold), var(--brand-navy));
-    }
-
-    .routing-create-copy {
-        display: grid;
-        gap: 0.45rem;
-        min-width: 0;
-    }
-
-    .routing-create-copy h2 {
-        margin: 4px 0 0;
-        color: var(--text-primary);
-        font-size: 1.35rem;
-        letter-spacing: -0.03em;
-    }
-
-    .routing-create-copy p {
-        margin: 0;
-        color: var(--text-muted);
-        font-size: 0.875rem;
-        line-height: 1.45;
-        overflow-wrap: anywhere;
+    .routing-primary-action {
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        border-radius: 0.5rem;
     }
 
     .routing-create-form {
         display: grid;
-        grid-template-columns: repeat(4, minmax(150px, 1fr)) auto;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 1rem;
         align-items: start;
         min-width: 0;
@@ -432,11 +407,11 @@
         min-width: 0;
     }
 
-    .routing-create-form button {
-        align-self: end;
-        min-height: 2.5rem;
-        border-radius: 0.5rem;
-        white-space: nowrap;
+    .designation-create-modal {
+        width: min(760px, 100%);
+        background:
+            radial-gradient(circle at top left, rgba(212, 165, 58, 0.16), transparent 32%),
+            var(--bg-surface);
     }
 
     .routing-records-card {
@@ -724,7 +699,6 @@
             grid-template-columns: 1fr 1fr;
         }
 
-        .routing-create-panel,
         .routing-create-form {
             grid-template-columns: 1fr 1fr;
         }
@@ -739,7 +713,6 @@
             padding: 16px;
         }
 
-        .routing-create-panel,
         .routing-create-form {
             grid-template-columns: 1fr;
         }
@@ -788,6 +761,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const assignmentUserSelect = document.getElementById('routingAssignmentUserSelect');
     const assignmentSearch = document.getElementById('routingAssignmentSearch');
     const assignmentHelp = document.getElementById('routingAssignmentHelp');
+    const designationCreateModal = document.getElementById('designationCreateModal');
     const designationTypeSelect = routingSection.querySelector('[data-designation-type]');
     const designationProgramScope = routingSection.querySelector('[data-designation-program-scope]');
     const designationYearScope = routingSection.querySelector('[data-designation-year-scope]');
@@ -865,6 +839,39 @@ document.addEventListener('DOMContentLoaded', function () {
 
     designationTypeSelect?.addEventListener('change', syncDesignationScopeFields);
     syncDesignationScopeFields();
+
+    const openDesignationCreateModal = function () {
+        if (!designationCreateModal) {
+            return;
+        }
+
+        designationCreateModal.hidden = false;
+        document.body.style.overflow = 'hidden';
+    };
+
+    const closeDesignationCreateModal = function () {
+        if (!designationCreateModal) {
+            return;
+        }
+
+        designationCreateModal.hidden = true;
+        document.body.style.overflow = '';
+    };
+
+    routingSection.querySelector('[data-designation-create-open]')?.addEventListener('click', openDesignationCreateModal);
+    document.querySelectorAll('[data-designation-create-close]').forEach(function (button) {
+        button.addEventListener('click', closeDesignationCreateModal);
+    });
+
+    designationCreateModal?.addEventListener('click', function (event) {
+        if (event.target === designationCreateModal) {
+            closeDesignationCreateModal();
+        }
+    });
+
+    if (window.location.hash === '#designation-create') {
+        openDesignationCreateModal();
+    }
 
     routingSection.querySelectorAll('[data-routing-delete-form]').forEach(function (form) {
         form.addEventListener('submit', function (event) {

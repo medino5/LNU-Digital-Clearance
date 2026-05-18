@@ -175,9 +175,7 @@
             <div class="admin-section-card chart-panel">
                 <div class="chart-panel-header">
                     <div>
-                        <div class="eyebrow">Clearances Per Semester</div>
                         <h2 class="chart-title">Clearances Per Semester</h2>
-                        <p class="section-copy compact-copy">Updates when the snapshot filters change.</p>
                     </div>
                 </div>
 
@@ -187,9 +185,7 @@
             <div class="admin-section-card chart-panel">
                 <div class="chart-panel-header">
                     <div>
-                        <div class="eyebrow">Clearance Status Distribution</div>
                         <h2 class="chart-title">Clearance Status Distribution</h2>
-                        <p class="section-copy compact-copy">Filtered breakdown of in-progress, flagged, and completed clearances.</p>
                     </div>
                 </div>
 
@@ -465,9 +461,10 @@
         .stat-tile {
             display: grid;
             grid-template-columns: auto minmax(0, 1fr);
-            justify-items: stretch;
+            justify-items: center;
+            align-items: center;
             text-align: left;
-            gap: 8px 10px;
+            gap: 8px 14px;
             padding: 16px;
             background: rgba(255, 255, 255, 0.54);
             border: 1px solid rgba(23, 60, 102, 0.1);
@@ -482,6 +479,8 @@
             margin-bottom: 2px;
             font-size: 0.7rem;
             letter-spacing: 0.06em;
+            text-align: center;
+            align-self: end;
         }
 
         .metric-circle {
@@ -514,6 +513,7 @@
             font-size: 0.78rem;
             font-weight: 700;
             align-self: start;
+            text-align: center;
             line-height: 1.25;
         }
 
