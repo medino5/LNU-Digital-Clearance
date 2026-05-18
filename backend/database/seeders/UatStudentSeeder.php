@@ -12,9 +12,19 @@ use RuntimeException;
 
 class UatStudentSeeder extends Seeder
 {
+    private const GENERATED_COUNTS_BY_PROGRAM = [
+        'BSIT' => 1142,
+        'BAEL' => 1143,
+        'BSTM' => 1143,
+        'BSEntrep' => 1143,
+        'AS' => 1143,
+        'EC' => 1143,
+        'SM' => 1142,
+    ];
+
     public function run(): void
     {
-        $programCodes = ['BSIT', 'BAEL', 'BSTM', 'BSEntrep', 'AS', 'EC', 'SM'];
+        $programCodes = array_keys(self::GENERATED_COUNTS_BY_PROGRAM);
         $programs = Program::query()
             ->whereIn('code', $programCodes)
             ->get()
@@ -30,8 +40,8 @@ class UatStudentSeeder extends Seeder
                 throw new RuntimeException('Missing program for UAT roster: ' . $programCode);
             }
 
-            foreach ([1, 2, 3, 4] as $yearLevel) {
-                for ($studentInYear = 1; $studentInYear <= 50; $studentInYear++) {
+            foreach ($this->yearLevelCounts(self::GENERATED_COUNTS_BY_PROGRAM[$programCode]) as $yearLevel => $yearCount) {
+                for ($studentInYear = 1; $studentInYear <= $yearCount; $studentInYear++) {
                     $studentId = sprintf('24%05d', $studentNumber);
                     $nameParts = $this->studentNameParts($studentNumber, $programCode, $yearLevel);
                     $displayName = StudentNameFormatter::compose(
@@ -72,6 +82,22 @@ class UatStudentSeeder extends Seeder
                 }
             }
         }
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    protected function yearLevelCounts(int $total): array
+    {
+        $base = intdiv($total, 4);
+        $remainder = $total % 4;
+        $counts = [];
+
+        foreach ([1, 2, 3, 4] as $yearLevel) {
+            $counts[$yearLevel] = $base + ($yearLevel <= $remainder ? 1 : 0);
+        }
+
+        return $counts;
     }
 
     /**

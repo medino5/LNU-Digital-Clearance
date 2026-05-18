@@ -48,7 +48,9 @@ class AdminOfficeDesignationController extends Controller
         $search = Str::lower(trim($request->string('search')->toString()));
         $currentUserId = $officeDesignation->activeAssignments()->value('user_id');
 
-        if ($officeDesignation->isStudentLed() && strlen($search) < 2) {
+        $minimumStudentSearchLength = 2;
+
+        if ($officeDesignation->isStudentLed() && strlen($search) < $minimumStudentSearchLength) {
             $users = $currentUserId
                 ? User::query()
                     ->with(['studentProfile.program'])
@@ -64,6 +66,7 @@ class AdminOfficeDesignationController extends Controller
                 ],
                 'current_user_id' => $currentUserId,
                 'requires_search' => true,
+                'minimum_search_length' => $minimumStudentSearchLength,
                 'users' => $this->sortUsers($users)
                     ->map(fn (User $user) => $this->formatEligibleUser($user))
                     ->values(),
@@ -84,6 +87,7 @@ class AdminOfficeDesignationController extends Controller
             ],
             'current_user_id' => $currentUserId,
             'requires_search' => false,
+            'minimum_search_length' => $officeDesignation->isStudentLed() ? $minimumStudentSearchLength : null,
             'users' => $this->sortUsers($users)
                 ->map(fn (User $user) => $this->formatEligibleUser($user))
                 ->values(),

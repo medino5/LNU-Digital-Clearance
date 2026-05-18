@@ -918,9 +918,10 @@ document.addEventListener('DOMContentLoaded', function () {
             setAssignmentOptions(payload.users || [], payload.current_user_id || button.dataset.currentUserId);
 
             if (payload.requires_search && !searchValue.trim()) {
+                const minimumLength = payload.minimum_search_length || 2;
                 assignmentHelp.textContent = payload.users?.length
-                    ? 'Current holder is shown. Search by name or student number to change it.'
-                    : 'Search by name or student number to find eligible students.';
+                    ? 'Current holder is shown. Type at least ' + minimumLength + ' characters to search for another student.'
+                    : 'Type at least ' + minimumLength + ' characters of a name or student number to find eligible students.';
             }
         } catch (error) {
             if (error.name === 'AbortError') {
@@ -981,6 +982,4 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endpush
-
-
 

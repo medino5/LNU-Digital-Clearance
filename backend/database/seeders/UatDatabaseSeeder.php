@@ -13,6 +13,7 @@ class UatDatabaseSeeder extends Seeder
             UatStudentSeeder::class,
             StudentBirthdayBackfillSeeder::class,
             HistoricalClearanceDemoSeeder::class,
+            CurrentClearanceDemoSeeder::class,
         ]);
     }
 }

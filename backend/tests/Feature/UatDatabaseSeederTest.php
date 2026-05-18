@@ -47,13 +47,13 @@ class UatDatabaseSeederTest extends TestCase
         ]);
     }
 
-    public function test_uat_database_seeder_adds_a_balanced_1400_student_roster(): void
+    public function test_uat_database_seeder_adds_large_demo_roster_and_clearance_records(): void
     {
         // This protects the manual-testing dataset: UAT should always reseed
         // with deterministic students plus historical completed clearances.
         $this->seed(UatDatabaseSeeder::class);
 
-        $this->assertSame(1401, Student::query()->count());
+        $this->assertSame(8000, Student::query()->count());
         $this->assertNotNull(Student::query()->where('student_id_number', '2302314')->first());
 
         $generatedStudents = Student::query()
@@ -61,9 +61,9 @@ class UatDatabaseSeederTest extends TestCase
             ->with(['program', 'user'])
             ->get();
 
-        $this->assertSame(1400, $generatedStudents->count());
+        $this->assertSame(7999, $generatedStudents->count());
         $this->assertSame(
-            1400,
+            7999,
             $generatedStudents
                 ->pluck('student_id_number')
                 ->filter(fn (string $studentId) => str_starts_with($studentId, '2') && strlen($studentId) === 7)
@@ -78,21 +78,29 @@ class UatDatabaseSeederTest extends TestCase
             $this->assertMatchesRegularExpression('/^[1-4]-[1-6]$/', $student->section);
         }
 
-        foreach (['BSIT', 'BAEL', 'BSTM', 'BSEntrep', 'AS', 'EC', 'SM'] as $programCode) {
+        foreach ([
+            'BSIT' => 1142,
+            'BAEL' => 1143,
+            'BSTM' => 1143,
+            'BSEntrep' => 1143,
+            'AS' => 1143,
+            'EC' => 1143,
+            'SM' => 1142,
+        ] as $programCode => $expectedCount) {
             $programId = Program::where('code', $programCode)->value('id');
 
             $this->assertSame(
-                200,
+                $expectedCount,
                 $generatedStudents->where('program_id', $programId)->count(),
-                "Expected 200 generated students for {$programCode}."
+                "Expected {$expectedCount} generated students for {$programCode}."
             );
         }
 
-        foreach ([1, 2, 3, 4] as $yearLevel) {
+        foreach ([1 => 2002, 2 => 2002, 3 => 2000, 4 => 1995] as $yearLevel => $expectedCount) {
             $this->assertSame(
-                350,
+                $expectedCount,
                 $generatedStudents->where('year_level', $yearLevel)->count(),
-                "Expected 350 generated students for year level {$yearLevel}."
+                "Expected {$expectedCount} generated students for year level {$yearLevel}."
             );
         }
 
@@ -106,17 +114,17 @@ class UatDatabaseSeederTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('students', [
-            'student_id_number' => '2401400',
+            'student_id_number' => '2407999',
             'year_level' => 4,
-            'section' => '4-2',
+            'section' => '4-3',
         ]);
         $this->assertSame(
-            '2001-09-01',
-            Student::where('student_id_number', '2401400')->firstOrFail()->date_of_birth->toDateString(),
+            '2008-08-20',
+            Student::where('student_id_number', '2407999')->firstOrFail()->date_of_birth->toDateString(),
         );
 
         $this->assertDatabaseHas('students', [
-            'student_id_number' => '2400801',
+            'student_id_number' => '2404572',
             'year_level' => 1,
             'section' => '1-1',
             'program_id' => Program::where('code', 'AS')->value('id'),
@@ -131,7 +139,7 @@ class UatDatabaseSeederTest extends TestCase
             'name_extension' => null,
         ]);
 
-        $this->assertSame(3080, DB::table('clearances')
+        $this->assertSame(12320, DB::table('clearances')
             ->where('status', 'completed')
             ->where('reference_number', 'like', 'CLR-%')
             ->count());
@@ -144,10 +152,10 @@ class UatDatabaseSeederTest extends TestCase
             ->pluck('total', 'semester_label');
 
         foreach ([
-            '1st Semester 2023-2024' => 420,
-            '2nd Semester 2023-2024' => 420,
-            '1st Semester 2024-2025' => 1120,
-            '2nd Semester 2024-2025' => 1120,
+            '1st Semester 2023-2024' => 2240,
+            '2nd Semester 2023-2024' => 2240,
+            '1st Semester 2024-2025' => 3920,
+            '2nd Semester 2024-2025' => 3920,
         ] as $semesterLabel => $expectedCount) {
             $this->assertSame($expectedCount, (int) $completedBySemester[$semesterLabel]);
         }
@@ -160,7 +168,17 @@ class UatDatabaseSeederTest extends TestCase
             ->pluck('total', 'program_code');
 
         foreach (['BSIT', 'BAEL', 'BSTM', 'BSEntrep', 'AS', 'EC', 'SM'] as $programCode) {
-            $this->assertSame(440, (int) $completedByProgram[$programCode]);
+            $this->assertSame(1760, (int) $completedByProgram[$programCode]);
         }
+
+        $this->assertSame(6000, DB::table('clearances')
+            ->where('semester_label', '1st Semester 2025-2026')
+            ->whereIn('status', ['in_progress', 'flagged'])
+            ->count());
+
+        $this->assertSame(30000, DB::table('clearance_steps')
+            ->join('clearances', 'clearance_steps.clearance_id', '=', 'clearances.id')
+            ->where('clearances.semester_label', '1st Semester 2025-2026')
+            ->count());
     }
 }
