@@ -23,10 +23,37 @@ class AdminClearanceReportController extends Controller
         $selectedProgramCode = trim((string) $request->query('history_program_code', ''));
         $semesters = Semester::orderByDesc('is_active')->orderByDesc('created_at')->get();
         $programs = Program::orderBy('code')->get(['code', 'name']);
+        $reportPreviewRows = Clearance::query()
+            ->where('status', Clearance::STATUS_COMPLETED)
+            ->selectRaw('semester_id, program_code, COUNT(*) as total, MAX(completed_at) as latest_completed_at')
+            ->groupBy('semester_id', 'program_code')
+            ->get();
 
         return view('admin.clearance-history', [
             'semesters' => $semesters,
             'programs' => $programs,
+            'reportPreview' => [
+                'semesters' => $semesters
+                    ->mapWithKeys(fn (Semester $semester) => [
+                        (string) $semester->id => [
+                            'label' => $semester->label,
+                            'academicYear' => $semester->displayAcademicYear(),
+                        ],
+                    ]),
+                'programs' => $programs
+                    ->mapWithKeys(fn (Program $program) => [
+                        $program->code => [
+                            'code' => $program->code,
+                            'name' => $program->name,
+                        ],
+                    ]),
+                'rows' => $reportPreviewRows->map(fn ($row) => [
+                    'semesterId' => (string) $row->semester_id,
+                    'programCode' => (string) $row->program_code,
+                    'total' => (int) $row->total,
+                    'latestCompletedAt' => $row->latest_completed_at,
+                ])->values(),
+            ],
             'selectedSemesterId' => $selectedSemesterId,
             'selectedAcademicYear' => $selectedAcademicYear,
             'selectedProgramCode' => $selectedProgramCode,

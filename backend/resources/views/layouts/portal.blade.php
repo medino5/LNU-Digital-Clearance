@@ -520,8 +520,8 @@
         }
 
         .sidebar-logo {
-            width: 64px;
-            height: 64px;
+            width: 68px;
+            height: 68px;
             object-fit: contain;
         }
 

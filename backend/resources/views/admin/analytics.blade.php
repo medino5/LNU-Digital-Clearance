@@ -623,7 +623,12 @@
         .analytics-donut strong {
             align-self: end;
             color: var(--text-primary);
-            font-size: 1.55rem;
+            max-width: 88px;
+            overflow: hidden;
+            font-size: clamp(1rem, 1.6vw, 1.25rem);
+            line-height: 1;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
         }
 
         .analytics-donut span {

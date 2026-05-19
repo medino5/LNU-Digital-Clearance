@@ -1369,13 +1369,19 @@
 
         .office-modal-header h2 {
             margin: 0 0 6px;
+            color: #fff;
             font-size: 1.8rem;
             line-height: 1.1;
         }
 
         .office-modal-header p {
             margin: 0;
+            color: rgba(255, 255, 255, 0.9);
             opacity: 0.92;
+        }
+
+        .office-modal-header .eyebrow {
+            color: rgba(255, 255, 255, 0.78);
         }
 
         .office-modal-close {
@@ -1499,8 +1505,8 @@
         }
 
         .topbar-logo {
-            height: 110px;
-            width: auto;
+            width: 68px;
+            height: 68px;
             object-fit: contain;
             filter: drop-shadow(0 4px 10px rgba(0,0,0,0.2));
         }
@@ -1620,8 +1626,8 @@
         }
 
         .topbar-logo {
-            height: 65px;
-            width: auto;
+            width: 68px;
+            height: 68px;
             object-fit: contain;
         }
 

@@ -624,31 +624,35 @@
         }
 
         .status-donut-hole {
-            width: 54%;
-            height: 54%;
+            width: 58%;
+            height: 58%;
             border-radius: 50%;
             background: var(--bg-surface);
             display: grid;
             place-items: center;
             text-align: center;
             box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+            padding: 0.35rem;
+            min-width: 0;
         }
 
         .status-donut-total {
             display: block;
-            font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+            font-size: clamp(1rem, 1.8vw, 1.35rem);
             font-weight: 700;
             color: var(--text-primary);
             line-height: 1;
             max-width: 100%;
             overflow: hidden;
             text-overflow: clip;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
         }
 
         .status-donut-caption {
             display: block;
-            margin-top: 6px;
-            font-size: 0.82rem;
+            margin-top: 4px;
+            font-size: 0.74rem;
             color: var(--text-muted);
         }
 

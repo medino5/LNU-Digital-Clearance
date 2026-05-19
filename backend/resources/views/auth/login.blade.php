@@ -61,11 +61,11 @@
                         data-target="password"
                         aria-label="Show password"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
                             fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M1 10s4-6 9-6 9 6 9 6-4 6-9 6-9-6-9-6z"/>
-                            <circle cx="12" cy="10" r="3"/>
+                            <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12z"/>
+                            <circle cx="12" cy="12" r="3"/>
                         </svg>
                     </button>
                 </div>
@@ -128,19 +128,32 @@
     right: 12px;
     top: 50%;
     transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
     border: none;
+    border-radius: 999px;
     background: transparent;
     cursor: pointer;
     font-size: 14px;
     color: var(--muted);
+    box-shadow: none;
 }
 
 .password-toggle:hover {
     color: var(--navy);
+    background: rgba(22, 52, 92, 0.08);
+    transform: translateY(-50%);
 }
 
 .password-toggle svg {
     display: block;
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
 }
 
 .password-field .password-toggle {
@@ -164,8 +177,8 @@
 }
 
 .topbar-logo {
-    height: 110px;
-    width: auto;
+    width: 68px;
+    height: 68px;
     object-fit: contain;
     filter: drop-shadow(0 4px 10px rgba(0,0,0,0.2));
 }

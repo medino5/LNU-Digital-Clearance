@@ -629,6 +629,10 @@
             grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.8fr) auto auto;
             gap: 10px;
             align-items: center;
+            padding: 0.8rem;
+            border: 1px solid var(--border-subtle);
+            border-radius: 0.85rem;
+            background: rgba(247, 245, 239, 0.56);
         }
 
         .student-filter-bar input,
@@ -655,11 +659,13 @@
             align-items: center;
             justify-content: center;
             min-width: 74px;
-            padding: 7px 12px;
+            padding: 6px 11px;
             border-radius: 999px;
             background: var(--status-info-bg);
             color: var(--brand-navy);
             font-size: 13px;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
         }
 
         .student-profile-link {
@@ -743,7 +749,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            margin-top: 18px;
+            margin: 18px auto 0;
             width: 100%;
             text-align: center;
         }
@@ -754,6 +760,11 @@
             justify-content: center;
         }
 
+        .pagination-wrapper nav > div,
+        .pagination-wrapper nav > ul {
+            margin-inline: auto;
+        }
+
         .pagination {
             display: flex;
             justify-content: center;
@@ -761,7 +772,7 @@
             gap: 6px;
             list-style: none;
             padding: 0;
-            margin: 0;
+            margin: 0 auto;
         }
 
         .pagination li {

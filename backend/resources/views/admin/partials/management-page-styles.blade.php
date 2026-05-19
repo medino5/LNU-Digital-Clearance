@@ -157,28 +157,41 @@
         border: 1px solid var(--border-subtle);
         border-radius: 0.75rem;
         background: var(--bg-surface);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
     }
 
     .management-table {
         min-width: 720px;
+        border-collapse: separate;
+        border-spacing: 0;
     }
 
     .management-table th {
-        background: var(--bg-surface);
+        padding: 0.75rem 0.9rem;
+        background: rgba(247, 245, 239, 0.72);
         color: var(--text-muted);
-        font-size: 0.75rem;
-        letter-spacing: 0.08em;
-        font-weight: 500;
+        font-size: 0.72rem;
+        letter-spacing: 0.1em;
+        font-weight: 700;
+        border-bottom: 1px solid var(--border-subtle);
+        white-space: nowrap;
     }
 
     .management-table td {
+        padding: 0.85rem 0.9rem;
         vertical-align: middle;
         background: var(--bg-surface);
         overflow-wrap: anywhere;
+        border-bottom: 1px solid rgba(231, 227, 216, 0.82);
+        line-height: 1.35;
     }
 
     .management-table tbody tr:hover td {
-        background: rgba(248, 250, 252, 0.6);
+        background: rgba(248, 250, 252, 0.74);
+    }
+
+    .management-table tbody tr:last-child td {
+        border-bottom: 0;
     }
 
     .management-action-col {
@@ -191,7 +204,8 @@
     }
 
     .table-action-button {
-        padding: 8px 14px;
+        min-height: 34px;
+        padding: 7px 12px;
         font-size: 13px;
     }
 
@@ -456,6 +470,5 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endpush
-
 
 

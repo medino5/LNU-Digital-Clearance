@@ -41,7 +41,7 @@
         justify-content: space-between;
         align-items: flex-start;
         gap: 14px;
-        padding: 18px;
+        padding: 16px;
     }
 
     .student-profile-hero h1 {
@@ -94,19 +94,19 @@
     }
 
     .profile-card {
-        padding: 16px;
+        padding: 14px;
     }
 
     .profile-facts {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
+        gap: 8px;
         margin: 0;
     }
 
     .profile-facts div,
     .profile-count-pill {
-        padding: 10px 12px;
+        padding: 9px 11px;
         border-radius: 0.75rem;
         background: var(--bg-surface);
         border: 1px solid var(--border-subtle);
@@ -201,7 +201,7 @@
     .profile-step-list,
     .profile-history-list {
         display: grid;
-        gap: 10px;
+        gap: 8px;
     }
 
     .profile-step-row,
@@ -210,7 +210,7 @@
         justify-content: space-between;
         align-items: flex-start;
         gap: 12px;
-        padding: 12px;
+        padding: 10px 11px;
         border: 1px solid var(--border-subtle);
         border-radius: 14px;
         background: var(--bg-surface);
@@ -267,7 +267,7 @@
         justify-content: space-between;
         align-items: flex-start;
         gap: 12px;
-        padding: 11px;
+        padding: 10px;
         border-radius: 14px;
         background: var(--bg-app);
         border: 1px solid var(--border-subtle);
@@ -330,5 +330,4 @@
     }
 </style>
 @endpush
-
 
