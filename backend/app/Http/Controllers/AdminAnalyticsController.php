@@ -458,7 +458,7 @@ class AdminAnalyticsController extends Controller
 
         return collect([
             ['label' => 'Completed', 'count' => $completed, 'color' => '#25b86b'],
-            ['label' => 'Pending', 'count' => $pending, 'color' => '#f59f32'],
+            ['label' => 'Pending', 'count' => $pending, 'color' => '#F59E0B'],
             ['label' => 'Flagged', 'count' => $flagged, 'color' => '#ef4444'],
         ])->map(function (array $item) use ($total) {
             $item['percent'] = $total > 0 ? round(($item['count'] / $total) * 100, 1) : 0;

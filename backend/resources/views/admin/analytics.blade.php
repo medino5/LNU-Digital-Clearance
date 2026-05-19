@@ -12,8 +12,11 @@
         $completedPercent = (float) ($statusItems->firstWhere('label', 'Completed')['percent'] ?? 0);
         $pendingPercent = (float) ($statusItems->firstWhere('label', 'Pending')['percent'] ?? 0);
         $flaggedPercent = (float) ($statusItems->firstWhere('label', 'Flagged')['percent'] ?? 0);
+        $completedColor = $statusItems->firstWhere('label', 'Completed')['color'] ?? '#25B86B';
+        $pendingColor = $statusItems->firstWhere('label', 'Pending')['color'] ?? '#F59E0B';
+        $flaggedColor = $statusItems->firstWhere('label', 'Flagged')['color'] ?? '#EF4444';
         $donutGradient = $totals['requests'] > 0
-            ? 'conic-gradient(var(--status-success-text) 0 ' . $completedPercent . '%, var(--status-warning-text) ' . $completedPercent . '% ' . ($completedPercent + $pendingPercent) . '%, var(--status-danger-text) ' . ($completedPercent + $pendingPercent) . '% 100%)'
+            ? 'conic-gradient(' . $completedColor . ' 0 ' . $completedPercent . '%, ' . $pendingColor . ' ' . $completedPercent . '% ' . ($completedPercent + $pendingPercent) . '%, ' . $flaggedColor . ' ' . ($completedPercent + $pendingPercent) . '% 100%)'
             : 'conic-gradient(var(--border-subtle) 0 100%)';
     @endphp
 
