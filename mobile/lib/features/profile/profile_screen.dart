@@ -185,32 +185,6 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 18),
           _PasswordCard(isBusy: isChangingPassword, onSubmit: onChangePassword),
           const SizedBox(height: 18),
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF4DB),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: _gold.withValues(alpha: 0.35)),
-            ),
-            child: const Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.verified_user_outlined, color: _navy),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'This account is used for student clearance only. If any profile detail is wrong, please contact MIS before the semester closes.',
-                    style: TextStyle(
-                      color: _navy,
-                      fontWeight: FontWeight.w600,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -500,22 +474,32 @@ class _AcademicProfileCardState extends State<_AcademicProfileCard> {
 
     return _DetailCard(
       title: 'Profile Details',
-      action: TextButton.icon(
-        onPressed: widget.isBusy
-            ? null
-            : () {
-                if (_isEditing) {
-                  setState(() {
-                    _isEditing = false;
-                    _loadError = null;
-                    _formError = null;
-                  });
-                } else {
-                  _beginEdit();
-                }
-              },
-        icon: Icon(_isEditing ? Icons.close_rounded : Icons.edit_rounded),
-        label: Text(_isEditing ? 'Cancel' : 'Edit'),
+      action: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ProfileInfoButton(
+            message: widget.canEditAcademicRouting
+                ? 'Name and birthday can be edited anytime. Program, year level, and section can be changed before you start clearance or after the current clearance is completed.'
+                : 'Name and birthday can be edited anytime. Program, year level, and section are locked while your current clearance is active to avoid routing mistakes.',
+          ),
+          TextButton.icon(
+            onPressed: widget.isBusy
+                ? null
+                : () {
+                    if (_isEditing) {
+                      setState(() {
+                        _isEditing = false;
+                        _loadError = null;
+                        _formError = null;
+                      });
+                    } else {
+                      _beginEdit();
+                    }
+                  },
+            icon: Icon(_isEditing ? Icons.close_rounded : Icons.edit_rounded),
+            label: Text(_isEditing ? 'Cancel' : 'Edit'),
+          ),
+        ],
       ),
       children: [
         _DetailRow(
@@ -545,14 +529,6 @@ class _AcademicProfileCardState extends State<_AcademicProfileCard> {
           value: widget.student?['section_label'] as String? ?? 'No section',
           isLast: !_isEditing,
         ),
-        if (!widget.canEditAcademicRouting) ...[
-          const SizedBox(height: 10),
-          _ProfileNotice(
-            icon: Icons.lock_clock_rounded,
-            text:
-                'Name and birthday can be edited anytime. Program, year level, and section unlock before starting clearance or after completing the current clearance.',
-          ),
-        ],
         if (_isEditing) ...[
           const SizedBox(height: 14),
           if (_isLoadingOptions)
@@ -912,6 +888,56 @@ class _ProfileNotice extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ProfileInfoButton extends StatelessWidget {
+  const _ProfileInfoButton({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: message,
+      triggerMode: TooltipTriggerMode.tap,
+      showDuration: const Duration(seconds: 4),
+      child: IconButton(
+        visualDensity: VisualDensity.compact,
+        tooltip: 'Profile edit rules',
+        onPressed: () {
+          showDialog<void>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Profile edit rules'),
+              content: Text(message),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Got it'),
+                ),
+              ],
+            ),
+          );
+        },
+        icon: Container(
+          width: 26,
+          height: 26,
+          decoration: BoxDecoration(
+            color: ProfileScreen._gold.withValues(alpha: 0.18),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: ProfileScreen._gold.withValues(alpha: 0.45),
+            ),
+          ),
+          child: const Icon(
+            Icons.priority_high_rounded,
+            size: 17,
+            color: ProfileScreen._navy,
+          ),
+        ),
       ),
     );
   }

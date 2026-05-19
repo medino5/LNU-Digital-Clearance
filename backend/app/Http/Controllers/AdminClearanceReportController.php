@@ -21,7 +21,18 @@ class AdminClearanceReportController extends Controller
         $selectedSemesterId = $request->integer('history_semester');
         $selectedAcademicYear = trim((string) $request->query('history_academic_year', ''));
         $selectedProgramCode = trim((string) $request->query('history_program_code', ''));
-        $semesters = Semester::orderByDesc('is_active')->orderByDesc('created_at')->get();
+        $semesters = Semester::query()
+            ->orderByDesc('academic_year')
+            ->orderByRaw("
+                CASE
+                    WHEN LOWER(label) LIKE '%midyear%' THEN 3
+                    WHEN LOWER(label) LIKE '%2nd%' THEN 2
+                    WHEN LOWER(label) LIKE '%1st%' THEN 1
+                    ELSE 0
+                END DESC
+            ")
+            ->orderByDesc('created_at')
+            ->get();
         $programs = Program::orderBy('code')->get(['code', 'name']);
         $reportPreviewRows = Clearance::query()
             ->where('status', Clearance::STATUS_COMPLETED)

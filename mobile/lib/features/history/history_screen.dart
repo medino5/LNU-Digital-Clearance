@@ -276,7 +276,7 @@ class _HistoryYearSection extends StatelessWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -286,7 +286,7 @@ class _HistoryYearSection extends StatelessWidget {
                 ? '1 clearance record'
                 : '$recordCount clearance records',
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           ...section.semesters.map((semester) {
             return _SemesterGroupCard(group: semester);
           }),
@@ -342,31 +342,31 @@ class _SemesterGroupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 2),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 2),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFE4DACD)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+            padding: const EdgeInsets.fromLTRB(2, 0, 2, 8),
             child: Row(
               children: [
                 Container(
-                  width: 34,
-                  height: 34,
+                  width: 30,
+                  height: 30,
                   decoration: BoxDecoration(
                     color: HistoryScreen._navy.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
                     Icons.calendar_month_rounded,
                     color: HistoryScreen._navy,
-                    size: 18,
+                    size: 16,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -510,8 +510,6 @@ class _HistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = record['status']?.toString() ?? 'in_progress';
-    final semester = record['semester_label']?.toString() ?? 'Unknown semester';
-    final academicYear = record['academic_year']?.toString() ?? 'Unknown SY';
     final reference = record['reference_number']?.toString();
     final programCode = record['program_code']?.toString() ?? '';
     final counts = (record['counts'] as Map?)?.cast<String, dynamic>() ?? {};
@@ -526,10 +524,10 @@ class _HistoryCard extends StatelessWidget {
     return Theme(
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: const Color(0xFFE8EDF3)),
         ),
         child: ExpansionTile(
@@ -538,8 +536,8 @@ class _HistoryCard extends StatelessWidget {
             duration: const Duration(milliseconds: 180),
             curve: Curves.easeOutCubic,
           ),
-          tilePadding: const EdgeInsets.fromLTRB(18, 14, 18, 10),
-          childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+          tilePadding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+          childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
           iconColor: HistoryScreen._navy,
           collapsedIconColor: HistoryScreen._muted,
           title: Row(
@@ -550,16 +548,18 @@ class _HistoryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      semester,
+                      reference != null && reference.isNotEmpty
+                          ? reference
+                          : _formatStatus(status),
                       style: const TextStyle(
                         color: HistoryScreen._navy,
-                        fontSize: 17,
+                        fontSize: 15,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'School Year $academicYear',
+                      '$approved of $total offices signed',
                       style: const TextStyle(
                         color: HistoryScreen._muted,
                         fontWeight: FontWeight.w700,
@@ -572,31 +572,17 @@ class _HistoryCard extends StatelessWidget {
             ],
           ),
           subtitle: Padding(
-            padding: const EdgeInsets.only(top: 14),
+            padding: const EdgeInsets.only(top: 10),
             child: Wrap(
               spacing: 8,
-              runSpacing: 8,
+              runSpacing: 6,
               children: [
                 if (programCode.isNotEmpty) _InfoPill(text: programCode),
-                _InfoPill(text: '$approved/$total offices signed'),
                 if (completedAt != null) _InfoPill(text: completedAt),
               ],
             ),
           ),
           children: [
-            if (reference != null && reference.isNotEmpty)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Reference: $reference',
-                  style: const TextStyle(
-                    color: HistoryScreen._navy,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            if (reference != null && reference.isNotEmpty)
-              const SizedBox(height: 12),
             if (steps.isEmpty)
               const _StepDetailEmpty()
             else
@@ -675,12 +661,11 @@ class _StepDetailCard extends StatelessWidget {
     final remarks = step['remarks']?.toString();
 
     return Container(
-      width: double.infinity,
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(11),
       decoration: BoxDecoration(
         color: const Color(0xFFF6F9FC),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE8EDF3)),
       ),
       child: Column(
@@ -770,7 +755,7 @@ class _StatusPill extends StatelessWidget {
         .join(' ');
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
         color: isCompleted ? const Color(0xFFE5F4EC) : const Color(0xFFEAF0F7),
         borderRadius: BorderRadius.circular(999),
@@ -795,7 +780,7 @@ class _InfoPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
         color: const Color(0xFFF6F9FC),
         borderRadius: BorderRadius.circular(999),

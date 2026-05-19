@@ -80,12 +80,12 @@
                     No students match the current filters.
                 </div>
             @else
-                <div class="mini">
+                <div class="student-result-summary">
                     Showing {{ $students->firstItem() }} - {{ $students->lastItem() }} of {{ $students->total() }} students
                 </div>
 
                 <div class="management-table-wrap">
-                    <table class="management-table">
+                    <table class="management-table student-roster-table">
                         <thead>
                             <tr>
                                 <th>Student ID</th>
@@ -111,10 +111,11 @@
                                         >
                                             {{ $student->displayName() }}
                                         </a>
+                                        <div class="student-row-meta">{{ $student->user?->username }}</div>
                                     </td>
-                                    <td>{{ $student->program->code }}</td>
-                                    <td>{{ $student->yearLevelLabel() }}</td>
-                                    <td>{{ $student->sectionLabel() }}</td>
+                                    <td><span class="student-program-pill">{{ $student->program->code }}</span></td>
+                                    <td><span class="student-soft-pill">{{ $student->yearLevelLabel() }}</span></td>
+                                    <td><span class="student-soft-pill">{{ $student->sectionLabel() }}</span></td>
                                     <td>
                                         <div class="table-action-stack">
                                             <a
@@ -629,10 +630,12 @@
             grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.8fr) auto auto;
             gap: 10px;
             align-items: center;
-            padding: 0.8rem;
+            padding: 0.75rem;
             border: 1px solid var(--border-subtle);
-            border-radius: 0.85rem;
-            background: rgba(247, 245, 239, 0.56);
+            border-radius: 1rem;
+            background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(247, 245, 239, 0.72));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
         }
 
         .student-filter-bar input,
@@ -654,6 +657,32 @@
             text-decoration: none;
         }
 
+        .student-result-summary {
+            width: fit-content;
+            padding: 0.45rem 0.7rem;
+            border-radius: 999px;
+            background: rgba(22, 52, 92, 0.07);
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            font-weight: 800;
+        }
+
+        .student-roster-table {
+            min-width: 860px;
+        }
+
+        .student-roster-table tbody tr:nth-child(even) td {
+            background: rgba(247, 245, 239, 0.34);
+        }
+
+        .student-roster-table tbody tr:hover td {
+            background: rgba(219, 234, 254, 0.34);
+        }
+
+        .student-roster-table td {
+            padding-block: 0.7rem;
+        }
+
         .student-id-pill {
             display: inline-flex;
             align-items: center;
@@ -666,6 +695,37 @@
             font-size: 13px;
             font-weight: 800;
             font-variant-numeric: tabular-nums;
+        }
+
+        .student-row-meta {
+            margin-top: 2px;
+            color: var(--text-muted);
+            font-size: 0.76rem;
+            font-weight: 700;
+        }
+
+        .student-program-pill,
+        .student-soft-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 30px;
+            padding: 0 0.65rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 850;
+            white-space: nowrap;
+        }
+
+        .student-program-pill {
+            background: var(--brand-navy);
+            color: var(--bg-surface);
+        }
+
+        .student-soft-pill {
+            background: rgba(22, 52, 92, 0.07);
+            color: var(--text-primary);
+            border: 1px solid rgba(22, 52, 92, 0.08);
         }
 
         .student-profile-link {
@@ -760,9 +820,15 @@
             justify-content: center;
         }
 
+        .pagination-wrapper nav,
         .pagination-wrapper nav > div,
-        .pagination-wrapper nav > ul {
+        .pagination-wrapper nav > ul,
+        .pagination-wrapper .pagination {
+            display: flex;
+            justify-content: center !important;
+            align-items: center;
             margin-inline: auto;
+            text-align: center;
         }
 
         .pagination {
@@ -781,9 +847,13 @@
 
         .pagination li a,
         .pagination li span {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            min-height: 34px;
+            padding: 6px 11px;
+            border-radius: 999px;
             text-decoration: none;
             font-size: 13px;
             border: 1px solid var(--border-subtle);
@@ -878,17 +948,19 @@
 
         .table-action-stack {
             display: flex;
-            flex-direction: column;
-            gap: 8px;
-            align-items: stretch;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 6px;
+            align-items: center;
         }
 
         .table-action-button {
-            width: 84px;
-            min-width: 84px;
-            height: 36px;
-            padding: 0 12px;
-            border-radius: 12px;
+            width: auto;
+            min-width: 64px;
+            height: 32px;
+            padding: 0 10px;
+            border-radius: 999px;
             display: inline-flex;
             align-items: center;
             justify-content: center;

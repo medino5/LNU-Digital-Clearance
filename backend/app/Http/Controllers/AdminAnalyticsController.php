@@ -76,11 +76,12 @@ class AdminAnalyticsController extends Controller
             }
 
             fputcsv($output, []);
-            fputcsv($output, ['Bottleneck Signer Analytics']);
-            fputcsv($output, ['Office', 'Pending Steps', 'Flagged Steps', 'Average Signing Time']);
+            fputcsv($output, ['Office Delay Risk']);
+            fputcsv($output, ['Office', 'Delay Risk Score', 'Waiting Steps', 'Flagged Steps', 'Average Signing Time']);
             foreach ($payload['bottleneckSigners'] as $office) {
                 fputcsv($output, [
                     $office['office_label'],
+                    $office['delay_score'] ?? 0,
                     $office['pending_steps'],
                     $office['flagged_steps'],
                     $office['avg_signing_time_label'],
@@ -180,6 +181,16 @@ class AdminAnalyticsController extends Controller
         $bottleneckSigners = $officePerformance
             ->sortByDesc(fn (array $office) => ($office['pending_steps'] * 3) + ($office['flagged_steps'] * 4) + ($office['avg_signing_minutes'] / 240))
             ->take(5)
+            ->map(function (array $office) {
+                $office['delay_score'] = round(
+                    ($office['pending_steps'] * 3)
+                    + ($office['flagged_steps'] * 4)
+                    + ($office['avg_signing_minutes'] / 240),
+                    1,
+                );
+
+                return $office;
+            })
             ->values();
 
         $highestPendingOffice = $officePerformance

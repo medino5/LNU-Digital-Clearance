@@ -203,19 +203,27 @@
         <section class="analytics-bottom-grid">
             <article class="analytics-panel">
                 <div class="analytics-panel-heading">
-                    <h2>Bottleneck Signer Analytics</h2>
+                    <h2>Office Delay Risk</h2>
+                    <span>Weighted by waiting, flagged, and signing time</span>
                 </div>
 
                 @if($bottleneckSigners->isEmpty())
-                    <div class="analytics-empty">No bottleneck data found for this filter.</div>
+                    <div class="analytics-empty">No delay risk data found for this filter.</div>
                 @else
                     <div class="analytics-bottleneck-list">
                         @foreach($bottleneckSigners as $index => $office)
+                            @php
+                                $riskWidth = min(100, max(8, ($office['delay_score'] ?? 0) * 8));
+                            @endphp
                             <div>
                                 <span>{{ $index + 1 }}</span>
                                 <div>
                                     <strong>{{ $office['office_label'] }}</strong>
-                                    <small>{{ $office['pending_steps'] }} pending, {{ $office['flagged_steps'] }} flagged, avg {{ $office['avg_signing_time_label'] }}</small>
+                                    <small>Risk score {{ $office['delay_score'] ?? 0 }} · avg signing {{ $office['avg_signing_time_label'] }}</small>
+                                    <div class="analytics-risk-meter" aria-label="Delay risk score">
+                                        <i style="width: {{ $riskWidth }}%"></i>
+                                    </div>
+                                    <em>{{ $office['pending_steps'] }} waiting · {{ $office['flagged_steps'] }} flagged</em>
                                 </div>
                             </div>
                         @endforeach
@@ -812,9 +820,10 @@
             grid-template-columns: auto 1fr;
             gap: 12px;
             align-items: center;
-            padding: 10px;
-            border-radius: 16px;
+            padding: 12px;
+            border-radius: 18px;
             min-width: 0;
+            box-shadow: 0 10px 24px rgba(24, 58, 99, 0.05);
         }
 
         .analytics-bottleneck-list > div > span {
@@ -833,10 +842,33 @@
             color: var(--text-primary);
         }
 
-        .analytics-bottleneck-list small {
+        .analytics-bottleneck-list small,
+        .analytics-bottleneck-list em {
+            display: block;
             color: var(--text-muted);
             font-weight: 750;
+            font-style: normal;
             overflow-wrap: anywhere;
+        }
+
+        .analytics-bottleneck-list em {
+            margin-top: 4px;
+            font-size: 0.78rem;
+        }
+
+        .analytics-risk-meter {
+            height: 7px;
+            margin-top: 8px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(212, 165, 58, 0.18);
+        }
+
+        .analytics-risk-meter i {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--brand-gold), var(--status-danger-text));
         }
 
         .analytics-program-list > div {

@@ -39,38 +39,24 @@
             <form method="POST" action="{{ route('admin.clearance-reports.completed.export') }}" id="history-export-form" class="history-export-form management-filter-grid">
                 @csrf
                 <input type="hidden" name="_form_key" value="history-export">
+                <input type="hidden" name="academic_year" value="{{ $exportAcademicYear }}" data-export-academic-year-input>
 
                 <label>
-                    Semester
+                    Report Period
                     <select name="semester_id" data-export-semester-select required>
-                        <option value="">Choose semester</option>
+                        <option value="">Choose semester and school year</option>
                         @foreach($semesters as $semester)
                             <option
                                 value="{{ $semester->id }}"
                                 data-academic-year="{{ $semester->displayAcademicYear() }}"
                                 {{ (string) $exportSemesterId === (string) $semester->id ? 'selected' : '' }}
                             >
-                                {{ $semester->label }}
+                                {{ $semester->label }} / {{ $semester->displayAcademicYear() }}
                             </option>
                         @endforeach
                     </select>
                     @if($activeFormKey === 'history-export')
                         <x-field-error field="semester_id" bag="historyExport" />
-                    @endif
-                </label>
-
-                <label>
-                    Academic Year
-                    <select name="academic_year" data-export-academic-year-select required>
-                        <option value="">Choose academic year</option>
-                        @foreach($academicYears as $academicYear)
-                            <option value="{{ $academicYear }}" {{ $exportAcademicYear === $academicYear ? 'selected' : '' }}>
-                                {{ $academicYear }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @if($activeFormKey === 'history-export')
-                        <x-field-error field="academic_year" bag="historyExport" />
                     @endif
                 </label>
 
@@ -138,7 +124,7 @@
     @push('styles')
     <style>
         .history-export-form {
-            grid-template-columns: minmax(200px, 1fr) minmax(200px, 1fr) minmax(240px, 1.2fr) auto;
+            grid-template-columns: minmax(260px, 1.25fr) minmax(240px, 1fr) auto;
         }
 
         .history-download-button {
@@ -276,7 +262,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const semesterSelect = document.querySelector('[data-export-semester-select]');
-            const academicYearSelect = document.querySelector('[data-export-academic-year-select]');
+            const academicYearInput = document.querySelector('[data-export-academic-year-input]');
             const programSelect = document.querySelector('[name="program_code"]');
             const previewData = @json($reportPreview);
             const previewTitle = document.querySelector('[data-preview-title]');
@@ -286,7 +272,7 @@
             const previewLatest = document.querySelector('[data-preview-latest]');
             const previewProgramList = document.querySelector('[data-preview-program-list]');
 
-            if (!semesterSelect || !academicYearSelect) {
+            if (!semesterSelect || !academicYearInput) {
                 return;
             }
 
@@ -318,7 +304,7 @@
                 }
 
                 const semesterId = semesterSelect.value;
-                const academicYear = academicYearSelect.value;
+                const academicYear = academicYearInput.value;
                 const programCode = programSelect?.value || '';
                 const semester = previewData.semesters?.[semesterId];
 
@@ -372,21 +358,17 @@
 
             const updateReportSummary = function () {
                 const selectedOption = semesterSelect.options[semesterSelect.selectedIndex];
-                const academicYear = selectedOption?.dataset.academicYear || academicYearSelect.value || '';
+                const academicYear = selectedOption?.dataset.academicYear || '';
 
-                if (academicYear && selectedOption?.value) {
-                    academicYearSelect.value = academicYear;
-                }
+                academicYearInput.value = selectedOption?.value ? academicYear : '';
 
                 renderPreview();
             };
 
             semesterSelect.addEventListener('change', updateReportSummary);
-            academicYearSelect.addEventListener('change', renderPreview);
             programSelect?.addEventListener('change', renderPreview);
             updateReportSummary();
         });
     </script>
     @endpush
 @endsection
-

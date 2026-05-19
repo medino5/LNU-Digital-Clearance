@@ -127,7 +127,7 @@ class DashboardScreen extends StatelessWidget {
             else
               ..._steps.map(
                 (step) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.only(bottom: 8),
                   child: _ClearanceStepCard(
                     step: step,
                     isResubmitting: resubmittingStepId == step['id'],
@@ -734,10 +734,10 @@ class _ClearanceStepCard extends StatelessWidget {
     };
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -751,7 +751,7 @@ class _ClearanceStepCard extends StatelessWidget {
                 backgroundColor: theme.background,
                 foregroundColor: theme.foreground,
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -759,7 +759,7 @@ class _ClearanceStepCard extends StatelessWidget {
                     Text(
                       step['office_label'] as String? ?? 'Required Office',
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -783,7 +783,7 @@ class _ClearanceStepCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
-                  vertical: 8,
+                  vertical: 6,
                 ),
                 decoration: BoxDecoration(
                   color: theme.background,
@@ -864,16 +864,16 @@ class _OfficerAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 48,
-      height: 48,
+      width: 42,
+      height: 42,
       decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
       clipBehavior: Clip.antiAlias,
       child: photoUrl != null && photoUrl!.isNotEmpty
           ? Image.network(
               photoUrl!,
               fit: BoxFit.cover,
-              width: 48,
-              height: 48,
+              width: 42,
+              height: 42,
               errorBuilder: (context, error, stackTrace) =>
                   Icon(icon, color: foregroundColor),
               loadingBuilder: (context, child, progress) =>
