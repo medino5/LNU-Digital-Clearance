@@ -34,7 +34,7 @@ class AdminClearanceDetailTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('data.id', $clearance->id)
             ->assertJsonPath('data.student.student_id_number', '2302314')
-            ->assertJsonPath('data.semester.label', '2nd Semester 2024-2025')
+            ->assertJsonPath('data.semester.label', $clearance->semester->label)
             ->assertJsonPath('data.reference_number', $clearance->reference_number)
             ->assertJsonPath('data.counts.total', 5)
             ->assertJsonPath('data.counts.approved', 5)

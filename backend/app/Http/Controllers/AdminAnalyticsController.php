@@ -7,6 +7,7 @@ use App\Models\ClearanceStep;
 use App\Models\Program;
 use App\Models\Semester;
 use App\Models\Student;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -51,7 +52,9 @@ class AdminAnalyticsController extends Controller
             fputcsv($output, ['Average Clearance Time', $payload['totals']['avg_completion_label']]);
             fputcsv($output, ['Pending Clearances', $payload['totals']['pending']]);
             fputcsv($output, ['Flagged Clearances', $payload['totals']['flagged']]);
-            fputcsv($output, ['Recommended Review', $payload['recentInsights'][1]['body'] ?? 'No review recommendation available.']);
+            $recommendedInsight = collect($payload['recentInsights'])
+                ->firstWhere('title', 'Actionable Bottleneck');
+            fputcsv($output, ['Recommended Review', $recommendedInsight['body'] ?? 'No review recommendation available.']);
 
             fputcsv($output, []);
             fputcsv($output, ['Clearance Requests Over Time']);
@@ -264,7 +267,6 @@ class AdminAnalyticsController extends Controller
                 $completionRate,
                 $avgCompletionMinutes,
                 $actionableBottleneckOffice,
-                $highestPendingOffice,
                 $programPerformance->first(),
             ),
         ];
@@ -469,7 +471,6 @@ class AdminAnalyticsController extends Controller
         float $completionRate,
         ?float $avgCompletionMinutes,
         ?array $actionableBottleneckOffice,
-        ?array $highestPendingOffice,
         ?array $topProgram,
     ): array {
         return [
@@ -484,13 +485,6 @@ class AdminAnalyticsController extends Controller
                     ? $actionableBottleneckOffice['office_label'] . ' needs review with ' . $actionableBottleneckOffice['pending_steps'] . ' pending and ' . $actionableBottleneckOffice['flagged_steps'] . ' flagged step(s).'
                     : 'No actionable office bottleneck is visible for this filter.',
                 'tone' => 'orange',
-            ],
-            [
-                'title' => 'Pending Load',
-                'body' => $highestPendingOffice && $highestPendingOffice['pending_steps'] > 0
-                    ? $highestPendingOffice['office_label'] . ' has ' . $highestPendingOffice['pending_steps'] . ' pending step(s).'
-                    : 'No office has a pending load in this filter.',
-                'tone' => 'blue',
             ],
             [
                 'title' => 'Average Time',
@@ -518,15 +512,7 @@ class AdminAnalyticsController extends Controller
 
     private function timelineKey(Clearance $clearance, string $scope): string
     {
-        if ($scope === self::SCOPE_OVERALL) {
-            return 'year:' . ($clearance->semester?->displayAcademicYear() ?: $this->academicYearFromLabel($clearance->semester_label) ?: 'Unknown');
-        }
-
-        if ($scope === self::SCOPE_SCHOOL_YEAR) {
-            return 'semester:' . $this->semesterTermFromLabel($clearance->semester?->label ?? $clearance->semester_label);
-        }
-
-        return 'month:' . ($clearance->created_at?->format('Y-m') ?? 'Unknown');
+        return 'month:' . $this->clearanceWindowMonth($clearance);
     }
 
     private function timelineLabel(string $key): string
@@ -543,7 +529,7 @@ class AdminAnalyticsController extends Controller
             $value = substr($key, 6);
 
             return $value !== 'Unknown'
-                ? \Carbon\CarbonImmutable::createFromFormat('Y-m', $value)->format('M Y')
+                ? CarbonImmutable::createFromFormat('Y-m', $value)->format('M Y')
                 : 'Unknown';
         }
 
@@ -595,6 +581,89 @@ class AdminAnalyticsController extends Controller
         return preg_match('/(20\d{2}-20\d{2})/', (string) $label, $matches)
             ? $matches[1]
             : null;
+    }
+
+    private function clearanceWindowMonth(Clearance $clearance): string
+    {
+        $windowMonths = $this->clearanceWindowMonths($clearance);
+
+        if ($windowMonths === []) {
+            return $clearance->created_at?->format('Y-m') ?? 'Unknown';
+        }
+
+        $createdAt = $clearance->created_at;
+        if ($createdAt === null) {
+            return $this->windowMonthKey($windowMonths[0]);
+        }
+
+        foreach ($windowMonths as $windowMonth) {
+            if ((int) $createdAt->format('Y') === $windowMonth['year']
+                && (int) $createdAt->format('n') === $windowMonth['month']) {
+                return $this->windowMonthKey($windowMonth);
+            }
+        }
+
+        $firstWindow = $windowMonths[0];
+        $lastWindow = $windowMonths[count($windowMonths) - 1];
+        $createdSort = (int) $createdAt->format('Ym');
+        $firstSort = ($firstWindow['year'] * 100) + $firstWindow['month'];
+
+        return $createdSort <= $firstSort
+            ? $this->windowMonthKey($firstWindow)
+            : $this->windowMonthKey($lastWindow);
+    }
+
+    /**
+     * Clearance requests are expected near term-end: Nov-Dec for 1st semester,
+     * Apr-May for 2nd semester, and Jun-Jul for midyear.
+     *
+     * @return array<int, array{year: int, month: int}>
+     */
+    private function clearanceWindowMonths(Clearance $clearance): array
+    {
+        $term = $this->semesterTermFromLabel($clearance->semester?->label ?? $clearance->semester_label);
+        $academicYear = $clearance->semester?->displayAcademicYear()
+            ?: $this->academicYearFromLabel($clearance->semester_label);
+        [$startYear, $endYear] = $this->academicYearParts($academicYear);
+
+        if ($startYear === null || $endYear === null) {
+            return [];
+        }
+
+        return match ($term) {
+            '2nd Semester' => [
+                ['year' => $endYear, 'month' => 4],
+                ['year' => $endYear, 'month' => 5],
+            ],
+            'Midyear' => [
+                ['year' => $endYear, 'month' => 6],
+                ['year' => $endYear, 'month' => 7],
+            ],
+            default => [
+                ['year' => $startYear, 'month' => 11],
+                ['year' => $startYear, 'month' => 12],
+            ],
+        };
+    }
+
+    /**
+     * @return array{0: int|null, 1: int|null}
+     */
+    private function academicYearParts(?string $academicYear): array
+    {
+        if (! preg_match('/^(20\d{2})-(20\d{2})$/', (string) $academicYear, $matches)) {
+            return [null, null];
+        }
+
+        return [(int) $matches[1], (int) $matches[2]];
+    }
+
+    /**
+     * @param array{year: int, month: int} $windowMonth
+     */
+    private function windowMonthKey(array $windowMonth): string
+    {
+        return CarbonImmutable::create($windowMonth['year'], $windowMonth['month'], 1)->format('Y-m');
     }
 
     private function minutesBetween(string $startColumn, string $endColumn, string $table): string

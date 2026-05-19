@@ -74,12 +74,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('2nd Semester 2024-2025'), findsWidgets);
-      expect(find.text('School Year 2024-2025'), findsOneWidget);
+      expect(find.text('SY 2024-2025'), findsOneWidget);
 
-      await tester.tap(find.text('2nd Semester 2024-2025').last);
+      await tester.tap(find.text('CLR-2024-BSIT-001'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Reference: CLR-2024-BSIT-001'), findsOneWidget);
+      expect(find.text('CLR-2024-BSIT-001'), findsOneWidget);
       expect(find.text('College Chief Librarian'), findsOneWidget);
       expect(find.textContaining('Signed by Maria Santos'), findsOneWidget);
     });

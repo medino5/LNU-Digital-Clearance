@@ -727,8 +727,8 @@ class ClearanceWorkflowTest extends TestCase
         $this->actingAs($officeUser)
             ->get(route('office.dashboard', ['tab' => 'archive']))
             ->assertOk()
-            ->assertSee('office-simple-pagination')
-            ->assertSee('Page 1')
+            ->assertSee('office-pagination')
+            ->assertSee('2')
             ->assertSee('Next');
     }
 

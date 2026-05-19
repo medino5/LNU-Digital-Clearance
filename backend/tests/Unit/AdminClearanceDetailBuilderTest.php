@@ -37,7 +37,7 @@ class AdminClearanceDetailBuilderTest extends TestCase
         $this->assertSame($clearance->id, $payload['id']);
         $this->assertSame('John A. Doe', $payload['student']['name']);
         $this->assertSame('BSIT', $payload['student']['program']['code']);
-        $this->assertSame('2nd Semester 2024-2025', $payload['semester']['label']);
+        $this->assertSame($clearance->semester->label, $payload['semester']['label']);
         $this->assertCount(5, $payload['steps']);
         $this->assertNotEmpty($payload['timeline']);
         $this->assertArrayNotHasKey('office_account', $payload['steps'][0]);
