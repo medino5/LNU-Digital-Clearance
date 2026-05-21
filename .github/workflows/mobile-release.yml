@@ -23,7 +23,7 @@ jobs:
 
     env:
       APK_NAME: digital-clearance-latest.apk
-      MOBILE_API_BASE_URL: ${{ vars.MOBILE_API_BASE_URL || 'https://lnu-digital-clearance-backend-58la.onrender.com/api' }}
+      MOBILE_API_BASE_URL: https://lnu-digital-clearance.onrender.com/api
 
     steps:
       - name: Check out repository
